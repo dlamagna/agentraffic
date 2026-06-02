@@ -74,7 +74,7 @@ The paper fixes agent count at **four recruited sub-agents** — large enough to
 
 ### LLM backend
 
-The inference backend runs vLLM 0.5's `AsyncLLMEngine` with **Llama-3.2-3B-Instruct**, configured with:
+The inference backend runs vLLM's `AsyncLLMEngine` with any HuggingFace-hosted model that vLLM supports, configured via `LLM_MODEL` in `infra/.env`. The paper uses **Llama-3.2-3B-Instruct** with the following settings:
 - Effective concurrency limit: 8 requests
 - Maximum model length: 11,200 tokens
 - Default completion cap: 6,144 tokens
@@ -88,14 +88,30 @@ The asynchronous engine accepts concurrent requests from multiple agents and sch
 ### Prerequisites
 
 - Docker with the [NVIDIA container runtime](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) (GPU required for vLLM)
-- A Hugging Face token with access to [Llama-3.2-3B-Instruct](https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct)
+- A Hugging Face token (only required for gated models such as Llama — not needed for open models like Qwen)
 - `jq` and `curl` (for the experiment runner)
 
 ### 1. Configure
 
 ```bash
 cp infra/.env.example infra/.env
-# Edit infra/.env and set HF_TOKEN=hf_...
+# Edit infra/.env — at minimum set LLM_MODEL and HF_TOKEN (if using a gated model)
+```
+
+The default model is `meta-llama/Llama-3.2-3B-Instruct` (used in the paper). To use a different model, set `LLM_MODEL` in `infra/.env` to any vLLM-compatible HuggingFace model ID:
+
+```bash
+# Non-gated alternative (no HF token required)
+LLM_MODEL=Qwen/Qwen2.5-7B-Instruct
+
+# Larger Llama variant
+LLM_MODEL=meta-llama/Llama-3.1-8B-Instruct
+```
+
+If you change the model, recalculate the KV-cache token limits for your GPU:
+
+```bash
+python scripts/deploy/kv_cache_calc.py --free-gb <FREE_GiB>
 ```
 
 ### 2. Start the stack
@@ -288,7 +304,7 @@ Prometheus scrapes it at `http://host.docker.internal:9102/metrics` (configured 
 Ensure the NVIDIA container runtime is installed and `docker info | grep -i runtime` shows `nvidia`. Run `nvidia-smi` on the host to confirm the driver is loaded.
 
 **HuggingFace token invalid / model download fails**
-Check `HF_TOKEN` in `infra/.env`. The token must have read access to gated models; request access to `meta-llama/Llama-3.2-3B-Instruct` on the HuggingFace model page first.
+Check `HF_TOKEN` in `infra/.env`. For gated models (e.g. Llama), the token must have read access — request it on the model's HuggingFace page. For open models (e.g. Qwen), `HF_TOKEN` can be left empty.
 
 **Port conflicts**
 Default ports: 8000 (LLM), 8101–8105 (agents), 3000 (UI), 16686 (Jaeger), 3001 (Grafana), 9090 (Prometheus). Change them in `infra/docker-compose.yml` if needed.
