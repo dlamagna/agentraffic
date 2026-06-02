@@ -67,6 +67,20 @@ shellcheck scripts/**/*.sh
 
 Configuration lives in `pyproject.toml`.
 
+### CI jobs
+
+CI runs on every push and PR via `.github/workflows/ci.yml`:
+
+| Job | What it checks |
+|-----|---------------|
+| `lint` | `black --check` + `ruff check` on `agents/` and `llm/` |
+| `docker-build` | `agents/Dockerfile` and `ui/Dockerfile` build without error |
+| `compose-validate` | `docker-compose.yml` and `docker-compose.monitoring.yml` are valid |
+| `shellcheck` | Shell scripts have no warnings or errors |
+| `unit-tests` | `pytest tests/` (pure Python, no GPU) |
+
+`llm/Dockerfile` is **not** built in CI — it requires the `nvidia/cuda` base image and `vllm`, which are unavailable on GitHub-hosted runners. Build and test it manually on the GPU server.
+
 ---
 
 ## Running tests
@@ -78,6 +92,35 @@ pytest tests/
 ```
 
 Full-stack integration tests require the Docker stack to be up (GPU server only). See the `scripts/ci/` directory for the smoke-test script.
+
+---
+
+## Naming conventions
+
+### Commit messages
+
+Use the [Conventional Commits](https://www.conventionalcommits.org/) prefix format:
+
+```
+feat: add star topology to UI selector
+fix: correct IAT fence calculation for full mesh
+docs: update queue README with lifecycle params
+ci: drop llm from docker-build matrix
+refactor: simplify collect_iats data loading
+chore: initial open-source release
+```
+
+Common prefixes: `feat` · `fix` · `docs` · `ci` · `refactor` · `test` · `chore`
+
+### Branch names
+
+Short, lowercase, hyphenated, prefixed by type:
+
+```
+feat/marble-topology
+fix/iat-fence-edge-case
+docs/analysis-readme
+```
 
 ---
 

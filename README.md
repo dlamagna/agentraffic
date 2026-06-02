@@ -256,9 +256,12 @@ Prometheus scrapes it at `http://host.docker.internal:9102/metrics` (configured 
 │   └── monitoring/           # Prometheus config + Grafana dashboards
 ├── scripts/
 │   ├── deploy/               # deploy.sh / stop.sh
-│   ├── experiment/           # run_agentverse.sh
+│   ├── experiment/           # run_agentverse.sh — data collection script
+│   ├── analysis/             # plot_paper_figures.py — reproduces paper figures
+│   ├── queue/                # Experiment queue daemon + MCP server
 │   ├── monitoring/           # TCP metrics collector + Docker mapping exporter
 │   └── ci/                   # smoketest.sh
+├── tests/                    # Pure-Python unit tests (no GPU required)
 └── ui/agentverse/            # Browser-based run viewer
 ```
 

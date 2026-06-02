@@ -18,6 +18,8 @@ jobs:
       - run: black --check agents/ llm/
       - run: ruff check agents/ llm/
 
+  # llm/Dockerfile is intentionally excluded from CI: it requires nvidia/cuda base
+  # image and vllm, which cannot build on GitHub-hosted runners without a GPU.
   docker-build:
     name: Docker build
     runs-on: ubuntu-latest
@@ -28,8 +30,6 @@ jobs:
             file: agents/Dockerfile
           - name: ui
             file: ui/Dockerfile
-          - name: llm
-            file: llm/Dockerfile
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
