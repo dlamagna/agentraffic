@@ -8,13 +8,14 @@ from typing import Any, Dict, Optional, Tuple
 import httpx
 from agents.common.telemetry import TelemetryLogger
 
-
 DEFAULT_LLM_SERVER_URL = "http://localhost:8000/chat"
 LLM_SERVER_URL = os.environ.get("LLM_SERVER_URL", DEFAULT_LLM_SERVER_URL)
 LLM_TIMEOUT_SECONDS = float(os.environ.get("LLM_TIMEOUT_SECONDS", "120"))
 
 
-def call_llm(prompt: str, headers: Optional[Dict[str, str]] = None, max_tokens: Optional[int] = None) -> Tuple[str, Dict[str, Any]]:
+def call_llm(
+    prompt: str, headers: Optional[Dict[str, str]] = None, max_tokens: Optional[int] = None
+) -> Tuple[str, Dict[str, Any]]:
     payload: Dict[str, Any] = {"prompt": prompt}
     if max_tokens is not None:
         payload["max_tokens"] = max_tokens
@@ -26,7 +27,9 @@ def call_llm(prompt: str, headers: Optional[Dict[str, str]] = None, max_tokens: 
     )
     resp.raise_for_status()
     data: Dict[str, Any] = resp.json()
-    return str(data.get("output", "")), (data.get("meta") if isinstance(data.get("meta"), dict) else {})
+    return str(data.get("output", "")), (
+        data.get("meta") if isinstance(data.get("meta"), dict) else {}
+    )
 
 
 def main() -> None:
@@ -69,5 +72,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-

@@ -11,7 +11,6 @@ from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-
 _INITIALIZED = False
 
 
@@ -83,5 +82,3 @@ def span_to_metadata(span: Any) -> Dict[str, Any]:
         meta["attributes"] = attrs
 
     return meta
-
-

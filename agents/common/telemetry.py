@@ -31,7 +31,9 @@ class TelemetryEvent:
 
 
 class TelemetryLogger:
-    def __init__(self, agent_id: str, log_file: Optional[str] = None, scenario: Optional[str] = None) -> None:
+    def __init__(
+        self, agent_id: str, log_file: Optional[str] = None, scenario: Optional[str] = None
+    ) -> None:
         self.agent_id = agent_id
         self.scenario = scenario
         self.node_id = _node_id()
@@ -72,6 +74,3 @@ class TelemetryLogger:
         except OSError as exc:
             # Best-effort logging; fall back to stderr.
             print(f"[telemetry-error] {exc}: {line}", file=sys.stderr)
-
-
-

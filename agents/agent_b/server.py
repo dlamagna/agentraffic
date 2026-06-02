@@ -14,7 +14,6 @@ from agents.common.metrics_logger import MetricsLogger
 from agents.common.telemetry import TelemetryLogger
 from agents.common.tracing import get_tracer, span_to_metadata
 
-
 HOST = "0.0.0.0"
 PORT = int(os.environ.get("AGENT_B_PORT", "8102"))
 LOG_LLM_REQUESTS = os.environ.get("LOG_LLM_REQUESTS", "").lower() in ("1", "true", "yes", "on")
@@ -30,7 +29,9 @@ def _log_llm_prompt(label: str, prompt: str) -> None:
         suffix = ""
     else:
         preview = prompt[:max_chars]
-        suffix = "" if len(prompt) <= max_chars else f"... [truncated {len(prompt) - max_chars} chars]"
+        suffix = (
+            "" if len(prompt) <= max_chars else f"... [truncated {len(prompt) - max_chars} chars]"
+        )
     print(f"[agent-b][llm] {label} prompt_len={len(prompt)} prompt={preview}{suffix}")
 
 
@@ -66,13 +67,13 @@ class AgentBRequestHandler(BaseHTTPRequestHandler):
             # Alias for subtask - used in AgentVerse collaborative discussions
             self._handle_subtask_or_discuss()
             return
-        
+
         if self.path != "/subtask":
             self._send_json(404, {"error": "Not found"})
             return
-        
+
         self._handle_subtask_or_discuss()
-    
+
     def _handle_subtask_or_discuss(self) -> None:
         """Handle both /subtask and /discuss endpoints."""
         carrier = {key: value for key, value in self.headers.items()}
@@ -96,9 +97,13 @@ class AgentBRequestHandler(BaseHTTPRequestHandler):
 
             subtask = data.get("subtask")
             scenario = data.get("scenario")
-            agent_b_role = data.get("agent_b_role") if isinstance(data.get("agent_b_role"), str) else None
+            agent_b_role = (
+                data.get("agent_b_role") if isinstance(data.get("agent_b_role"), str) else None
+            )
             agent_b_contract = (
-                data.get("agent_b_contract") if isinstance(data.get("agent_b_contract"), str) else None
+                data.get("agent_b_contract")
+                if isinstance(data.get("agent_b_contract"), str)
+                else None
             )
             max_tokens: Optional[int] = None
             if isinstance(data.get("max_tokens"), int):
@@ -129,12 +134,14 @@ class AgentBRequestHandler(BaseHTTPRequestHandler):
                 task_id=task_id,
                 event_type="subtask_received",
                 message=subtask,
-                extra={
-                    "agent_role": agent_b_role,
-                    "agent_index": agent_index,
-                }
-                if agent_b_role or agent_index
-                else None,
+                extra=(
+                    {
+                        "agent_role": agent_b_role,
+                        "agent_index": agent_index,
+                    }
+                    if agent_b_role or agent_index
+                    else None
+                ),
             )
 
             tool_call_id = logger.new_tool_call_id()
@@ -180,16 +187,23 @@ class AgentBRequestHandler(BaseHTTPRequestHandler):
                     end_time_utc = datetime.now(timezone.utc).isoformat()
                     agent_b_span_meta = span_to_metadata(span_llm)
                     self.metrics_logger.log_call(
-                        task_id=task_id, agent_id="AgentB", call_type="sub_call",
-                        timestamp_start=start_time_utc, timestamp_end=end_time_utc,
-                        http_status=200, llm_meta=llm_meta,
+                        task_id=task_id,
+                        agent_id="AgentB",
+                        call_type="sub_call",
+                        timestamp_start=start_time_utc,
+                        timestamp_end=end_time_utc,
+                        http_status=200,
+                        llm_meta=llm_meta,
                     )
                 except Exception as exc:
                     self.metrics_logger.log_call(
-                        task_id=task_id, agent_id="AgentB", call_type="sub_call",
+                        task_id=task_id,
+                        agent_id="AgentB",
+                        call_type="sub_call",
                         timestamp_start=start_time_utc,
                         timestamp_end=datetime.now(timezone.utc).isoformat(),
-                        http_status=500, error=str(exc),
+                        http_status=500,
+                        error=str(exc),
                     )
                     raise
 
@@ -247,5 +261,3 @@ def run() -> None:
 
 if __name__ == "__main__":
     run()
-
-

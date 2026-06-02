@@ -6,7 +6,6 @@ import sys
 import uuid
 from typing import Any, Dict, Optional
 
-
 MODEL_NAME = os.environ.get("MODEL_NAME", "unknown")
 _DEFAULT_LOG_DIR = os.environ.get("METRICS_LOG_DIR", "logs")
 

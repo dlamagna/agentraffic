@@ -30,7 +30,6 @@ from agents.common.metrics_logger import MetricsLogger
 from agents.common.telemetry import TelemetryLogger
 from agents.common.tracing import get_tracer
 
-
 HOST = "0.0.0.0"
 PORT = int(os.environ.get("AGENT_A_PORT", "8101"))
 MAX_AGENT_B_TURNS = int(os.environ.get("MAX_AGENT_B_TURNS", "3"))
@@ -54,7 +53,9 @@ def _normalize_workers(
     if not urls:
         urls = ["http://agent-b:8102/subtask"]
 
-    count = requested_count if isinstance(requested_count, int) and requested_count > 0 else len(urls)
+    count = (
+        requested_count if isinstance(requested_count, int) and requested_count > 0 else len(urls)
+    )
     count = min(count, MAX_PARALLEL_WORKERS)
 
     payloads: list[Dict[str, Any]] = worker_payloads if isinstance(worker_payloads, list) else []
@@ -91,8 +92,7 @@ def _parse_subtasks(raw: str, desired_count: int, fallback_task: str) -> list[st
 
     if len(subtasks) < desired_count:
         subtasks += [
-            f"Subtask {idx + 1}: {fallback_task}"
-            for idx in range(len(subtasks), desired_count)
+            f"Subtask {idx + 1}: {fallback_task}" for idx in range(len(subtasks), desired_count)
         ]
     return subtasks[:desired_count]
 
@@ -102,7 +102,11 @@ def _log_llm_prompt(label: str, prompt: str) -> None:
         return
     max_chars = max(LLM_LOG_MAX_CHARS, 0)
     preview = prompt[:max_chars] if max_chars else ""
-    suffix = "" if not max_chars or len(prompt) <= max_chars else f"... [truncated {len(prompt) - max_chars} chars]"
+    suffix = (
+        ""
+        if not max_chars or len(prompt) <= max_chars
+        else f"... [truncated {len(prompt) - max_chars} chars]"
+    )
     print(f"[agent-a][llm] {label} prompt_len={len(prompt)} prompt={preview}{suffix}")
 
 
@@ -209,7 +213,9 @@ class AgentARequestHandler(BaseHTTPRequestHandler):
 
             # Optional topology override: "horizontal" | "vertical" | "full_mesh"
             _fs = data.get("force_structure", None)
-            force_structure: Optional[str] = _fs if _fs in ("horizontal", "vertical", "full_mesh") else None
+            force_structure: Optional[str] = (
+                _fs if _fs in ("horizontal", "vertical", "full_mesh") else None
+            )
 
             # Optional agent count override (0 = solo mode, N = exactly N sub-agents)
             _fac = data.get("force_agent_count", None)
@@ -278,7 +284,9 @@ class AgentARequestHandler(BaseHTTPRequestHandler):
                         force_agent_count=force_agent_count,
                         full_mesh_max_rounds=full_mesh_max_rounds,
                     )
-                    self._persist_agentverse_run(task_id, task, max_iterations, success_threshold, result)
+                    self._persist_agentverse_run(
+                        task_id, task, max_iterations, success_threshold, result
+                    )
                     self._send_sse_event("complete", result)
 
                 else:
@@ -292,12 +300,17 @@ class AgentARequestHandler(BaseHTTPRequestHandler):
                         force_agent_count=force_agent_count,
                         full_mesh_max_rounds=full_mesh_max_rounds,
                     )
-                    self._persist_agentverse_run(task_id, task, max_iterations, success_threshold, result)
+                    self._persist_agentverse_run(
+                        task_id, task, max_iterations, success_threshold, result
+                    )
                     self._send_json(200, result)
 
             except Exception as exc:
-                logger.log(task_id=task_id, event_type="agentverse_error",
-                           message=f"AgentVerse workflow failed: {exc}")
+                logger.log(
+                    task_id=task_id,
+                    event_type="agentverse_error",
+                    message=f"AgentVerse workflow failed: {exc}",
+                )
                 if stream:
                     self._send_sse_event("error", {"error": str(exc)})
                 else:
@@ -310,10 +323,18 @@ class AgentARequestHandler(BaseHTTPRequestHandler):
     def _handle_task(self, span, data: Dict[str, Any]) -> None:
         task = data.get("task")
         scenario = data.get("scenario")
-        agent_a_role = data.get("agent_a_role") if isinstance(data.get("agent_a_role"), str) else None
-        agent_a_contract = data.get("agent_a_contract") if isinstance(data.get("agent_a_contract"), str) else None
-        agent_b_role = data.get("agent_b_role") if isinstance(data.get("agent_b_role"), str) else None
-        agent_b_contract = data.get("agent_b_contract") if isinstance(data.get("agent_b_contract"), str) else None
+        agent_a_role = (
+            data.get("agent_a_role") if isinstance(data.get("agent_a_role"), str) else None
+        )
+        agent_a_contract = (
+            data.get("agent_a_contract") if isinstance(data.get("agent_a_contract"), str) else None
+        )
+        agent_b_role = (
+            data.get("agent_b_role") if isinstance(data.get("agent_b_role"), str) else None
+        )
+        agent_b_contract = (
+            data.get("agent_b_contract") if isinstance(data.get("agent_b_contract"), str) else None
+        )
         agent_count = data.get("agent_count")
         agent_b_workers = data.get("agent_b_workers")
 
@@ -332,8 +353,12 @@ class AgentARequestHandler(BaseHTTPRequestHandler):
         task_id = logger.new_task_id()
         task_start = datetime.now(timezone.utc).isoformat()
         span.set_attribute("app.task_id", task_id)
-        logger.log(task_id=task_id, event_type="task_received", message=task,
-                   extra={"agent_role": agent_a_role} if agent_a_role else None)
+        logger.log(
+            task_id=task_id,
+            event_type="task_received",
+            message=task,
+            extra={"agent_role": agent_a_role} if agent_a_role else None,
+        )
 
         final_prompt: str
         agent_b_output: Optional[str] = None
@@ -363,22 +388,39 @@ class AgentARequestHandler(BaseHTTPRequestHandler):
                 f"User task:\n{task}"
             )
             try:
-                with self.tracer.start_as_current_span("agent_a.plan_subtasks", kind=SpanKind.CLIENT) as span_plan:
+                with self.tracer.start_as_current_span(
+                    "agent_a.plan_subtasks", kind=SpanKind.CLIENT
+                ) as span_plan:
                     span_plan.set_attribute("app.llm.url", LLM_SERVER_URL)
                     headers: Dict[str, str] = {}
                     propagate.inject(headers)
                     _ts_plan_start = datetime.now(timezone.utc).isoformat()
                     planned_raw, _plan_meta = call_llm(planning_prompt, headers=headers)
                     _ts_plan_end = datetime.now(timezone.utc).isoformat()
-                    llm_requests.append({"source": "agent_a", "label": "planning",
-                                         "prompt": planning_prompt, "response": planned_raw,
-                                         "endpoint": LLM_SERVER_URL})
-                    self.metrics_logger.log_call(task_id=task_id, agent_id="AgentA", call_type="sub_call",
-                                                  timestamp_start=_ts_plan_start, timestamp_end=_ts_plan_end,
-                                                  http_status=200, llm_meta=_plan_meta)
+                    llm_requests.append(
+                        {
+                            "source": "agent_a",
+                            "label": "planning",
+                            "prompt": planning_prompt,
+                            "response": planned_raw,
+                            "endpoint": LLM_SERVER_URL,
+                        }
+                    )
+                    self.metrics_logger.log_call(
+                        task_id=task_id,
+                        agent_id="AgentA",
+                        call_type="sub_call",
+                        timestamp_start=_ts_plan_start,
+                        timestamp_end=_ts_plan_end,
+                        http_status=200,
+                        llm_meta=_plan_meta,
+                    )
             except Exception as exc:
-                logger.log(task_id=task_id, event_type="agent_a_planning_error",
-                           message=f"Planning failed: {exc}")
+                logger.log(
+                    task_id=task_id,
+                    event_type="agent_a_planning_error",
+                    message=f"Planning failed: {exc}",
+                )
                 planned_raw = "[]"
 
             subtasks = _parse_subtasks(planned_raw, len(workers), task)
@@ -389,19 +431,29 @@ class AgentARequestHandler(BaseHTTPRequestHandler):
                 token = otel_context.attach(parent_ctx)
                 role = worker["role"] or agent_b_role
                 try:
-                    with self.tracer.start_as_current_span("agent_a.call_agent_b_parallel", kind=SpanKind.CLIENT):
+                    with self.tracer.start_as_current_span(
+                        "agent_a.call_agent_b_parallel", kind=SpanKind.CLIENT
+                    ):
                         headers: Dict[str, str] = {"x-agent-index": str(worker_index)}
                         propagate.inject(headers)
-                        return call_agent_b(subtask, scenario=scenario, headers=headers,
-                                            agent_b_role=role,
-                                            agent_b_contract=worker["contract"] or agent_b_contract,
-                                            agent_b_url=worker["endpoint"])
+                        return call_agent_b(
+                            subtask,
+                            scenario=scenario,
+                            headers=headers,
+                            agent_b_role=role,
+                            agent_b_contract=worker["contract"] or agent_b_contract,
+                            agent_b_url=worker["endpoint"],
+                        )
                 finally:
                     otel_context.detach(token)
 
             with ThreadPoolExecutor(max_workers=len(workers)) as executor:
                 future_map = {
-                    executor.submit(_run_worker_call, request_ctx, idx, worker, subtask): (idx, worker, subtask)
+                    executor.submit(_run_worker_call, request_ctx, idx, worker, subtask): (
+                        idx,
+                        worker,
+                        subtask,
+                    )
                     for idx, (worker, subtask) in enumerate(zip(workers, subtasks), start=1)
                 }
                 for future in as_completed(future_map):
@@ -409,11 +461,23 @@ class AgentARequestHandler(BaseHTTPRequestHandler):
                     try:
                         response = future.result()
                         output = str(response.get("output", ""))
-                        agent_b_outputs.append({"agent_index": idx, "endpoint": worker["endpoint"],
-                                                 "subtask": subtask, "output": output})
+                        agent_b_outputs.append(
+                            {
+                                "agent_index": idx,
+                                "endpoint": worker["endpoint"],
+                                "subtask": subtask,
+                                "output": output,
+                            }
+                        )
                     except Exception as exc:
-                        agent_b_outputs.append({"agent_index": idx, "endpoint": worker["endpoint"],
-                                                 "subtask": subtask, "output": f"Worker failed: {exc}"})
+                        agent_b_outputs.append(
+                            {
+                                "agent_index": idx,
+                                "endpoint": worker["endpoint"],
+                                "subtask": subtask,
+                                "output": f"Worker failed: {exc}",
+                            }
+                        )
 
             worker_summary = "\n\n".join(
                 f"Worker {item['agent_index']} ({item['endpoint']}):\nSubtask: {item['subtask']}\n{item['output']}"
@@ -435,12 +499,18 @@ class AgentARequestHandler(BaseHTTPRequestHandler):
                     f"User task:\n{task}\n\nContext so far:\n{context_summary or '(none yet)'}"
                 )
                 try:
-                    with self.tracer.start_as_current_span("agent_a.call_agent_b", kind=SpanKind.CLIENT):
+                    with self.tracer.start_as_current_span(
+                        "agent_a.call_agent_b", kind=SpanKind.CLIENT
+                    ):
                         headers = {}
                         propagate.inject(headers)
-                        response = call_agent_b(subtask, scenario=scenario, headers=headers,
-                                                agent_b_role=agent_b_role,
-                                                agent_b_contract=agent_b_contract)
+                        response = call_agent_b(
+                            subtask,
+                            scenario=scenario,
+                            headers=headers,
+                            agent_b_role=agent_b_role,
+                            agent_b_contract=agent_b_contract,
+                        )
                         agent_b_output = str(response.get("output", ""))
                 except Exception as exc:
                     self._send_json(502, {"error": f"Agent B failed: {exc}"})
@@ -460,46 +530,67 @@ class AgentARequestHandler(BaseHTTPRequestHandler):
             final_prompt = task
 
         try:
-            with self.tracer.start_as_current_span("agent_a.call_llm", kind=SpanKind.CLIENT) as span_llm:
+            with self.tracer.start_as_current_span(
+                "agent_a.call_llm", kind=SpanKind.CLIENT
+            ) as span_llm:
                 span_llm.set_attribute("app.llm.url", LLM_SERVER_URL)
                 headers = {}
                 propagate.inject(headers)
                 _ts_final_start = datetime.now(timezone.utc).isoformat()
                 output, _final_meta = call_llm(final_prompt, headers=headers)
                 _ts_final_end = datetime.now(timezone.utc).isoformat()
-                llm_requests.append({"source": "agent_a", "label": "final",
-                                      "prompt": final_prompt, "response": output,
-                                      "endpoint": LLM_SERVER_URL})
-                self.metrics_logger.log_call(task_id=task_id, agent_id="AgentA", call_type="root",
-                                              timestamp_start=_ts_final_start, timestamp_end=_ts_final_end,
-                                              http_status=200, llm_meta=_final_meta)
+                llm_requests.append(
+                    {
+                        "source": "agent_a",
+                        "label": "final",
+                        "prompt": final_prompt,
+                        "response": output,
+                        "endpoint": LLM_SERVER_URL,
+                    }
+                )
+                self.metrics_logger.log_call(
+                    task_id=task_id,
+                    agent_id="AgentA",
+                    call_type="root",
+                    timestamp_start=_ts_final_start,
+                    timestamp_end=_ts_final_end,
+                    http_status=200,
+                    llm_meta=_final_meta,
+                )
         except Exception as exc:
             self._send_json(502, {"error": f"LLM failed: {exc}"})
             return
 
         task_end = datetime.now(timezone.utc).isoformat()
         total_llm_calls = len(llm_requests)
-        total_prompt_tokens = sum((r.get("llm_meta") or {}).get("prompt_tokens") or 0 for r in llm_requests)
-        total_completion_tokens = sum((r.get("llm_meta") or {}).get("completion_tokens") or 0 for r in llm_requests)
+        total_prompt_tokens = sum(
+            (r.get("llm_meta") or {}).get("prompt_tokens") or 0 for r in llm_requests
+        )
+        total_completion_tokens = sum(
+            (r.get("llm_meta") or {}).get("completion_tokens") or 0 for r in llm_requests
+        )
         total_tokens = sum((r.get("llm_meta") or {}).get("total_tokens") or 0 for r in llm_requests)
 
-        self._send_json(200, {
-            "task_id": task_id,
-            "agent_id": "AgentA",
-            "scenario": scenario,
-            "task_query": task,
-            "task_start": task_start,
-            "task_end": task_end,
-            "total_llm_calls": total_llm_calls,
-            "total_prompt_tokens": total_prompt_tokens,
-            "total_completion_tokens": total_completion_tokens,
-            "total_tokens": total_tokens,
-            "output": output,
-            "agent_b_output": agent_b_output,
-            "agent_b_outputs": agent_b_outputs,
-            "agent_a_progress_notes": agent_a_progress_notes,
-            "llm_requests": llm_requests,
-        })
+        self._send_json(
+            200,
+            {
+                "task_id": task_id,
+                "agent_id": "AgentA",
+                "scenario": scenario,
+                "task_query": task,
+                "task_start": task_start,
+                "task_end": task_end,
+                "total_llm_calls": total_llm_calls,
+                "total_prompt_tokens": total_prompt_tokens,
+                "total_completion_tokens": total_completion_tokens,
+                "total_tokens": total_tokens,
+                "output": output,
+                "agent_b_output": agent_b_output,
+                "agent_b_outputs": agent_b_outputs,
+                "agent_a_progress_notes": agent_a_progress_notes,
+                "llm_requests": llm_requests,
+            },
+        )
 
     # -----------------------------------------------------------------------
     # HTTP method handlers
@@ -520,7 +611,11 @@ class AgentARequestHandler(BaseHTTPRequestHandler):
         if parsed.path.startswith("/agentverse"):
             task_id: Optional[str] = None
             if parsed.path != "/agentverse":
-                suffix = parsed.path[len("/agentverse/"):] if parsed.path.startswith("/agentverse/") else ""
+                suffix = (
+                    parsed.path[len("/agentverse/") :]
+                    if parsed.path.startswith("/agentverse/")
+                    else ""
+                )
                 task_id = suffix.strip("/") or None
             if not task_id:
                 qs = parse_qs(parsed.query or "")
@@ -547,7 +642,9 @@ class AgentARequestHandler(BaseHTTPRequestHandler):
         carrier = {key: value for key, value in self.headers.items()}
         parent_ctx = propagate.extract(carrier)
         with self.tracer.start_as_current_span(
-            "agent_a.handle_task", context=parent_ctx, kind=SpanKind.SERVER,
+            "agent_a.handle_task",
+            context=parent_ctx,
+            kind=SpanKind.SERVER,
         ) as span:
             content_length = int(self.headers.get("Content-Length", "0"))
             raw_body = self.rfile.read(content_length) if content_length > 0 else b""

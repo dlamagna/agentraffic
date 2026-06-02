@@ -48,7 +48,6 @@ except ImportError:  # pragma: no cover
 
 from llm.tracing import get_tracer
 
-
 DEFAULT_MODEL_NAME = os.environ.get("LLM_MODEL", "meta-llama/Llama-3.1-8B-Instruct")
 LOG_LLM_REQUESTS = os.environ.get("LOG_LLM_REQUESTS", "").lower() in ("1", "true", "yes", "on")
 LOG_LLM_MAX_CHARS = int(os.environ.get("LLM_LOG_MAX_CHARS", "500"))
@@ -61,7 +60,12 @@ LLM_MAX_MODEL_LEN = int(os.environ.get("LLM_MAX_MODEL_LEN") or "0")
 # Safety margin (tokens) reserved beyond the completion budget to absorb
 # chat-template overhead and minor tokenizer discrepancies.
 LLM_PROMPT_SAFETY_MARGIN_TOKENS = int(os.environ.get("LLM_PROMPT_SAFETY_MARGIN_TOKENS", "128"))
-LLM_METRICS_ENABLED = os.environ.get("LLM_METRICS_ENABLED", "1").lower() in ("1", "true", "yes", "on")
+LLM_METRICS_ENABLED = os.environ.get("LLM_METRICS_ENABLED", "1").lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
 LLM_METRICS_INCLUDE_TOKENS = os.environ.get("LLM_METRICS_INCLUDE_TOKENS", "1").lower() in (
     "1",
     "true",
@@ -81,7 +85,9 @@ LLM_DEFAULT_SYSTEM_PROMPT = os.environ.get(
     "You are a helpful AI assistant. Provide clear, concise, and accurate responses.",
 )
 
-_METRICS_READY = LLM_METRICS_ENABLED and Counter is not None and Gauge is not None and Histogram is not None
+_METRICS_READY = (
+    LLM_METRICS_ENABLED and Counter is not None and Gauge is not None and Histogram is not None
+)
 
 if LLM_METRICS_ENABLED and not _METRICS_READY:
     print(
@@ -95,7 +101,21 @@ if _METRICS_READY:
         "Total LLM requests",
         ["status"],
     )
-    _LLM_LATENCY_BUCKETS = [0.5, 1.0, 2.5, 5.0, 10.0, 15.0, 20.0, 30.0, 45.0, 60.0, 90.0, 120.0, 180.0]
+    _LLM_LATENCY_BUCKETS = [
+        0.5,
+        1.0,
+        2.5,
+        5.0,
+        10.0,
+        15.0,
+        20.0,
+        30.0,
+        45.0,
+        60.0,
+        90.0,
+        120.0,
+        180.0,
+    ]
     # Fine-grained buckets for TTFT: most values are sub-second, so we need
     # resolution at the 10ms–2s range rather than the coarser latency buckets.
     _TTFT_BUCKETS = [0.01, 0.025, 0.05, 0.1, 0.2, 0.3, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 5.0, 10.0]
@@ -179,7 +199,9 @@ def _log_prompt(source: str, prompt: str) -> None:
         suffix = ""
     else:
         preview = prompt[:max_chars]
-        suffix = "" if len(prompt) <= max_chars else f"... [truncated {len(prompt) - max_chars} chars]"
+        suffix = (
+            "" if len(prompt) <= max_chars else f"... [truncated {len(prompt) - max_chars} chars]"
+        )
     print(f"[llm-request] source={source} prompt_len={len(prompt)} prompt={preview}{suffix}")
 
 
@@ -455,7 +477,9 @@ class AsyncVLLMBackend:
                 # Sometimes nested: root.engine_config.cache_config
                 try:
                     eng_cfg = getattr(root, "engine_config", None)
-                    cache_cfg = getattr(eng_cfg, "cache_config", None) if eng_cfg is not None else None
+                    cache_cfg = (
+                        getattr(eng_cfg, "cache_config", None) if eng_cfg is not None else None
+                    )
                 except Exception:
                     cache_cfg = None
 
@@ -643,22 +667,22 @@ class AsyncVLLMBackend:
         system_prompt: Optional[str] = None,
     ) -> str:
         """Apply Llama 3 chat template to a raw prompt.
-        
+
         Converts a plain text prompt into the proper Llama 3 Instruct format
         with special tokens for system/user/assistant roles.
         """
         if not LLM_APPLY_CHAT_TEMPLATE:
             return prompt
-        
+
         self._resolve_tokenizer()
-        
+
         # Build messages in chat format
         messages = []
         sys_prompt = system_prompt or LLM_DEFAULT_SYSTEM_PROMPT
         if sys_prompt:
             messages.append({"role": "system", "content": sys_prompt})
         messages.append({"role": "user", "content": prompt})
-        
+
         # Try to use the tokenizer's built-in chat template
         if self._tokenizer is not None and hasattr(self._tokenizer, "apply_chat_template"):
             try:
@@ -670,7 +694,7 @@ class AsyncVLLMBackend:
                 return formatted
             except Exception as e:
                 print(f"[llm] Warning: apply_chat_template failed: {e}, using fallback")
-        
+
         # Fallback: manually construct Llama 3 format
         parts = ["<|begin_of_text|>"]
         for msg in messages:
@@ -764,7 +788,7 @@ async def handle_chat(request: web.Request) -> web.Response:
             INFLIGHT.inc()
 
         span.set_attribute("app.path", request.path)
-        
+
         try:
             data: Dict[str, Any] = await request.json()
         except json.JSONDecodeError:
@@ -825,9 +849,7 @@ async def handle_chat(request: web.Request) -> web.Response:
                         - effective_max_new_tokens
                         - LLM_PROMPT_SAFETY_MARGIN_TOKENS,
                     )
-                    token_ids = _backend._tokenizer.encode(
-                        prompt, add_special_tokens=False
-                    )
+                    token_ids = _backend._tokenizer.encode(prompt, add_special_tokens=False)
                     if len(token_ids) > max_input_tokens:
                         prompt_truncated_tokens = len(token_ids) - max_input_tokens
                         token_ids = token_ids[:max_input_tokens]
@@ -848,7 +870,9 @@ async def handle_chat(request: web.Request) -> web.Response:
 
         span.set_attribute("app.prompt_length", len(original_prompt))
         span.set_attribute("app.formatted_prompt_length", len(prompt))
-        span.set_attribute("app.chat_template_applied", not skip_template and LLM_APPLY_CHAT_TEMPLATE)
+        span.set_attribute(
+            "app.chat_template_applied", not skip_template and LLM_APPLY_CHAT_TEMPLATE
+        )
         span.set_attribute("app.prompt_truncated", prompt_truncated)
         if prompt_truncated_tokens is not None:
             span.set_attribute("app.prompt_truncated_tokens", int(prompt_truncated_tokens))
@@ -898,7 +922,9 @@ async def handle_chat(request: web.Request) -> web.Response:
             if _METRICS_READY:
                 INFLIGHT.dec()
             latency_s = time.monotonic() - start_time
-            print(f"[llm] req={request_id} ERROR after {int(latency_s * 1000)}ms: {exc}", flush=True)
+            print(
+                f"[llm] req={request_id} ERROR after {int(latency_s * 1000)}ms: {exc}", flush=True
+            )
             _record_metrics(status, latency_s, queue_wait_s, prompt_tokens, completion_tokens)
             return web.json_response({"error": f"Generation failed: {exc}"}, status=500)
 
@@ -938,7 +964,11 @@ async def handle_chat(request: web.Request) -> web.Response:
             "queue_wait_s": round(queue_wait_s, 4),
             "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
-            "total_tokens": (prompt_tokens + completion_tokens) if (prompt_tokens is not None and completion_tokens is not None) else None,
+            "total_tokens": (
+                (prompt_tokens + completion_tokens)
+                if (prompt_tokens is not None and completion_tokens is not None)
+                else None
+            ),
             "otel": _otel_span_metadata(span),
         }
 
@@ -951,17 +981,19 @@ async def handle_openai_models(request: web.Request) -> web.Response:
     Returns a minimal models list so clients like the RLM OpenAI backend can
     confirm connectivity without hitting an unknown route.
     """
-    return web.json_response({
-        "object": "list",
-        "data": [
-            {
-                "id": DEFAULT_MODEL_NAME,
-                "object": "model",
-                "created": 0,
-                "owned_by": "local",
-            }
-        ],
-    })
+    return web.json_response(
+        {
+            "object": "list",
+            "data": [
+                {
+                    "id": DEFAULT_MODEL_NAME,
+                    "object": "model",
+                    "created": 0,
+                    "owned_by": "local",
+                }
+            ],
+        }
+    )
 
 
 async def handle_openai_chat(request: web.Request) -> web.Response:
@@ -1040,23 +1072,25 @@ async def handle_openai_chat(request: web.Request) -> web.Response:
     prompt_tokens = _backend.count_tokens(formatted_prompt)
     completion_tokens = _backend.count_tokens(text)
 
-    return web.json_response({
-        "id": f"chatcmpl-{request_id}",
-        "object": "chat.completion",
-        "model": DEFAULT_MODEL_NAME,
-        "choices": [
-            {
-                "index": 0,
-                "message": {"role": "assistant", "content": text},
-                "finish_reason": "stop",
-            }
-        ],
-        "usage": {
-            "prompt_tokens": prompt_tokens or 0,
-            "completion_tokens": completion_tokens or 0,
-            "total_tokens": (prompt_tokens or 0) + (completion_tokens or 0),
-        },
-    })
+    return web.json_response(
+        {
+            "id": f"chatcmpl-{request_id}",
+            "object": "chat.completion",
+            "model": DEFAULT_MODEL_NAME,
+            "choices": [
+                {
+                    "index": 0,
+                    "message": {"role": "assistant", "content": text},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {
+                "prompt_tokens": prompt_tokens or 0,
+                "completion_tokens": completion_tokens or 0,
+                "total_tokens": (prompt_tokens or 0) + (completion_tokens or 0),
+            },
+        }
+    )
 
 
 def _messages_to_llama3(messages: List[Dict[str, Any]]) -> str:
@@ -1120,7 +1154,9 @@ async def run_async_server(
         eff_max_num_seqs = _backend.effective_max_num_seqs()
         eff_max_batched = _backend.effective_max_num_batched_tokens()
         CONFIG_MAX_NUM_SEQS.set(float(eff_max_num_seqs) if eff_max_num_seqs is not None else -1.0)
-        CONFIG_MAX_NUM_BATCHED_TOKENS.set(float(eff_max_batched) if eff_max_batched is not None else -1.0)
+        CONFIG_MAX_NUM_BATCHED_TOKENS.set(
+            float(eff_max_batched) if eff_max_batched is not None else -1.0
+        )
         CONFIG_GPU_MEMORY_UTILIZATION.set(
             float(gpu_memory_utilization) if gpu_memory_utilization is not None else -1.0
         )
@@ -1142,11 +1178,15 @@ async def run_async_server(
             )
         else:
             KV_CACHE_NUM_GPU_BLOCKS.set(float(kv_num_blocks) if kv_num_blocks is not None else -1.0)
-            KV_CACHE_BLOCK_SIZE_TOKENS.set(float(kv_block_size) if kv_block_size is not None else -1.0)
+            KV_CACHE_BLOCK_SIZE_TOKENS.set(
+                float(kv_block_size) if kv_block_size is not None else -1.0
+            )
             kv_total = _backend.kv_cache_total_tokens()
             KV_CACHE_TOTAL_TOKENS.set(float(kv_total) if kv_total is not None else -1.0)
             kv_est = _backend.kv_cache_est_max_concurrency_at_max_model_len()
-            KV_CACHE_EST_MAX_CONCURRENCY_AT_MAX_MODEL_LEN.set(float(kv_est) if kv_est is not None else -1.0)
+            KV_CACHE_EST_MAX_CONCURRENCY_AT_MAX_MODEL_LEN.set(
+                float(kv_est) if kv_est is not None else -1.0
+            )
 
     app = create_app()
     runner = web.AppRunner(app)
