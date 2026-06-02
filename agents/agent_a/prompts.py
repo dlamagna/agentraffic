@@ -158,7 +158,7 @@ Required fields:
 - "goal_achieved": boolean - whether the original task is fully addressed
 - "score": integer 0-100 - overall quality score calculated as weighted average:
   * Completeness: 30% weight
-  * Correctness: 30% weight  
+  * Correctness: 30% weight
   * Clarity: 15% weight
   * Relevance: 15% weight
   * Actionability: 10% weight

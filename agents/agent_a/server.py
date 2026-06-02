@@ -16,15 +16,13 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Dict, Iterable, Optional
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import parse_qs, urlparse
 
 from opentelemetry import context as otel_context
 from opentelemetry import propagate
 from opentelemetry.trace import SpanKind
 
-import httpx
-
-from agents.agent_a.main import AGENT_B_URL, AGENT_B_URLS, LLM_SERVER_URL, call_agent_b, call_llm
+from agents.agent_a.main import AGENT_B_URLS, LLM_SERVER_URL, call_agent_b, call_llm
 from agents.agent_a.orchestrator import AgentVerseOrchestrator
 from agents.common.metrics_logger import MetricsLogger
 from agents.common.telemetry import TelemetryLogger

@@ -2,10 +2,10 @@
 
 import argparse
 import json
+import os
 from typing import Any, Dict, Optional, Tuple
 
 import httpx
-import os
 
 from agents.common.telemetry import TelemetryLogger
 

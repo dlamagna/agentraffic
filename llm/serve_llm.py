@@ -29,13 +29,20 @@ except ImportError:  # pragma: no cover - only at runtime without vLLM
     SamplingParams = None  # type: ignore
 
 try:
-    from vllm.transformers_utils.tokenizer import get_tokenizer as vllm_get_tokenizer  # type: ignore
+    from vllm.transformers_utils.tokenizer import (
+        get_tokenizer as vllm_get_tokenizer,  # type: ignore
+    )
 except ImportError:  # pragma: no cover - optional
     vllm_get_tokenizer = None  # type: ignore
 
 try:
-    from prometheus_client import Counter, Gauge, Histogram, generate_latest  # type: ignore
-    from prometheus_client import CONTENT_TYPE_LATEST  # type: ignore
+    from prometheus_client import (  # type: ignore
+        CONTENT_TYPE_LATEST,  # type: ignore
+        Counter,
+        Gauge,
+        Histogram,
+        generate_latest,
+    )
 except ImportError:  # pragma: no cover - optional
     Counter = Gauge = Histogram = None  # type: ignore
     generate_latest = None  # type: ignore
@@ -560,7 +567,6 @@ class AsyncVLLMBackend:
         final_output = None
         queue_start = time.monotonic()
         last_log_time = queue_start
-        last_token_count = 0
         queue_wait_s: float = 0.0
 
         # Span for time-to-first-token (TTFT): from queuing until the first token.
@@ -604,7 +610,6 @@ class AsyncVLLMBackend:
                             flush=True,
                         )
                         last_log_time = now
-                        last_token_count = current_tokens
 
             if final_output is None or not final_output.outputs:
                 return "", queue_wait_s
@@ -1194,12 +1199,12 @@ async def run_async_server(
 
     site = web.TCPSite(runner, host, port)
     print("=" * 60)
-    print(f"[*] vLLM async backend ready")
+    print("[*] vLLM async backend ready")
     print(f"    Model: {model_name}")
     print(f"    URL: http://{host}:{port}")
     print(f"    max_num_seqs: {max_num_seqs or 'default'}")
     print(f"    max_model_len: {max_model_len or 'default'}")
-    print(f"    Batching: ENABLED (concurrent requests batched automatically)")
+    print("    Batching: ENABLED (concurrent requests batched automatically)")
     print("=" * 60)
 
     await site.start()

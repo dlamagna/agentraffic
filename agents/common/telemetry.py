@@ -6,8 +6,8 @@ import socket
 import sys
 import time
 import uuid
-from dataclasses import dataclass, asdict
-from typing import Optional, Dict, Any
+from dataclasses import asdict, dataclass
+from typing import Any, Dict, Optional
 
 
 def _now_ms() -> int:

@@ -15,34 +15,33 @@ import os
 import re
 import time
 import uuid
-from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass, field, asdict
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from enum import Enum
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import httpx
-
 from opentelemetry import context as otel_context
 from opentelemetry import propagate
 from opentelemetry.trace import SpanKind
 
+from agents.agent_a.prompts import (
+    EVALUATION_PROMPT,
+    EXECUTION_PROMPT,
+    EXPERT_RECRUITMENT_PROMPT,
+    FINAL_SYNTHESIS_PROMPT,
+    FULL_MESH_DISCUSSION_PROMPT,
+    HORIZONTAL_DISCUSSION_PROMPT,
+    SOLO_DECISION_PROMPT,
+    SOLO_EXECUTION_PROMPT,
+    SOLO_SELF_REVIEW_PROMPT,
+    SYNTHESIZE_DISCUSSION_PROMPT,
+    VERTICAL_REVIEWER_PROMPT,
+    VERTICAL_SOLVER_PROMPT,
+)
 from agents.common.telemetry import TelemetryLogger
 from agents.common.tracing import get_tracer, span_to_metadata
-from agents.agent_a.prompts import (
-    EXPERT_RECRUITMENT_PROMPT,
-    HORIZONTAL_DISCUSSION_PROMPT,
-    FULL_MESH_DISCUSSION_PROMPT,
-    VERTICAL_SOLVER_PROMPT,
-    VERTICAL_REVIEWER_PROMPT,
-    EXECUTION_PROMPT,
-    EVALUATION_PROMPT,
-    FINAL_SYNTHESIS_PROMPT,
-    SOLO_DECISION_PROMPT,
-    SOLO_SELF_REVIEW_PROMPT,
-    SOLO_EXECUTION_PROMPT,
-    SYNTHESIZE_DISCUSSION_PROMPT,
-)
 
 try:
     # Prefer the same tokenizer implementation used by the vLLM backend so that
@@ -995,12 +994,10 @@ class AgentVerseOrchestrator:
 
             # If JSON parsing failed or returned an empty object, try to recover
             # structured data from a Markdown-formatted response.
-            parsed_from_markdown = False
             if not isinstance(parsed, dict) or not parsed:
                 md_parsed = self._parse_markdown_evaluation(response)
                 if md_parsed is not None:
                     parsed = md_parsed
-                    parsed_from_markdown = True
                 else:
                     parsed = {}
 
@@ -1052,8 +1049,8 @@ class AgentVerseOrchestrator:
             if not experts:
                 if not AGENT_B_URLS:
                     raise ValueError(
-                        f"No Agent B URLs available for default expert. "
-                        f"Please set AGENT_B_URLS environment variable."
+                        "No Agent B URLs available for default expert. "
+                        "Please set AGENT_B_URLS environment variable."
                     )
                 experts = [
                     Expert(
