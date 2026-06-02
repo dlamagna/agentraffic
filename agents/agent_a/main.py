@@ -1,0 +1,118 @@
+"""Agent A entry point — parse config and start the orchestrator HTTP server."""
+
+import argparse
+import json
+from typing import Any, Dict, Optional, Tuple
+
+import httpx
+import os
+
+from agents.common.telemetry import TelemetryLogger
+
+
+DEFAULT_LLM_SERVER_URL = "http://localhost:8000/chat"
+LLM_SERVER_URL = os.environ.get("LLM_SERVER_URL", DEFAULT_LLM_SERVER_URL)
+LLM_TIMEOUT_SECONDS = float(os.environ.get("LLM_TIMEOUT_SECONDS", "120"))
+AGENT_B_TIMEOUT_SECONDS = float(os.environ.get("AGENT_B_TIMEOUT_SECONDS", "120"))
+DEFAULT_AGENT_B_URL = "http://agent-b:8102/subtask"
+AGENT_B_URL = os.environ.get("AGENT_B_URL", DEFAULT_AGENT_B_URL)
+AGENT_B_URLS = [
+    url.strip()
+    for url in os.environ.get("AGENT_B_URLS", "").split(",")
+    if url.strip()
+]
+if not AGENT_B_URLS:
+    AGENT_B_URLS = [AGENT_B_URL]
+
+
+def call_llm(prompt: str, headers: Optional[Dict[str, str]] = None) -> Tuple[str, Dict[str, Any]]:
+    resp = httpx.post(
+        LLM_SERVER_URL,
+        json={"prompt": prompt},
+        headers=headers,
+        timeout=LLM_TIMEOUT_SECONDS,
+    )
+    resp.raise_for_status()
+    data: Dict[str, Any] = resp.json()
+    return str(data.get("output", "")), (data.get("meta") if isinstance(data.get("meta"), dict) else {})
+
+
+def call_agent_b(
+    subtask: str,
+    scenario: Optional[str] = None,
+    headers: Optional[Dict[str, str]] = None,
+    agent_b_role: Optional[str] = None,
+    agent_b_contract: Optional[str] = None,
+    agent_b_url: Optional[str] = None,
+) -> Dict[str, Any]:
+    payload: Dict[str, Any] = {"subtask": subtask}
+    if scenario:
+        payload["scenario"] = scenario
+    if agent_b_role:
+        payload["agent_b_role"] = agent_b_role
+    if agent_b_contract:
+        payload["agent_b_contract"] = agent_b_contract
+    target_url = agent_b_url or AGENT_B_URL
+    resp = httpx.post(
+        target_url,
+        json=payload,
+        headers=headers,
+        timeout=AGENT_B_TIMEOUT_SECONDS,
+    )
+    resp.raise_for_status()
+    data: Dict[str, Any] = resp.json()
+    return {
+        "output": str(data.get("output", "")),
+        "llm_prompt": data.get("llm_prompt"),
+        "llm_response": data.get("llm_response"),
+        "llm_endpoint": data.get("llm_endpoint"),
+        "llm_meta": data.get("llm_meta"),
+    }
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Agent A MVP")
+    parser.add_argument("task", help="User task / intent text")
+    parser.add_argument(
+        "--scenario",
+        default=None,
+        help="Scenario label (agentic_simple/agentic_multi_hop/tool_call)",
+    )
+    args = parser.parse_args()
+
+    logger = TelemetryLogger(agent_id="AgentA", scenario=args.scenario)
+    task_id = logger.new_task_id()
+
+    logger.log(task_id=task_id, event_type="task_received", message=args.task)
+
+    tool_call_id = logger.new_tool_call_id()
+    logger.log(
+        task_id=task_id,
+        event_type="llm_request",
+        message="Calling LLM server",
+        tool_call_id=tool_call_id,
+        extra={"url": LLM_SERVER_URL},
+    )
+
+    output, _meta = call_llm(args.task)
+
+    logger.log(
+        task_id=task_id,
+        event_type="llm_response",
+        message="Received LLM response",
+        tool_call_id=tool_call_id,
+        extra={"output_preview": output[:200]},
+    )
+
+    payload = {
+        "task_id": task_id,
+        "agent_id": "AgentA",
+        "output": output,
+    }
+    print(json.dumps(payload))
+
+
+if __name__ == "__main__":
+    main()
+
+

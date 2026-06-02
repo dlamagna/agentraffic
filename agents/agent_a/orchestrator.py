@@ -1,0 +1,2706 @@
+"""
+AgentVerse Orchestrator Module
+
+Implements the 4-stage AgentVerse workflow:
+1. Expert Recruitment - Dynamically determine agent composition
+2. Collaborative Decision-Making - Horizontal, vertical, or full-mesh communication
+3. Action Execution - Execute collaboratively-decided actions
+4. Evaluation - Assess results and provide feedback for iteration
+
+Based on: https://arxiv.org/pdf/2308.10848 (AgentVerse paper)
+"""
+
+import json
+import os
+import re
+import time
+import uuid
+from datetime import datetime, timezone
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass, field, asdict
+from typing import Any, Callable, Dict, List, Optional, Tuple
+from enum import Enum
+
+import httpx
+
+from opentelemetry import context as otel_context
+from opentelemetry import propagate
+from opentelemetry.trace import SpanKind
+
+from agents.common.telemetry import TelemetryLogger
+from agents.common.tracing import get_tracer, span_to_metadata
+from agents.agent_a.prompts import (
+    EXPERT_RECRUITMENT_PROMPT,
+    HORIZONTAL_DISCUSSION_PROMPT,
+    FULL_MESH_DISCUSSION_PROMPT,
+    VERTICAL_SOLVER_PROMPT,
+    VERTICAL_REVIEWER_PROMPT,
+    EXECUTION_PROMPT,
+    EVALUATION_PROMPT,
+    FINAL_SYNTHESIS_PROMPT,
+    SOLO_DECISION_PROMPT,
+    SOLO_SELF_REVIEW_PROMPT,
+    SOLO_EXECUTION_PROMPT,
+    SYNTHESIZE_DISCUSSION_PROMPT,
+)
+
+try:
+    # Prefer the same tokenizer implementation used by the vLLM backend so that
+    # token counts for guardrails match what the model actually sees.
+    from vllm.transformers_utils.tokenizer import (  # type: ignore
+        get_tokenizer as vllm_get_tokenizer,
+    )
+except ImportError:  # pragma: no cover - optional dependency
+    vllm_get_tokenizer = None  # type: ignore
+
+
+# Configuration
+LLM_SERVER_URL = os.environ.get("LLM_SERVER_URL", "http://localhost:8000/chat")
+LLM_TIMEOUT_SECONDS = float(os.environ.get("LLM_TIMEOUT_SECONDS", "120"))
+AGENT_B_TIMEOUT_SECONDS = float(os.environ.get("AGENT_B_TIMEOUT_SECONDS", "120"))
+MAX_PARALLEL_WORKERS = int(os.environ.get("MAX_PARALLEL_WORKERS", "5"))
+DEFAULT_AGENT_B_URL = os.environ.get("AGENT_B_URL", "http://agent-b:8102/subtask")
+# Optional guardrail for very large evaluation prompts (character-based heuristic).
+# This does NOT change the model's true context length, but helps avoid hitting
+# vLLM's "decoder prompt length > max_model_len" error by trimming the oldest
+# parts of the execution results before calling the Evaluator LLM. Kept as a
+# fallback when token-aware budgeting is unavailable.
+EVAL_MAX_PROMPT_CHARS = int(os.environ.get("EVAL_MAX_PROMPT_CHARS", "20000"))
+
+# Token-level guardrail configuration. These mirror the LLM backend settings in
+# infra/README.md so that Agent A can budget tokens consistently with vLLM.
+LLM_MODEL_NAME = os.environ.get("LLM_MODEL", "meta-llama/Llama-3.1-8B-Instruct")
+LLM_MAX_MODEL_LEN = int(os.environ.get("LLM_MAX_MODEL_LEN", "4096"))
+LLM_MAX_TOKENS = int(os.environ.get("LLM_MAX_TOKENS", "512"))
+# Allow a separate override for evaluation completions while defaulting to the
+# global LLM_MAX_TOKENS budget.
+LLM_EVAL_MAX_TOKENS = int(os.environ.get("LLM_EVAL_MAX_TOKENS", str(LLM_MAX_TOKENS)))
+# Safety margin subtracted from the theoretical max to leave headroom for
+# chat templates, system prompts, and any backend-side metadata.
+LLM_PROMPT_SAFETY_MARGIN_TOKENS = int(
+    os.environ.get("LLM_PROMPT_SAFETY_MARGIN_TOKENS", "128")
+)
+# Hard cap (chars) on the discussion_history string injected into each round's
+# prompt.  Prevents context explosion when individual turn outputs are long.
+DISCUSSION_HISTORY_MAX_CHARS = int(os.environ.get("DISCUSSION_HISTORY_MAX_CHARS", "6000"))
+FULL_MESH_MAX_ROUNDS = int(os.environ.get("FULL_MESH_MAX_ROUNDS", "3"))
+
+# Regex matching any consensus signal the LLM may emit.  Covers the exact
+# form instructed ("[CONSENSUS]") and common markdown variations the model
+# produces in practice ("**CONSENSUS:**", "**CONSENSUS**", etc.).
+_CONSENSUS_SIGNAL_RE = re.compile(
+    r"(?i)(\[CONSENSUS\]|\*{1,2}CONSENSUS[*:]*\*{0,2})"
+)
+
+# Same for approval signals ("[APPROVED]" / "**APPROVED**" etc.).
+_APPROVED_SIGNAL_RE = re.compile(
+    r"(?i)(\[APPROVED\]|\*{1,2}APPROVED[*:]*\*{0,2})"
+)
+
+_TOKENIZER = None
+_TOKENIZER_READY = False
+
+
+def _resolve_tokenizer() -> None:
+    """Best-effort initialization of a shared tokenizer for token budgeting."""
+    global _TOKENIZER_READY, _TOKENIZER
+    if _TOKENIZER_READY:
+        return
+    _TOKENIZER_READY = True
+    if vllm_get_tokenizer is None:
+        _TOKENIZER = None
+        return
+    try:
+        _TOKENIZER = vllm_get_tokenizer(LLM_MODEL_NAME)
+    except Exception:
+        _TOKENIZER = None
+
+
+def _count_tokens(text: str) -> Optional[int]:
+    """Count tokens using the shared tokenizer, matching the LLM backend."""
+    if not text:
+        return 0
+    _resolve_tokenizer()
+    if _TOKENIZER is None:
+        return None
+    try:
+        return len(_TOKENIZER.encode(text, add_special_tokens=False))
+    except Exception:
+        return None
+AGENT_B_URLS = [
+    url.strip()
+    for url in os.environ.get("AGENT_B_URLS", "").split(",")
+    if url.strip()
+]
+if not AGENT_B_URLS:
+    AGENT_B_URLS = [DEFAULT_AGENT_B_URL]
+
+
+class CommunicationStructure(Enum):
+    HORIZONTAL = "horizontal"  # Democratic - all agents discuss
+    VERTICAL = "vertical"      # Solver + reviewers
+    FULL_MESH = "full_mesh"    # Directed all-to-all agent discussion
+
+
+@dataclass
+class Expert:
+    """Represents a recruited expert agent."""
+    role: str
+    responsibilities: str
+    contract: str
+    endpoint: Optional[str] = None
+    index: int = 0
+
+
+@dataclass
+class RecruitmentResult:
+    """Result of the expert recruitment stage."""
+    experts: List[Expert]
+    communication_structure: CommunicationStructure
+    execution_order: List[str]
+    reasoning: str
+
+
+@dataclass
+class DecisionResult:
+    """Result of the collaborative decision-making stage."""
+    final_decision: str
+    discussion_rounds: List[Dict[str, Any]]
+    consensus_reached: bool
+    structure_used: str
+    solver_role: Optional[str] = None
+    reviewer_roles: List[str] = field(default_factory=list)
+
+
+@dataclass
+class ExecutionResult:
+    """Result of the action execution stage."""
+    outputs: List[Dict[str, Any]]
+    success_count: int
+    failure_count: int
+
+
+@dataclass
+class EvaluationResult:
+    """Result of the evaluation stage."""
+    goal_achieved: bool
+    score: int
+    criteria: Optional[Dict[str, int]] = None  # Breakdown: completeness, correctness, clarity, relevance, actionability
+    rationale: Optional[str] = None  # Explanation of how the score was calculated
+    feedback: str = ""
+    missing_aspects: List[str] = field(default_factory=list)
+    should_iterate: bool = False
+
+
+@dataclass
+class AgentVerseState:
+    """Complete state of an AgentVerse workflow execution."""
+    task_id: str
+    original_task: str
+    iteration: int = 0
+    max_iterations: int = 3
+    success_threshold: int = 70  # Score (0-100) required to accept and stop iterating
+
+    # Optional override: "horizontal", "vertical", or "full_mesh". When set,
+    # the LLM recruitment decision is skipped and this structure is used directly.
+    # None = LLM decides.
+    force_structure: Optional[str] = None
+
+    # Optional override: fixed number of experts to recruit.
+    # 0 = solo mode (Agent A handles the entire workflow without sub-agents).
+    # 1-5 = the LLM list is trimmed/padded to hit exactly this count.
+    # None = use whatever the LLM recruits (up to MAX_PARALLEL_WORKERS).
+    force_agent_count: Optional[int] = None
+
+    # Optional per-request override for the full-mesh discussion round cap.
+    # Overrides the FULL_MESH_MAX_ROUNDS env var for this workflow only.
+    # None = use FULL_MESH_MAX_ROUNDS (default 3).
+    full_mesh_max_rounds: Optional[int] = None
+
+    # Stage results
+    recruitment: Optional[RecruitmentResult] = None
+    decision: Optional[DecisionResult] = None
+    execution: Optional[ExecutionResult] = None
+    evaluation: Optional[EvaluationResult] = None
+    
+    # History across iterations
+    iteration_history: List[Dict[str, Any]] = field(default_factory=list)
+    
+    # Detailed LLM request/response log for each call
+    llm_requests: List[Dict[str, Any]] = field(default_factory=list)
+    
+    # Final output
+    final_output: Optional[str] = None
+    completed: bool = False
+
+
+class AgentVerseOrchestrator:
+    """
+    Orchestrator implementing the AgentVerse 4-stage workflow.
+    
+    Stages:
+    1. Expert Recruitment - Dynamically determine agent composition
+    2. Collaborative Decision-Making - Horizontal, vertical, or full-mesh communication
+    3. Action Execution - Execute collaboratively-decided actions
+    4. Evaluation - Assess results and provide feedback for iteration
+    """
+    
+    def __init__(self, logger: TelemetryLogger, tracer=None, progress_callback: Optional[Callable[[Dict[str, Any]], None]] = None):
+        self.logger = logger
+        self.tracer = tracer or get_tracer("agent-a-orchestrator")
+        self.http_client = httpx.Client(timeout=LLM_TIMEOUT_SECONDS)
+        self.progress_callback = progress_callback
+    
+    def _call_llm(
+        self,
+        prompt: str,
+        headers: Optional[Dict[str, str]] = None,
+        max_tokens: Optional[int] = None,
+    ) -> Tuple[str, Dict[str, Any]]:
+        """Call the LLM server and return (output, metadata)."""
+        payload: Dict[str, Any] = {"prompt": prompt}
+        if max_tokens is not None:
+            payload["max_tokens"] = max_tokens
+
+        # Create a dedicated client span for each LLM HTTP request so we can
+        # surface trace/span IDs in the raw request JSON (no UI changes needed).
+        with self.tracer.start_as_current_span("agent_a.call_llm", kind=SpanKind.CLIENT) as span_llm:
+            start_time_utc = datetime.now(timezone.utc).isoformat()
+            span_llm.set_attribute("app.request_start_time_utc", start_time_utc)
+            span_llm.set_attribute("app.llm.url", LLM_SERVER_URL)
+            if max_tokens is not None:
+                span_llm.set_attribute("llm.max_tokens", int(max_tokens))
+
+            merged_headers: Dict[str, str] = dict(headers or {})
+            propagate.inject(merged_headers)
+
+            resp = self.http_client.post(
+                LLM_SERVER_URL,
+                json=payload,
+                headers=merged_headers,
+                timeout=LLM_TIMEOUT_SECONDS,
+            )
+            resp.raise_for_status()
+            data: Dict[str, Any] = resp.json()
+
+            output = str(data.get("output", ""))
+            meta = data.get("meta") if isinstance(data.get("meta"), dict) else {}
+            meta_out: Dict[str, Any] = {
+                "llm_backend": meta,
+                "otel": {
+                    "agent_a": span_to_metadata(span_llm),
+                    "llm_backend": meta.get("otel") if isinstance(meta, dict) else {},
+                },
+            }
+            return output, meta_out
+    
+    def _call_agent_b(
+        self,
+        subtask: str,
+        scenario: str = "agentic_verse",
+        headers: Optional[Dict[str, str]] = None,
+        agent_b_role: Optional[str] = None,
+        agent_b_contract: Optional[str] = None,
+        agent_b_url: Optional[str] = None,
+        task_id: Optional[str] = None,
+        max_tokens: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Call an Agent B instance."""
+        payload: Dict[str, Any] = {"subtask": subtask, "scenario": scenario}
+        if agent_b_role:
+            payload["agent_b_role"] = agent_b_role
+        if agent_b_contract:
+            payload["agent_b_contract"] = agent_b_contract
+        if max_tokens is not None:
+            payload["max_tokens"] = max_tokens
+        
+        target_url = agent_b_url or DEFAULT_AGENT_B_URL
+        
+        # Validate URL
+        if not target_url or not isinstance(target_url, str) or not target_url.strip():
+            raise ValueError(f"Invalid Agent B URL: {target_url!r}")
+        
+        # Log the attempt for debugging
+        self.logger.log(
+            task_id=task_id or 'unknown',
+            event_type="agent_b_call_attempt",
+            message=f"Calling Agent B at {target_url}",
+            extra={
+                "url": target_url,
+                "role": agent_b_role,
+                "scenario": scenario,
+            },
+        )
+        
+        try:
+            resp = self.http_client.post(
+                target_url,
+                json=payload,
+                headers=headers,
+                timeout=AGENT_B_TIMEOUT_SECONDS,
+            )
+            resp.raise_for_status()
+            data: Dict[str, Any] = resp.json()
+            return {
+                "output": str(data.get("output", "")),
+                "llm_prompt": data.get("llm_prompt"),
+                "llm_response": data.get("llm_response"),
+                "llm_endpoint": data.get("llm_endpoint"),
+                "llm_meta": data.get("llm_meta") if isinstance(data.get("llm_meta"), dict) else None,
+                "otel": data.get("otel") if isinstance(data.get("otel"), dict) else None,
+            }
+        except httpx.ConnectError as e:
+            error_msg = (
+                f"Failed to connect to Agent B at {target_url}. "
+                f"Error: {e}. "
+                f"Please verify that the Agent B service is running and reachable. "
+                f"Available URLs: {AGENT_B_URLS}"
+            )
+            self.logger.log(
+                task_id=task_id or 'unknown',
+                event_type="agent_b_connection_error",
+                message=error_msg,
+                extra={
+                    "url": target_url,
+                    "role": agent_b_role,
+                    "available_urls": AGENT_B_URLS,
+                },
+            )
+            raise ConnectionError(error_msg) from e
+        except httpx.TimeoutException as e:
+            error_msg = (
+                f"Timeout connecting to Agent B at {target_url} "
+                f"(timeout: {AGENT_B_TIMEOUT_SECONDS}s)"
+            )
+            self.logger.log(
+                task_id=task_id or 'unknown',
+                event_type="agent_b_timeout_error",
+                message=error_msg,
+                extra={
+                    "url": target_url,
+                    "role": agent_b_role,
+                    "timeout": AGENT_B_TIMEOUT_SECONDS,
+                },
+            )
+            raise TimeoutError(error_msg) from e
+        except httpx.HTTPStatusError as e:
+            error_msg = (
+                f"Agent B returned error status {e.response.status_code} "
+                f"for URL {target_url}: {e.response.text[:200]}"
+            )
+            self.logger.log(
+                task_id=task_id or 'unknown',
+                event_type="agent_b_http_error",
+                message=error_msg,
+                extra={
+                    "url": target_url,
+                    "role": agent_b_role,
+                    "status_code": e.response.status_code,
+                },
+            )
+            raise
+    
+    def _send_progress(self, event_type: str, data: Dict[str, Any]) -> None:
+        """Send progress update via callback if available."""
+        if self.progress_callback:
+            self.progress_callback({
+                "event": event_type,
+                "data": data
+            })
+    
+    def _record_llm_request(
+        self,
+        state: AgentVerseState,
+        *,
+        stage: str,
+        label: str,
+        prompt: str,
+        response: str,
+        source: str = "Agent A",
+        agent_role: Optional[str] = None,
+        endpoint: Optional[str] = None,
+        round_num: Optional[int] = None,
+        duration_seconds: Optional[float] = None,
+        request_id: Optional[str] = None,
+        otel: Optional[Dict[str, Any]] = None,
+        llm_meta: Optional[Dict[str, Any]] = None,
+        start_time_utc: Optional[str] = None,
+        sender_role: Optional[str] = None,
+        receiver_role: Optional[str] = None,
+        error: bool = False,
+    ) -> None:
+        """Record an LLM request/response for the detailed flow.
+
+        duration_seconds: end-to-end task duration (LLM call for Agent A direct calls,
+        or full Agent B round-trip including network, Agent B processing, and LLM call).
+        start_time_utc: ISO 8601 UTC timestamp when the request started (for tracing and UI).
+        error: True when the LLM call failed (e.g. context-length exceeded, 5xx).
+        """
+        seq = len(state.llm_requests) + 1
+        role = agent_role
+        if role is None and source == "Agent A":
+            role = "orchestrator"
+        entry: Dict[str, Any] = {
+            "seq": seq,
+            "iteration": state.iteration,
+            "stage": stage,
+            "label": label,
+            "source": source,
+            "prompt": prompt,
+            "response": response,
+            "endpoint": endpoint or LLM_SERVER_URL,
+            "error": error,
+        }
+        if start_time_utc is not None:
+            entry["start_time_utc"] = start_time_utc
+        if request_id is not None:
+            entry["request_id"] = request_id
+        if otel is not None:
+            entry["otel"] = otel
+        if llm_meta is not None:
+            entry["llm_meta"] = llm_meta
+        if role:
+            entry["agent_role"] = role
+        if sender_role is not None:
+            entry["sender_role"] = sender_role
+        if receiver_role is not None:
+            entry["receiver_role"] = receiver_role
+        if round_num is not None:
+            entry["round"] = round_num
+        if duration_seconds is not None:
+            entry["duration_seconds"] = round(duration_seconds, 2)
+        state.llm_requests.append(entry)
+
+        # Send progress update — use "llm_error" event type for failures so
+        # streaming clients (UI) can highlight the failed call immediately.
+        event_type = "llm_error" if error else "llm_request"
+        self._send_progress(event_type, entry)
+
+    def _call_llm_tracked(
+        self,
+        state: AgentVerseState,
+        prompt: str,
+        stage: str,
+        label: str,
+        agent_role: str = "orchestrator",
+        headers: Optional[Dict[str, str]] = None,
+        max_tokens: Optional[int] = None,
+    ) -> Tuple[str, Dict[str, Any]]:
+        """Call the LLM and always record the attempt in state.llm_requests.
+
+        On success the entry is flagged error=False.  On any exception the
+        entry is flagged error=True (with the error message as the response
+        field) and an "llm_error" SSE progress event is emitted so streaming
+        UIs show the failure immediately.  The exception is then re-raised so
+        callers can handle it appropriately.
+        """
+        if headers is None:
+            headers = {}
+        request_id = self._new_llm_request_id(state)
+        headers["X-Request-ID"] = request_id
+        t0 = time.time()
+        start_time_utc = datetime.fromtimestamp(t0, tz=timezone.utc).isoformat()
+        try:
+            response, llm_trace_meta = self._call_llm(prompt, headers=headers, max_tokens=max_tokens)
+            duration = time.time() - t0
+            self._record_llm_request(
+                state,
+                stage=stage,
+                label=label,
+                prompt=prompt,
+                response=response,
+                source="Agent A",
+                agent_role=agent_role,
+                duration_seconds=duration,
+                request_id=request_id,
+                otel=llm_trace_meta.get("otel"),
+                llm_meta=llm_trace_meta.get("llm_backend"),
+                start_time_utc=start_time_utc,
+                error=False,
+            )
+            return response, llm_trace_meta
+        except Exception as exc:
+            duration = time.time() - t0
+            # Extract the server-side error message when available.
+            error_detail = str(exc)
+            if hasattr(exc, "response"):
+                try:
+                    body = exc.response.json()  # type: ignore[union-attr]
+                    error_detail = body.get("error", error_detail)
+                except Exception:
+                    pass
+            self._record_llm_request(
+                state,
+                stage=stage,
+                label=label,
+                prompt=prompt,
+                response=f"[LLM ERROR: {error_detail}]",
+                source="Agent A",
+                agent_role=agent_role,
+                duration_seconds=duration,
+                request_id=request_id,
+                otel=None,
+                llm_meta={"error": error_detail},
+                start_time_utc=start_time_utc,
+                error=True,
+            )
+            raise
+    
+    def _new_llm_request_id(self, state: AgentVerseState) -> str:
+        """Generate a short, human-friendly ID for an LLM call.
+
+        This ID is propagated to the LLM backend (via X-Request-ID) so that
+        Docker logs can be correlated with the UI's LLM request table/graph.
+        """
+        return str(uuid.uuid4())[:8]
+    
+    def _parse_json_response(self, response: str, default: Any = None) -> Any:
+        """Parse JSON from LLM response, handling common issues."""
+        # Try to extract JSON from the response
+        response = response.strip()
+        
+        # If response starts with ```json, extract the content
+        if response.startswith("```json"):
+            response = response[7:]
+        if response.startswith("```"):
+            response = response[3:]
+        if response.endswith("```"):
+            response = response[:-3]
+        
+        response = response.strip()
+        
+        try:
+            return json.loads(response)
+        except json.JSONDecodeError:
+            # Try to find JSON object in the response
+            start = response.find("{")
+            end = response.rfind("}") + 1
+            if start != -1 and end > start:
+                try:
+                    return json.loads(response[start:end])
+                except json.JSONDecodeError:
+                    pass
+            return default
+
+    def _parse_markdown_evaluation(self, response: str) -> Optional[Dict[str, Any]]:
+        """
+        Best-effort parser for evaluation responses written in Markdown instead of JSON.
+        
+        This is intentionally forgiving and only extracts fields we can confidently
+        recognize (score, goal_achieved, should_iterate, rationale, feedback,
+        missing_aspects).
+        """
+        text = response.strip()
+
+        # Strip code fences if present (``` or ```markdown / ```md / ```text)
+        if text.startswith("```"):
+            # Remove leading fence line
+            parts = text.split("\n", 1)
+            text = parts[1] if len(parts) > 1 else ""
+            # Remove trailing fence if present
+            if "```" in text:
+                text = text.rsplit("```", 1)[0]
+
+        # Normalize line endings
+        text = text.replace("\r\n", "\n").replace("\r", "\n")
+
+        def _search(pattern: str) -> Optional[str]:
+            m = re.search(pattern, text, flags=re.IGNORECASE | re.MULTILINE)
+            return m.group(1).strip() if m else None
+
+        score_str = _search(r"score\s*[:\-]\s*([0-9]{1,3})")
+        goal_str = _search(r"goal(?:\s+achieved)?\s*[:\-]\s*(yes|no|true|false)")
+        should_iterate_str = _search(r"should\s*iterate\s*[:\-]\s*(yes|no|true|false)")
+        rationale = _search(r"rationale\s*[:\-]\s*(.+)")
+        feedback = _search(r"feedback\s*[:\-]\s*(.+)")
+
+        # If we couldn't find any of the core fields, bail out
+        if not any([score_str, goal_str, should_iterate_str, rationale, feedback]):
+            return None
+
+        def _to_bool(val: Optional[str]) -> Optional[bool]:
+            if val is None:
+                return None
+            v = val.strip().lower()
+            if v in ("yes", "true"):
+                return True
+            if v in ("no", "false"):
+                return False
+            return None
+
+        parsed: Dict[str, Any] = {}
+
+        if score_str is not None:
+            try:
+                score_val = int(score_str)
+                parsed["score"] = max(0, min(100, score_val))
+            except ValueError:
+                pass
+
+        goal_val = _to_bool(goal_str)
+        if goal_val is not None:
+            parsed["goal_achieved"] = goal_val
+
+        should_iterate_val = _to_bool(should_iterate_str)
+        if should_iterate_val is not None:
+            parsed["should_iterate"] = should_iterate_val
+
+        if rationale:
+            parsed["rationale"] = rationale
+        if feedback:
+            parsed["feedback"] = feedback
+
+        # Try to capture a "Missing" or "Missing aspects" section with bullets
+        missing_aspects: List[str] = []
+        missing_match = re.search(
+            r"(?:missing\s+aspects?|gaps?|areas\s+for\s+improvement)\s*[:\-]?\s*\n(?P<body>(?:\s*[-*]\s+.+\n?)+)",
+            text,
+            flags=re.IGNORECASE,
+        )
+        if missing_match:
+            body = missing_match.group("body")
+            for line in body.splitlines():
+                line = line.strip()
+                if line.startswith(("-", "*")):
+                    item = line.lstrip("-*").strip()
+                    if item:
+                        missing_aspects.append(item)
+        if missing_aspects:
+            parsed["missing_aspects"] = missing_aspects
+
+        return parsed or None
+    
+    def _build_evaluation_prompt(
+        self,
+        span,
+        state: AgentVerseState,
+        results_text: str,
+    ) -> Tuple[str, bool, Optional[int], Optional[int]]:
+        """
+        Build the evaluation prompt with a token-aware guardrail.
+
+        The guardrail:
+        - Reserves space for up to LLM_EVAL_MAX_TOKENS completion tokens
+        - Applies a safety margin (LLM_PROMPT_SAFETY_MARGIN_TOKENS)
+        - Trims the OLDEST part of the results so the prompt stays within
+          LLM_MAX_MODEL_LEN whenever possible.
+
+        Returns (prompt, truncated, trimmed_tokens, final_prompt_tokens).
+        """
+        truncated = False
+        trimmed_tokens: Optional[int] = None
+        final_prompt_tokens: Optional[int] = None
+
+        base_kwargs: Dict[str, Any] = {
+            "task": state.original_task,
+            "iteration": state.iteration + 1,
+            "max_iterations": state.max_iterations,
+            "success_threshold": state.success_threshold,
+        }
+
+        # Prefer token-aware budgeting when we have both a configured limit and
+        # a working tokenizer. Fallback to the older character-based heuristic
+        # when tokens cannot be computed.
+        if LLM_MAX_MODEL_LEN > 0 and LLM_EVAL_MAX_TOKENS > 0:
+            _resolve_tokenizer()
+            if _TOKENIZER is not None:
+                base_prompt = EVALUATION_PROMPT.format(
+                    task=base_kwargs["task"],
+                    results="",
+                    iteration=base_kwargs["iteration"],
+                    max_iterations=base_kwargs["max_iterations"],
+                    success_threshold=base_kwargs["success_threshold"],
+                )
+                base_tokens = _count_tokens(base_prompt)
+
+                if base_tokens is not None:
+                    max_prompt_tokens = max(
+                        0,
+                        LLM_MAX_MODEL_LEN
+                        - LLM_EVAL_MAX_TOKENS
+                        - LLM_PROMPT_SAFETY_MARGIN_TOKENS,
+                    )
+
+                    if max_prompt_tokens <= 0:
+                        prompt = base_prompt
+                        truncated = True
+                        final_prompt_tokens = base_tokens
+
+                        span.set_attribute("app.evaluation_prompt_truncated", True)
+                        span.set_attribute(
+                            "app.evaluation_prompt_token_limit", max_prompt_tokens
+                        )
+                        span.set_attribute(
+                            "app.evaluation_prompt_base_tokens", int(base_tokens)
+                        )
+                        span.set_attribute(
+                            "app.evaluation_prompt_results_tokens_trimmed",
+                            _count_tokens(results_text) or 0,
+                        )
+                        span.set_attribute(
+                            "app.evaluation_prompt_tokens", int(base_tokens)
+                        )
+                        span.set_attribute(
+                            "app.evaluation_prompt_length_chars", len(prompt)
+                        )
+                        return prompt, truncated, trimmed_tokens, final_prompt_tokens
+
+                    results_budget = max(0, max_prompt_tokens - base_tokens)
+                    try:
+                        results_tokens = _TOKENIZER.encode(
+                            results_text, add_special_tokens=False
+                        )
+                    except Exception:
+                        results_tokens = None
+
+                    if results_tokens is not None:
+                        total_results_tokens = len(results_tokens)
+
+                        if total_results_tokens > results_budget:
+                            # Keep the most recent part of the results, which is
+                            # usually the most relevant for evaluation.
+                            kept_tokens = (
+                                results_tokens[-results_budget:]
+                                if results_budget > 0
+                                else []
+                            )
+                            results_text_trimmed = (
+                                _TOKENIZER.decode(kept_tokens) if kept_tokens else ""
+                            )
+                            trimmed_tokens = total_results_tokens - len(kept_tokens)
+                            truncated = True
+                        else:
+                            results_text_trimmed = results_text
+                            trimmed_tokens = 0
+
+                        prompt = EVALUATION_PROMPT.format(
+                            task=base_kwargs["task"],
+                            results=results_text_trimmed,
+                            iteration=base_kwargs["iteration"],
+                            max_iterations=base_kwargs["max_iterations"],
+                            success_threshold=base_kwargs["success_threshold"],
+                        )
+
+                        final_prompt_tokens = _count_tokens(prompt)
+                        if final_prompt_tokens is None:
+                            kept = min(total_results_tokens, results_budget)
+                            final_prompt_tokens = base_tokens + kept
+
+                        # Span attributes for telemetry / debugging.
+                        span.set_attribute(
+                            "app.evaluation_prompt_truncated", bool(truncated)
+                        )
+                        span.set_attribute(
+                            "app.evaluation_prompt_max_model_tokens",
+                            int(LLM_MAX_MODEL_LEN),
+                        )
+                        span.set_attribute(
+                            "app.evaluation_prompt_completion_tokens_budget",
+                            int(LLM_EVAL_MAX_TOKENS),
+                        )
+                        span.set_attribute(
+                            "app.evaluation_prompt_safety_margin_tokens",
+                            int(LLM_PROMPT_SAFETY_MARGIN_TOKENS),
+                        )
+                        span.set_attribute(
+                            "app.evaluation_prompt_base_tokens", int(base_tokens)
+                        )
+                        span.set_attribute(
+                            "app.evaluation_prompt_results_tokens_total",
+                            int(total_results_tokens),
+                        )
+                        span.set_attribute(
+                            "app.evaluation_prompt_results_tokens_budget",
+                            int(results_budget),
+                        )
+                        span.set_attribute(
+                            "app.evaluation_prompt_results_tokens_trimmed",
+                            int(trimmed_tokens or 0),
+                        )
+                        span.set_attribute(
+                            "app.evaluation_prompt_tokens", int(final_prompt_tokens)
+                        )
+                        span.set_attribute(
+                            "app.evaluation_prompt_length_chars", len(prompt)
+                        )
+
+                        return prompt, truncated, trimmed_tokens, final_prompt_tokens
+
+        # Fallback: character-based guardrail (previous behavior) – used only
+        # when token-based budgeting is unavailable.
+        prompt = EVALUATION_PROMPT.format(
+            task=base_kwargs["task"],
+            results=results_text,
+            iteration=base_kwargs["iteration"],
+            max_iterations=base_kwargs["max_iterations"],
+            success_threshold=base_kwargs["success_threshold"],
+        )
+
+        if len(prompt) > EVAL_MAX_PROMPT_CHARS:
+            base_prompt = EVALUATION_PROMPT.format(
+                task=base_kwargs["task"],
+                results="",
+                iteration=base_kwargs["iteration"],
+                max_iterations=base_kwargs["max_iterations"],
+                success_threshold=base_kwargs["success_threshold"],
+            )
+            max_results_chars = max(EVAL_MAX_PROMPT_CHARS - len(base_prompt), 0)
+            if max_results_chars > 0 and len(results_text) > max_results_chars:
+                truncated = True
+                results_text_trimmed = results_text[-max_results_chars:]
+                prompt = EVALUATION_PROMPT.format(
+                    task=base_kwargs["task"],
+                    results=results_text_trimmed,
+                    iteration=base_kwargs["iteration"],
+                    max_iterations=base_kwargs["max_iterations"],
+                    success_threshold=base_kwargs["success_threshold"],
+                )
+                span.set_attribute("app.evaluation_prompt_truncated", True)
+                span.set_attribute(
+                    "app.evaluation_prompt_length_chars", len(prompt)
+                )
+                span.set_attribute(
+                    "app.evaluation_results_truncated_chars",
+                    len(results_text) - len(results_text_trimmed),
+                )
+
+        return prompt, truncated, trimmed_tokens, final_prompt_tokens
+    
+    # ========================================================================
+    # Stage 1: Expert Recruitment
+    # ========================================================================
+    
+    def recruit_experts(
+        self,
+        state: AgentVerseState,
+        feedback: Optional[str] = None
+    ) -> RecruitmentResult:
+        """
+        Stage 1: Analyze the task and recruit appropriate expert agents.
+        """
+        with self.tracer.start_as_current_span(
+            "orchestrator.recruit_experts",
+            kind=SpanKind.INTERNAL,
+        ) as span:
+            span.set_attribute("app.task_id", state.task_id)
+            span.set_attribute("app.iteration", state.iteration)
+            
+            # Send progress update: starting recruitment
+            self._send_progress("stage_start", {
+                "stage": "recruitment",
+                "stage_number": 1,
+                "iteration": state.iteration,
+                "message": "Analyzing task and recruiting expert agents..."
+            })
+            
+            feedback_context = ""
+            if feedback:
+                feedback_context = f"\nFeedback from previous iteration:\n{feedback}\n"
+
+            # Solo mode: 0 sub-agents means Agent A handles everything itself.
+            # Skip the LLM recruitment call entirely — there is nothing to recruit.
+            if state.force_agent_count is not None and state.force_agent_count == 0:
+                reasoning = "Solo mode: Agent A handles the entire workflow without sub-agents."
+                result = RecruitmentResult(
+                    experts=[],
+                    communication_structure=CommunicationStructure.HORIZONTAL,
+                    execution_order=[],
+                    reasoning=reasoning,
+                )
+
+                self.logger.log(
+                    task_id=state.task_id,
+                    event_type="agentverse_recruitment_complete",
+                    message="Solo mode — no experts recruited",
+                    extra={"experts": [], "structure": "horizontal", "reasoning": reasoning},
+                )
+                span.set_attribute("app.expert_count", 0)
+                span.set_attribute("app.solo_mode", True)
+
+                self._send_progress("stage_complete", {
+                    "stage": "recruitment",
+                    "stage_number": 1,
+                    "iteration": state.iteration,
+                    "experts": [],
+                    "communication_structure": "horizontal",
+                    "reasoning": reasoning,
+                })
+                return result
+
+            if state.force_agent_count is not None:
+                _target = max(1, min(state.force_agent_count, MAX_PARALLEL_WORKERS, len(AGENT_B_URLS)))
+                agent_count_instruction = (
+                    f"IMPORTANT: You MUST recruit EXACTLY {_target} expert agent(s). "
+                    f"No more, no fewer."
+                )
+                agent_count_guidance = (
+                    f"Assign roles so that exactly {_target} expert(s) cover the work — "
+                    f"distribute responsibilities across exactly {_target} agent(s)"
+                )
+                agent_count_json_constraint = (
+                    f"IMPORTANT: The \"experts\" list MUST contain exactly {_target} object(s).\n"
+                    "IMPORTANT: \"execution_order\" must list each recruited expert role exactly once "
+                    "and must not include roles absent from \"experts\".\n"
+                )
+            else:
+                agent_count_instruction = ""
+                agent_count_guidance = "How many instances of each role (1-3 per role, max 5 total agents)?"
+                agent_count_json_constraint = ""
+
+            if state.force_structure == "full_mesh":
+                force_structure_instruction = (
+                    "IMPORTANT: You MUST set \"communication_structure\" to \"full_mesh\". "
+                    "Agents will communicate in a directed all-to-all pattern — every agent sends "
+                    "a message directly to every other agent. Assign peer roles (planner, researcher, "
+                    "executor, critic, summarizer) that collaborate as equals; avoid hierarchical "
+                    "solver/reviewer patterns."
+                )
+                structure_guidance = "Set \"communication_structure\" to \"full_mesh\" (directed all-to-all discussion among peers)."
+            elif state.force_structure == "horizontal":
+                force_structure_instruction = (
+                    "IMPORTANT: You MUST set \"communication_structure\" to \"horizontal\". "
+                    "All agents participate in a democratic round-table discussion."
+                )
+                structure_guidance = "Set \"communication_structure\" to \"horizontal\" (democratic discussion among all experts)."
+            elif state.force_structure == "vertical":
+                force_structure_instruction = (
+                    "IMPORTANT: You MUST set \"communication_structure\" to \"vertical\". "
+                    "One agent acts as solver; the others act as reviewers who critique and refine the solution."
+                )
+                structure_guidance = "Set \"communication_structure\" to \"vertical\" (one solver, remaining agents as reviewers)."
+            else:
+                force_structure_instruction = ""
+                structure_guidance = "Should agents use horizontal (democratic discussion), vertical (solver + reviewers), or full_mesh (directed all-to-all discussion) communication?"
+
+            prompt = EXPERT_RECRUITMENT_PROMPT.format(
+                task=state.original_task,
+                feedback_context=feedback_context,
+                agent_count_instruction=agent_count_instruction,
+                agent_count_guidance=agent_count_guidance,
+                agent_count_json_constraint=agent_count_json_constraint,
+                force_structure_instruction=force_structure_instruction,
+                structure_guidance=structure_guidance,
+            )
+            
+            self.logger.log(
+                task_id=state.task_id,
+                event_type="agentverse_recruitment_start",
+                message="Starting expert recruitment",
+                extra={"iteration": state.iteration},
+            )
+            
+            headers: Dict[str, str] = {}
+            propagate.inject(headers)
+            response, llm_trace_meta = self._call_llm_tracked(
+                state, prompt, stage="recruitment", label="expert_recruitment", headers=headers,
+            )
+            
+            parsed = self._parse_json_response(response, {})
+
+            # If JSON parsing failed or returned an empty object, try to recover
+            # structured data from a Markdown-formatted response.
+            parsed_from_markdown = False
+            if not isinstance(parsed, dict) or not parsed:
+                md_parsed = self._parse_markdown_evaluation(response)
+                if md_parsed is not None:
+                    parsed = md_parsed
+                    parsed_from_markdown = True
+                else:
+                    parsed = {}
+            
+            valid_roles = {"planner", "researcher", "executor", "critic", "summarizer"}
+
+            # Parse experts
+            experts = []
+            raw_experts = parsed.get("experts", [])
+            
+            # Validate AGENT_B_URLS is not empty
+            if not AGENT_B_URLS:
+                raise ValueError(
+                    f"No Agent B URLs configured. Please set AGENT_B_URLS environment variable. "
+                    f"Default URL would be: {DEFAULT_AGENT_B_URL}"
+                )
+            
+            for idx, expert_data in enumerate(raw_experts[:MAX_PARALLEL_WORKERS]):
+                endpoint = AGENT_B_URLS[idx % len(AGENT_B_URLS)]
+                
+                # Validate endpoint URL
+                if not endpoint or not isinstance(endpoint, str) or not endpoint.strip():
+                    self.logger.log(
+                        task_id=state.task_id,
+                        event_type="agentverse_invalid_endpoint",
+                        message=f"Invalid endpoint for expert {idx}: {endpoint!r}",
+                        extra={
+                            "expert_index": idx,
+                            "endpoint": endpoint,
+                            "available_urls": AGENT_B_URLS,
+                        },
+                    )
+                    # Fall back to first available URL
+                    endpoint = AGENT_B_URLS[0] if AGENT_B_URLS else DEFAULT_AGENT_B_URL
+                
+                role_raw = str(expert_data.get("role", "executor")).strip().lower()
+                role = role_raw if role_raw in valid_roles else "executor"
+
+                experts.append(Expert(
+                    role=role,
+                    responsibilities=expert_data.get("responsibilities", ""),
+                    contract=expert_data.get("contract", ""),
+                    endpoint=endpoint,
+                    index=idx,
+                ))
+            
+            # Default experts if none parsed
+            if not experts:
+                if not AGENT_B_URLS:
+                    raise ValueError(
+                        f"No Agent B URLs available for default expert. "
+                        f"Please set AGENT_B_URLS environment variable."
+                    )
+                experts = [
+                    Expert(
+                        role="executor",
+                        responsibilities="Execute the given task",
+                        contract="You are an executor agent. Complete the assigned task thoroughly.",
+                        endpoint=AGENT_B_URLS[0],
+                        index=0,
+                    )
+                ]
+            
+            # Apply forced agent count override (for controlled experiments).
+            # Trim excess experts or pad with executor defaults to hit the target.
+            if state.force_agent_count is not None:
+                target = max(1, min(state.force_agent_count, MAX_PARALLEL_WORKERS, len(AGENT_B_URLS)))
+                if len(experts) > target:
+                    experts = experts[:target]
+                while len(experts) < target:
+                    idx = len(experts)
+                    experts.append(Expert(
+                        role="executor",
+                        responsibilities="Execute an assigned subtask thoroughly",
+                        contract="You are an executor agent. Complete the assigned task thoroughly.",
+                        endpoint=AGENT_B_URLS[idx % len(AGENT_B_URLS)],
+                        index=idx,
+                    ))
+
+            # Ensure stable, contiguous expert indexes after trimming/padding.
+            for idx, expert in enumerate(experts):
+                expert.index = idx
+
+            # Normalize execution order so it only references recruited experts.
+            # This avoids mismatch when the LLM returns a larger role list than the
+            # forced expert count (e.g., after trimming to target).
+            expert_roles = [e.role for e in experts]
+            raw_execution_order = parsed.get("execution_order", [])
+            normalized_execution_order: List[str] = []
+            if isinstance(raw_execution_order, list):
+                for role in raw_execution_order:
+                    role_str = str(role).strip().lower()
+                    if role_str in expert_roles and role_str not in normalized_execution_order:
+                        normalized_execution_order.append(role_str)
+            for role in expert_roles:
+                if role not in normalized_execution_order:
+                    normalized_execution_order.append(role)
+
+            # Parse communication structure from LLM response
+            structure_str = parsed.get("communication_structure", "horizontal")
+            try:
+                structure = CommunicationStructure(structure_str.lower())
+            except ValueError:
+                structure = CommunicationStructure.HORIZONTAL
+
+            # Override with forced structure if requested (for controlled experiments).
+            # This skips the LLM's own choice without altering any other behaviour.
+            if state.force_structure in ("horizontal", "vertical", "full_mesh"):
+                structure = CommunicationStructure(state.force_structure)
+            
+            # Use LLM reasoning if provided, else generate fallback from structure
+            raw_reasoning = parsed.get("reasoning", "").strip()
+            if raw_reasoning:
+                reasoning = raw_reasoning
+            else:
+                structure_desc = (
+                    "democratic discussion among all experts"
+                    if structure == CommunicationStructure.HORIZONTAL
+                    else (
+                        "directed all-to-all discussion among all experts"
+                        if structure == CommunicationStructure.FULL_MESH
+                        else "solver proposes, reviewers critique, solver refines"
+                    )
+                )
+                reasoning = (
+                    f"Selected {structure.value} communication structure ({structure_desc}) "
+                    f"with {len(experts)} expert(s): {', '.join(e.role for e in experts)}."
+                )
+            
+            result = RecruitmentResult(
+                experts=experts,
+                communication_structure=structure,
+                execution_order=normalized_execution_order,
+                reasoning=reasoning,
+            )
+            
+            # Log expert endpoints for debugging
+            expert_endpoints = {e.role: e.endpoint for e in experts}
+            
+            self.logger.log(
+                task_id=state.task_id,
+                event_type="agentverse_recruitment_complete",
+                message=f"Recruited {len(experts)} experts",
+                extra={
+                    "experts": [e.role for e in experts],
+                    "expert_endpoints": expert_endpoints,
+                    "structure": structure.value,
+                    "reasoning": result.reasoning,
+                    "available_agent_b_urls": AGENT_B_URLS,
+                },
+            )
+            
+            span.set_attribute("app.expert_count", len(experts))
+            span.set_attribute("app.communication_structure", structure.value)
+            
+            # Send progress update: recruitment complete
+            self._send_progress("stage_complete", {
+                "stage": "recruitment",
+                "stage_number": 1,
+                "iteration": state.iteration,
+                "experts": [{"role": e.role, "responsibilities": e.responsibilities} for e in experts],
+                "communication_structure": structure.value,
+                "reasoning": reasoning
+            })
+            
+            return result
+    
+    # ========================================================================
+    # Stage 2: Collaborative Decision-Making
+    # ========================================================================
+    
+    def collaborative_decision(
+        self,
+        state: AgentVerseState,
+        recruitment: RecruitmentResult,
+    ) -> DecisionResult:
+        """
+        Stage 2: Agents engage in collaborative discussion to decide on approach.
+        """
+        with self.tracer.start_as_current_span(
+            "orchestrator.collaborative_decision",
+            kind=SpanKind.INTERNAL,
+        ) as span:
+            span.set_attribute("app.task_id", state.task_id)
+            span.set_attribute("app.structure", recruitment.communication_structure.value)
+            
+            # Send progress update: starting decision-making
+            self._send_progress("stage_start", {
+                "stage": "decision",
+                "stage_number": 2,
+                "iteration": state.iteration,
+                "message": f"Starting {recruitment.communication_structure.value} decision-making...",
+                "structure": recruitment.communication_structure.value
+            })
+            
+            self.logger.log(
+                task_id=state.task_id,
+                event_type="agentverse_decision_start",
+                message=f"Starting {recruitment.communication_structure.value} decision-making",
+            )
+
+            if not recruitment.experts:
+                result = self._solo_decision(state)
+            elif recruitment.communication_structure == CommunicationStructure.HORIZONTAL:
+                result = self._horizontal_discussion(state, recruitment)
+            elif recruitment.communication_structure == CommunicationStructure.FULL_MESH:
+                result = self._full_mesh_discussion(
+                    state, recruitment,
+                    max_rounds=state.full_mesh_max_rounds,
+                )
+            else:
+                result = self._vertical_decision(state, recruitment)
+            
+            # Send progress update: decision complete
+            self._send_progress("stage_complete", {
+                "stage": "decision",
+                "stage_number": 2,
+                "iteration": state.iteration,
+                "consensus_reached": result.consensus_reached,
+                "structure": result.structure_used,
+                "rounds": len(result.discussion_rounds)
+            })
+            
+            return result
+    
+    def _horizontal_discussion(
+        self,
+        state: AgentVerseState,
+        recruitment: RecruitmentResult,
+        max_rounds: int = 3,
+    ) -> DecisionResult:
+        """Horizontal (democratic) discussion among all agents."""
+        discussion_rounds: List[Dict[str, Any]] = []
+        discussion_history = ""
+        consensus_reached = False
+        
+        for round_num in range(1, max_rounds + 1):
+            round_responses = []
+            all_consensus = True
+            
+            # Truncate history to avoid context explosion across rounds.
+            # Keep the tail (most recent rounds) when over the char limit.
+            if len(discussion_history) > DISCUSSION_HISTORY_MAX_CHARS:
+                discussion_history = "...[earlier rounds truncated]...\n" + discussion_history[-DISCUSSION_HISTORY_MAX_CHARS:]
+
+            for expert in recruitment.experts:
+                prompt = HORIZONTAL_DISCUSSION_PROMPT.format(
+                    role=expert.role,
+                    contract=expert.contract,
+                    task=state.original_task,
+                    discussion_history=discussion_history or "(No discussion yet)",
+                    round_num=round_num,
+                )
+                
+                headers: Dict[str, str] = {}
+                propagate.inject(headers)
+                request_id = self._new_llm_request_id(state)
+                headers["X-Request-ID"] = request_id
+                t0 = time.time()
+                start_time_utc = datetime.fromtimestamp(t0, tz=timezone.utc).isoformat()
+                try:
+                    response = self._call_agent_b(
+                        subtask=prompt,
+                        agent_b_role=expert.role,
+                        # Contract is already embedded in HORIZONTAL_DISCUSSION_PROMPT;
+                        # omitting it here avoids the agent_b server prepending it
+                        # a second time and wasting context tokens.
+                        agent_b_url=expert.endpoint,
+                        headers=headers,
+                        task_id=state.task_id,
+                    )
+                    duration = time.time() - t0
+                    output = response.get("output", "")
+                    llm_prompt = response.get("llm_prompt") or prompt
+                    llm_response = response.get("llm_response") or output
+                    self._record_llm_request(
+                        state,
+                        stage="decision",
+                        label=f"horizontal_discussion_round{round_num}",
+                        prompt=llm_prompt,
+                        response=llm_response,
+                        source=f"agent-b-{expert.index + 1}",
+                        agent_role=expert.role,
+                        endpoint=response.get("llm_endpoint"),
+                        round_num=round_num,
+                        duration_seconds=duration,
+                        request_id=request_id,
+                        otel=response.get("otel"),
+                        llm_meta=response.get("llm_meta"),
+                        start_time_utc=start_time_utc,
+                    )
+                except Exception as exc:
+                    output = f"[Agent error: {exc}]"
+                    self._record_llm_request(
+                        state,
+                        stage="decision",
+                        label=f"horizontal_discussion_round{round_num}",
+                        prompt=prompt,
+                        response=output,
+                        source=f"agent-b-{expert.index + 1}",
+                        agent_role=expert.role,
+                        round_num=round_num,
+                        duration_seconds=time.time() - t0,
+                        request_id=request_id,
+                        start_time_utc=start_time_utc,
+                        error=True,
+                    )
+                
+                round_responses.append({
+                    "expert": expert.role,
+                    "index": expert.index,
+                    "response": output,
+                    "consensus": bool(_CONSENSUS_SIGNAL_RE.search(output)),
+                })
+
+                if not _CONSENSUS_SIGNAL_RE.search(output):
+                    all_consensus = False
+            
+            # Build history for next round
+            round_summary = f"\n--- Round {round_num} ---\n"
+            for resp in round_responses:
+                round_summary += f"{resp['expert'].upper()}: {resp['response']}\n"
+            discussion_history += round_summary
+            
+            discussion_rounds.append({
+                "round": round_num,
+                "responses": round_responses,
+            })
+            
+            self.logger.log(
+                task_id=state.task_id,
+                event_type="agentverse_discussion_round",
+                message=f"Completed discussion round {round_num}",
+                extra={"round": round_num, "all_consensus": all_consensus},
+            )
+            
+            # Send progress update: round complete
+            self._send_progress("discussion_round", {
+                "stage": "decision",
+                "round": round_num,
+                "iteration": state.iteration,
+                "responses": round_responses,
+                "consensus": all_consensus
+            })
+            
+            if all_consensus:
+                consensus_reached = True
+                # Do not break — always complete all configured rounds for
+                # comparability across topologies.
+
+        # Synthesize final decision from discussion
+        final_decision = self._synthesize_discussion(state, discussion_history)
+
+        return DecisionResult(
+            final_decision=final_decision,
+            discussion_rounds=discussion_rounds,
+            consensus_reached=consensus_reached,
+            structure_used="horizontal",
+            solver_role=None,
+            reviewer_roles=[e.role for e in recruitment.experts],
+        )
+
+    def _full_mesh_discussion(
+        self,
+        state: AgentVerseState,
+        recruitment: RecruitmentResult,
+        max_rounds: Optional[int] = None,
+    ) -> DecisionResult:
+        """Full-mesh discussion with directed messages between every expert pair."""
+        discussion_rounds: List[Dict[str, Any]] = []
+        discussion_history = ""
+        consensus_reached = False
+        rounds = max(1, max_rounds if max_rounds is not None else FULL_MESH_MAX_ROUNDS)
+
+        ordered_pairs: List[Tuple[Expert, Expert]] = [
+            (sender, receiver)
+            for sender in recruitment.experts
+            for receiver in recruitment.experts
+            if sender.index != receiver.index
+        ]
+
+        if not ordered_pairs:
+            discussion_history = (
+                "Full-mesh discussion requested, but fewer than two experts were recruited. "
+                "No peer-to-peer messages were exchanged."
+            )
+            final_decision = self._synthesize_discussion(state, discussion_history)
+            return DecisionResult(
+                final_decision=final_decision,
+                discussion_rounds=[],
+                consensus_reached=True,
+                structure_used="full_mesh",
+                solver_role=None,
+                reviewer_roles=[e.role for e in recruitment.experts],
+            )
+
+        for round_num in range(1, rounds + 1):
+            if len(discussion_history) > DISCUSSION_HISTORY_MAX_CHARS:
+                discussion_history = "...[earlier rounds truncated]...\n" + discussion_history[-DISCUSSION_HISTORY_MAX_CHARS:]
+
+            request_ctx = otel_context.get_current()
+
+            def _mesh_message_task(
+                ctx: otel_context.Context,
+                sender: Expert,
+                receiver: Expert,
+            ) -> Dict[str, Any]:
+                token = otel_context.attach(ctx)
+                output = ""
+                prompt = FULL_MESH_DISCUSSION_PROMPT.format(
+                    sender_role=sender.role,
+                    sender_contract=sender.contract,
+                    receiver_role=receiver.role,
+                    task=state.original_task,
+                    discussion_history=discussion_history or "(No prior full-mesh messages)",
+                    round_num=round_num,
+                )
+                headers: Dict[str, str] = {}
+                propagate.inject(headers)
+                request_id = self._new_llm_request_id(state)
+                headers["X-Request-ID"] = request_id
+                t0 = time.time()
+                start_time_utc = datetime.fromtimestamp(t0, tz=timezone.utc).isoformat()
+                try:
+                    response = self._call_agent_b(
+                        subtask=prompt,
+                        agent_b_role=sender.role,
+                        agent_b_url=sender.endpoint,
+                        headers=headers,
+                        task_id=state.task_id,
+                    )
+                    duration = time.time() - t0
+                    output = response.get("output", "")
+                    llm_prompt = response.get("llm_prompt") or prompt
+                    llm_response = response.get("llm_response") or output
+                    self._record_llm_request(
+                        state,
+                        stage="decision",
+                        label=(
+                            f"full_mesh_message_round{round_num}_"
+                            f"agent{sender.index + 1}_to_agent{receiver.index + 1}"
+                        ),
+                        prompt=llm_prompt,
+                        response=llm_response,
+                        source=f"agent-b-{sender.index + 1}",
+                        agent_role=sender.role,
+                        endpoint=response.get("llm_endpoint"),
+                        round_num=round_num,
+                        duration_seconds=duration,
+                        request_id=request_id,
+                        otel=response.get("otel"),
+                        llm_meta=response.get("llm_meta"),
+                        start_time_utc=start_time_utc,
+                        sender_role=sender.role,
+                        receiver_role=receiver.role,
+                    )
+                except Exception as exc:
+                    output = f"[Full-mesh message error: {exc}]"
+                    self._record_llm_request(
+                        state,
+                        stage="decision",
+                        label=(
+                            f"full_mesh_message_round{round_num}_"
+                            f"agent{sender.index + 1}_to_agent{receiver.index + 1}"
+                        ),
+                        prompt=prompt,
+                        response=output,
+                        source=f"agent-b-{sender.index + 1}",
+                        agent_role=sender.role,
+                        round_num=round_num,
+                        duration_seconds=time.time() - t0,
+                        request_id=request_id,
+                        start_time_utc=start_time_utc,
+                        sender_role=sender.role,
+                        receiver_role=receiver.role,
+                        error=True,
+                    )
+                finally:
+                    otel_context.detach(token)
+
+                return {
+                    "sender": sender.role,
+                    "sender_index": sender.index,
+                    "receiver": receiver.role,
+                    "receiver_index": receiver.index,
+                    "response": output,
+                    "consensus": bool(_CONSENSUS_SIGNAL_RE.search(output)),
+                }
+
+            round_messages: List[Dict[str, Any]] = []
+            max_workers = max(1, min(MAX_PARALLEL_WORKERS, len(ordered_pairs)))
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = [
+                    executor.submit(_mesh_message_task, request_ctx, sender, receiver)
+                    for sender, receiver in ordered_pairs
+                ]
+                for future in as_completed(futures):
+                    round_messages.append(future.result())
+
+            round_messages.sort(
+                key=lambda msg: (int(msg["sender_index"]), int(msg["receiver_index"]))
+            )
+            all_consensus = bool(round_messages) and all(
+                msg.get("consensus", False) for msg in round_messages
+            )
+
+            round_summary = f"\n--- Full-Mesh Round {round_num} ---\n"
+            for msg in round_messages:
+                round_summary += (
+                    f"{msg['sender'].upper()} -> {msg['receiver'].upper()}: "
+                    f"{msg['response']}\n"
+                )
+            discussion_history += round_summary
+
+            discussion_rounds.append({
+                "round": round_num,
+                "messages": round_messages,
+                "all_consensus": all_consensus,
+            })
+
+            self.logger.log(
+                task_id=state.task_id,
+                event_type="agentverse_full_mesh_round",
+                message=f"Completed full-mesh discussion round {round_num}",
+                extra={
+                    "round": round_num,
+                    "messages": len(round_messages),
+                    "all_consensus": all_consensus,
+                },
+            )
+
+            self._send_progress("full_mesh_round", {
+                "stage": "decision",
+                "round": round_num,
+                "iteration": state.iteration,
+                "messages": round_messages,
+                "consensus": all_consensus,
+            })
+
+            if all_consensus:
+                consensus_reached = True
+                # Do not break — always complete all configured rounds for
+                # comparability across topologies.
+
+        final_decision = self._synthesize_discussion(state, discussion_history)
+
+        return DecisionResult(
+            final_decision=final_decision,
+            discussion_rounds=discussion_rounds,
+            consensus_reached=consensus_reached,
+            structure_used="full_mesh",
+            solver_role=None,
+            reviewer_roles=[e.role for e in recruitment.experts],
+        )
+    
+    def _vertical_decision(
+        self,
+        state: AgentVerseState,
+        recruitment: RecruitmentResult,
+        max_iterations: int = 3,
+    ) -> DecisionResult:
+        """Vertical (solver + reviewers) decision-making."""
+        discussion_rounds: List[Dict[str, Any]] = []
+        
+        # Find solver and reviewers.
+        # Prefer a planner as solver; if none, fall back to first expert.
+        solver: Optional[Expert] = None
+        reviewers: List[Expert] = []
+
+        if recruitment.experts:
+            planner_solver = next(
+                (e for e in recruitment.experts if e.role == "planner"),
+                None,
+            )
+            if planner_solver is not None:
+                solver = planner_solver
+                reviewers = [e for e in recruitment.experts if e is not planner_solver]
+            else:
+                solver = recruitment.experts[0]
+                reviewers = recruitment.experts[1:] if len(recruitment.experts) > 1 else []
+        
+        if not solver:
+            return DecisionResult(
+                final_decision="No solver agent available",
+                discussion_rounds=[],
+                consensus_reached=False,
+                structure_used="vertical",
+                solver_role=None,
+                reviewer_roles=[],
+            )
+        
+        proposal = ""
+        critiques = ""
+        
+        for iteration in range(1, max_iterations + 1):
+            # Solver proposes
+            previous_context = ""
+            if proposal:
+                previous_context = f"\nYour previous proposal:\n{proposal}\n"
+            critique_context = ""
+            if critiques:
+                critique_context = f"\nReviewer critiques:\n{critiques}\n"
+            
+            solver_prompt = VERTICAL_SOLVER_PROMPT.format(
+                contract=solver.contract,
+                task=state.original_task,
+                previous_proposal=previous_context,
+                critiques=critique_context,
+            )
+            
+            headers: Dict[str, str] = {}
+            propagate.inject(headers)
+            request_id = self._new_llm_request_id(state)
+            headers["X-Request-ID"] = request_id
+            t0 = time.time()
+            start_time_utc = datetime.fromtimestamp(t0, tz=timezone.utc).isoformat()
+            try:
+                response = self._call_agent_b(
+                    subtask=solver_prompt,
+                    agent_b_role=solver.role,
+                    agent_b_contract=solver.contract,
+                    agent_b_url=solver.endpoint,
+                    headers=headers,
+                    task_id=state.task_id,
+                )
+                duration = time.time() - t0
+                proposal = response.get("output", "")
+                llm_prompt = response.get("llm_prompt") or solver_prompt
+                llm_response = response.get("llm_response") or proposal
+                self._record_llm_request(
+                    state,
+                    stage="decision",
+                    label=f"vertical_solver_iter{iteration}",
+                    prompt=llm_prompt,
+                    response=llm_response,
+                    source=f"agent-b-{solver.index + 1}",
+                    agent_role=solver.role,
+                    endpoint=response.get("llm_endpoint"),
+                    round_num=iteration,
+                    duration_seconds=duration,
+                    request_id=request_id,
+                    otel=response.get("otel"),
+                    llm_meta=response.get("llm_meta"),
+                    start_time_utc=start_time_utc,
+                )
+            except Exception as exc:
+                proposal = f"[Solver error: {exc}]"
+                self._record_llm_request(
+                    state,
+                    stage="decision",
+                    label=f"vertical_solver_iter{iteration}",
+                    prompt=solver_prompt,
+                    response=proposal,
+                    source=f"agent-b-{solver.index + 1}",
+                    agent_role=solver.role,
+                    round_num=iteration,
+                    duration_seconds=time.time() - t0,
+                    request_id=request_id,
+                    start_time_utc=start_time_utc,
+                    error=True,
+                )
+            
+            # Reviewers critique (in parallel)
+            reviewer_responses: List[Dict[str, Any]] = []
+            all_approved = True
+
+            if reviewers:
+                request_ctx = otel_context.get_current()
+
+                def _reviewer_task(
+                    ctx: otel_context.Context,
+                    reviewer: Expert,
+                ) -> Dict[str, Any]:
+                    token = otel_context.attach(ctx)
+                    try:
+                        reviewer_prompt = VERTICAL_REVIEWER_PROMPT.format(
+                            role=reviewer.role,
+                            contract=reviewer.contract,
+                            task=state.original_task,
+                            proposal=proposal,
+                        )
+
+                        headers: Dict[str, str] = {}
+                        propagate.inject(headers)
+                        request_id = self._new_llm_request_id(state)
+                        headers["X-Request-ID"] = request_id
+                        t0 = time.time()
+                        start_time_utc = datetime.fromtimestamp(t0, tz=timezone.utc).isoformat()
+                        try:
+                            response = self._call_agent_b(
+                                subtask=reviewer_prompt,
+                                agent_b_role=reviewer.role,
+                                agent_b_contract=reviewer.contract,
+                                agent_b_url=reviewer.endpoint,
+                                headers=headers,
+                                task_id=state.task_id,
+                            )
+                            duration = time.time() - t0
+                            critique = response.get("output", "")
+                            llm_prompt = response.get("llm_prompt") or reviewer_prompt
+                            llm_response = response.get("llm_response") or critique
+                            self._record_llm_request(
+                                state,
+                                stage="decision",
+                                label=f"vertical_reviewer_{reviewer.role}_iter{iteration}",
+                                prompt=llm_prompt,
+                                response=llm_response,
+                                source=f"agent-b-{reviewer.index + 1}",
+                                agent_role=reviewer.role,
+                                endpoint=response.get("llm_endpoint"),
+                                round_num=iteration,
+                                duration_seconds=duration,
+                                request_id=request_id,
+                                otel=response.get("otel"),
+                                llm_meta=response.get("llm_meta"),
+                                start_time_utc=start_time_utc,
+                            )
+                        except Exception as exc:
+                            critique = f"[Reviewer error: {exc}]"
+                            self._record_llm_request(
+                                state,
+                                stage="decision",
+                                label=f"vertical_reviewer_{reviewer.role}_iter{iteration}",
+                                prompt=reviewer_prompt,
+                                response=critique,
+                                source=f"agent-b-{reviewer.index + 1}",
+                                agent_role=reviewer.role,
+                                round_num=iteration,
+                                duration_seconds=time.time() - t0,
+                                request_id=request_id,
+                                start_time_utc=start_time_utc,
+                                error=True,
+                            )
+                    finally:
+                        otel_context.detach(token)
+
+                    return {
+                        "reviewer": reviewer.role,
+                        "critique": critique,
+                        "approved": bool(_APPROVED_SIGNAL_RE.search(critique)),
+                    }
+
+                from concurrent.futures import ThreadPoolExecutor
+
+                with ThreadPoolExecutor(max_workers=len(reviewers)) as executor:
+                    futures = [
+                        executor.submit(_reviewer_task, request_ctx, reviewer)
+                        for reviewer in reviewers
+                    ]
+                    for future in futures:
+                        reviewer_responses.append(future.result())
+
+                all_approved = all(r.get("approved", False) for r in reviewer_responses)
+            
+            critiques = "\n".join([
+                f"{r['reviewer']}: {r['critique']}"
+                for r in reviewer_responses
+            ])
+            
+            discussion_rounds.append({
+                "iteration": iteration,
+                "proposal": proposal,
+                "reviewer_responses": reviewer_responses,
+                "all_approved": all_approved,
+            })
+            
+            self.logger.log(
+                task_id=state.task_id,
+                event_type="agentverse_vertical_iteration",
+                message=f"Completed vertical iteration {iteration}",
+                extra={"iteration": iteration, "all_approved": all_approved},
+            )
+            
+            # Send progress update: vertical iteration complete
+            self._send_progress("vertical_iteration", {
+                "stage": "decision",
+                "iteration": state.iteration,
+                "solver_iteration": iteration,
+                "proposal": proposal[:200] + "..." if len(proposal) > 200 else proposal,
+                "reviewer_responses": reviewer_responses,
+                "all_approved": all_approved
+            })
+            
+            if all_approved:
+                break
+        
+        return DecisionResult(
+            final_decision=proposal,
+            discussion_rounds=discussion_rounds,
+            consensus_reached=all_approved if reviewers else True,
+            structure_used="vertical",
+            solver_role=solver.role if solver else None,
+            reviewer_roles=[r.role for r in reviewers],
+        )
+    
+    def _solo_decision(
+        self,
+        state: AgentVerseState,
+        max_revisions: int = 2,
+    ) -> DecisionResult:
+        """Solo decision-making with self-critique.
+
+        Agent A proposes a plan, reviews it, and optionally revises.  This
+        mirrors the vertical solver/reviewer pattern but with Agent A playing
+        both roles.  The loop runs at most *max_revisions* review rounds; it
+        exits early if the self-review returns [APPROVED].
+        """
+        feedback_context = ""
+        if state.iteration > 0 and state.evaluation and state.evaluation.feedback:
+            feedback_context = (
+                f"\nFeedback from previous iteration:\n{state.evaluation.feedback}\n"
+            )
+
+        # --- Propose initial plan ---
+        prompt = SOLO_DECISION_PROMPT.format(
+            task=state.original_task,
+            feedback_context=feedback_context,
+        )
+
+        headers: Dict[str, str] = {}
+        propagate.inject(headers)
+        proposal, _llm_meta = self._call_llm_tracked(
+            state, prompt, stage="decision", label="solo_decision_propose",
+            agent_role="orchestrator", headers=headers, max_tokens=2048,
+        )
+
+        discussion_rounds: List[Dict[str, Any]] = []
+
+        # --- Self-review loop: critique → revise ---
+        approved = False
+        for revision in range(1, max_revisions + 1):
+            review_prompt = SOLO_SELF_REVIEW_PROMPT.format(
+                task=state.original_task,
+                proposal=proposal,
+            )
+
+            headers = {}
+            propagate.inject(headers)
+            critique, _llm_meta = self._call_llm_tracked(
+                state, review_prompt,
+                stage="decision",
+                label=f"solo_self_review_{revision}",
+                agent_role="orchestrator",
+                headers=headers,
+            )
+
+            critique_approved = bool(_APPROVED_SIGNAL_RE.search(critique))
+            discussion_rounds.append({
+                "revision": revision,
+                "proposal": proposal,
+                "critique": critique,
+                "approved": critique_approved,
+            })
+
+            self._send_progress("discussion_round", {
+                "stage": "decision",
+                "round": revision,
+                "iteration": state.iteration,
+                "responses": [
+                    {"expert": "orchestrator", "response": critique,
+                     "consensus": critique_approved},
+                ],
+                "consensus": critique_approved,
+            })
+
+            if critique_approved:
+                approved = True
+                break
+
+            # Revise the plan incorporating the self-critique
+            revise_prompt = SOLO_DECISION_PROMPT.format(
+                task=state.original_task,
+                feedback_context=(
+                    f"\nYour previous plan:\n{proposal}\n\n"
+                    f"Your self-review identified these issues:\n{critique}\n\n"
+                    "Revise the plan to address the critique.\n"
+                ),
+            )
+            headers = {}
+            propagate.inject(headers)
+            proposal, _llm_meta = self._call_llm_tracked(
+                state, revise_prompt,
+                stage="decision",
+                label=f"solo_decision_revise_{revision}",
+                agent_role="orchestrator",
+                headers=headers,
+                max_tokens=2048,
+            )
+
+        return DecisionResult(
+            final_decision=proposal,
+            discussion_rounds=discussion_rounds,
+            consensus_reached=approved,
+            structure_used="solo",
+            solver_role=None,
+            reviewer_roles=[],
+        )
+
+    def _synthesize_discussion(
+        self,
+        state: AgentVerseState,
+        discussion_history: str,
+    ) -> str:
+        """Synthesize a final decision from discussion history."""
+        prompt = SYNTHESIZE_DISCUSSION_PROMPT.format(
+            task=state.original_task,
+            discussion_history=discussion_history,
+        )
+        
+        headers: Dict[str, str] = {}
+        propagate.inject(headers)
+        # Allow a larger completion for the final synthesized answer
+        response, _llm_meta = self._call_llm_tracked(
+            state, prompt, stage="decision", label="synthesize_discussion",
+            headers=headers, max_tokens=2048,
+        )
+        return response
+    
+    # ========================================================================
+    # Stage 3: Action Execution
+    # ========================================================================
+    
+    def execute_actions(
+        self,
+        state: AgentVerseState,
+        recruitment: RecruitmentResult,
+        decision: DecisionResult,
+    ) -> ExecutionResult:
+        """
+        Stage 3: Execute the collaboratively-decided actions.
+        """
+        with self.tracer.start_as_current_span(
+            "orchestrator.execute_actions",
+            kind=SpanKind.INTERNAL,
+        ) as span:
+            span.set_attribute("app.task_id", state.task_id)
+            
+            # Send progress update: starting execution
+            self._send_progress("stage_start", {
+                "stage": "execution",
+                "stage_number": 3,
+                "iteration": state.iteration,
+                "message": f"Executing tasks with {len(recruitment.experts)} agents...",
+                "expert_count": len(recruitment.experts)
+            })
+            
+            self.logger.log(
+                task_id=state.task_id,
+                event_type="agentverse_execution_start",
+                message="Starting action execution",
+            )
+
+            # Solo mode: Agent A executes directly via LLM when there are
+            # no sub-agents.  The output is packaged in the same shape as a
+            # normal expert output so downstream stages (evaluation,
+            # synthesis) work unchanged.
+            if not recruitment.experts:
+                return self._solo_execution(state, decision)
+
+            # Create subtasks based on decision
+            subtasks = self._create_subtasks(state, recruitment, decision)
+            
+            outputs: List[Dict[str, Any]] = []
+            success_count = 0
+            failure_count = 0
+            
+            # Execute subtasks in parallel
+            request_ctx = otel_context.get_current()
+            
+            def execute_subtask(
+                ctx: otel_context.Context,
+                expert: Expert,
+                subtask: str,
+            ) -> Dict[str, Any]:
+                token = otel_context.attach(ctx)
+                try:
+                    with self.tracer.start_as_current_span(
+                        f"orchestrator.execute_subtask.{expert.role}",
+                        kind=SpanKind.CLIENT,
+                    ):
+                        # Validate expert endpoint
+                        if not expert.endpoint or not isinstance(expert.endpoint, str) or not expert.endpoint.strip():
+                            error_msg = (
+                                f"Expert {expert.role} (index {expert.index}) has invalid endpoint: {expert.endpoint!r}. "
+                                f"Available URLs: {AGENT_B_URLS}"
+                            )
+                            self.logger.log(
+                                task_id=state.task_id,
+                                event_type="agentverse_execution_error",
+                                message=error_msg,
+                                extra={
+                                    "expert_role": expert.role,
+                                    "expert_index": expert.index,
+                                    "endpoint": expert.endpoint,
+                                    "available_urls": AGENT_B_URLS,
+                                },
+                            )
+                            raise ValueError(error_msg)
+                        
+                        prompt = EXECUTION_PROMPT.format(
+                            role=expert.role,
+                            contract=expert.contract,
+                            task=state.original_task,
+                            subtask=subtask,
+                            decision_context=decision.final_decision[:500],
+                        )
+                        
+                        headers: Dict[str, str] = {}
+                        propagate.inject(headers)
+                        request_id = self._new_llm_request_id(state)
+                        headers["X-Request-ID"] = request_id
+                        t0 = time.time()
+                        start_time_utc = datetime.fromtimestamp(t0, tz=timezone.utc).isoformat()
+                        try:
+                            response = self._call_agent_b(
+                                subtask=prompt,
+                                agent_b_role=expert.role,
+                                agent_b_contract=expert.contract,
+                                agent_b_url=expert.endpoint,
+                                headers=headers,
+                                task_id=state.task_id,
+                            )
+                            duration = time.time() - t0
+                            llm_prompt = response.get("llm_prompt") or prompt
+                            llm_response = response.get("llm_response") or response.get("output", "")
+                            self._record_llm_request(
+                                state,
+                                stage="execution",
+                                label=f"execute_{expert.role}",
+                                prompt=llm_prompt,
+                                response=llm_response,
+                                source=f"agent-b-{expert.index + 1}",
+                                agent_role=expert.role,
+                                endpoint=response.get("llm_endpoint"),
+                                duration_seconds=duration,
+                                request_id=request_id,
+                                otel=response.get("otel"),
+                                llm_meta=response.get("llm_meta"),
+                                start_time_utc=start_time_utc,
+                            )
+                            return {
+                                "expert": expert.role,
+                                "index": expert.index,
+                                "subtask": subtask,
+                                "output": response.get("output", ""),
+                                "success": True,
+                            }
+                        except Exception as exc:
+                            error_output = f"Execution failed: {exc}"
+                            self._record_llm_request(
+                                state,
+                                stage="execution",
+                                label=f"execute_{expert.role}",
+                                prompt=prompt,
+                                response=error_output,
+                                source=f"agent-b-{expert.index + 1}",
+                                agent_role=expert.role,
+                                duration_seconds=time.time() - t0,
+                                request_id=request_id,
+                                start_time_utc=start_time_utc,
+                                error=True,
+                            )
+                            return {
+                                "expert": expert.role,
+                                "index": expert.index,
+                                "subtask": subtask,
+                                "output": error_output,
+                                "success": False,
+                            }
+                except Exception as exc:
+                    return {
+                        "expert": expert.role,
+                        "index": expert.index,
+                        "subtask": subtask,
+                        "output": f"Execution failed: {exc}",
+                        "success": False,
+                    }
+                finally:
+                    otel_context.detach(token)
+            
+            with ThreadPoolExecutor(max_workers=len(recruitment.experts)) as executor:
+                futures = []
+                for expert, subtask in zip(recruitment.experts, subtasks):
+                    future = executor.submit(
+                        execute_subtask,
+                        request_ctx,
+                        expert,
+                        subtask,
+                    )
+                    futures.append(future)
+                
+                for future in as_completed(futures):
+                    result = future.result()
+                    outputs.append(result)
+                    if result.get("success"):
+                        success_count += 1
+                    else:
+                        failure_count += 1
+                    
+                    # Send progress update: execution result
+                    self._send_progress("execution_result", {
+                        "stage": "execution",
+                        "iteration": state.iteration,
+                        "expert": result.get("expert"),
+                        "success": result.get("success"),
+                        "output_preview": result.get("output", "")[:200],
+                        "completed": len(outputs),
+                        "total": len(recruitment.experts)
+                    })
+            
+            self.logger.log(
+                task_id=state.task_id,
+                event_type="agentverse_execution_complete",
+                message=f"Execution complete: {success_count} success, {failure_count} failures",
+                extra={"success": success_count, "failures": failure_count},
+            )
+            
+            result = ExecutionResult(
+                outputs=outputs,
+                success_count=success_count,
+                failure_count=failure_count,
+            )
+            
+            # Send progress update: execution complete
+            self._send_progress("stage_complete", {
+                "stage": "execution",
+                "stage_number": 3,
+                "iteration": state.iteration,
+                "success_count": success_count,
+                "failure_count": failure_count,
+                "total": len(outputs)
+            })
+            
+            return result
+    
+    def _solo_execution(
+        self,
+        state: AgentVerseState,
+        decision: DecisionResult,
+    ) -> ExecutionResult:
+        """Execute the task directly via Agent A's LLM when there are no sub-agents."""
+        prompt = SOLO_EXECUTION_PROMPT.format(
+            task=state.original_task,
+            decision_context=decision.final_decision[:2000],
+        )
+
+        headers: Dict[str, str] = {}
+        propagate.inject(headers)
+        try:
+            response, _llm_meta = self._call_llm_tracked(
+                state, prompt, stage="execution", label="solo_execution",
+                agent_role="orchestrator", headers=headers, max_tokens=2048,
+            )
+            output = {
+                "expert": "orchestrator",
+                "index": 0,
+                "subtask": "Solo execution by Agent A",
+                "output": response,
+                "success": True,
+            }
+            success, failure = 1, 0
+        except Exception as exc:
+            output = {
+                "expert": "orchestrator",
+                "index": 0,
+                "subtask": "Solo execution by Agent A",
+                "output": f"Execution failed: {exc}",
+                "success": False,
+            }
+            success, failure = 0, 1
+
+        result = ExecutionResult(
+            outputs=[output],
+            success_count=success,
+            failure_count=failure,
+        )
+
+        self._send_progress("execution_result", {
+            "stage": "execution",
+            "iteration": state.iteration,
+            "expert": "orchestrator",
+            "success": output["success"],
+            "output_preview": output["output"][:200],
+            "completed": 1,
+            "total": 1,
+        })
+        self._send_progress("stage_complete", {
+            "stage": "execution",
+            "stage_number": 3,
+            "iteration": state.iteration,
+            "success_count": success,
+            "failure_count": failure,
+            "total": 1,
+        })
+
+        return result
+
+    def _create_subtasks(
+        self,
+        state: AgentVerseState,
+        recruitment: RecruitmentResult,
+        decision: DecisionResult,
+    ) -> List[str]:
+        """Create subtasks for each expert based on the decision."""
+        subtasks = []
+        for expert in recruitment.experts:
+            subtask = f"""Based on your role as {expert.role}:
+
+Responsibilities: {expert.responsibilities}
+
+Execute your part of the plan:
+{decision.final_decision}
+
+Focus on what is relevant to your expertise.
+"""
+            subtasks.append(subtask)
+        return subtasks
+    
+    # ========================================================================
+    # Stage 4: Evaluation
+    # ========================================================================
+    
+    def evaluate_results(
+        self,
+        state: AgentVerseState,
+        execution: ExecutionResult,
+    ) -> EvaluationResult:
+        """
+        Stage 4: Evaluate if the goal has been achieved.
+        """
+        with self.tracer.start_as_current_span(
+            "orchestrator.evaluate_results",
+            kind=SpanKind.INTERNAL,
+        ) as span:
+            span.set_attribute("app.task_id", state.task_id)
+            span.set_attribute("app.iteration", state.iteration)
+            
+            # Send progress update: starting evaluation
+            self._send_progress("stage_start", {
+                "stage": "evaluation",
+                "stage_number": 4,
+                "iteration": state.iteration,
+                "message": "Evaluating results and determining if iteration is needed..."
+            })
+            
+            self.logger.log(
+                task_id=state.task_id,
+                event_type="agentverse_evaluation_start",
+                message="Starting evaluation",
+            )
+
+            # Format results for evaluation
+            results_text = "\n\n".join(
+                [
+                    f"[{output['expert']}]:\n{output['output']}"
+                    for output in execution.outputs
+                ]
+            )
+
+            # Build evaluation prompt with a token-aware guardrail that budgets
+            # for completion tokens and a safety margin, trimming the oldest
+            # part of the results when needed.
+            prompt, truncated_for_length, trimmed_tokens, final_prompt_tokens = (
+                self._build_evaluation_prompt(span, state, results_text)
+            )
+            
+            headers: Dict[str, str] = {}
+            propagate.inject(headers)
+            response, _llm_trace_meta = self._call_llm_tracked(
+                state, prompt, stage="evaluation", label="evaluate_results",
+                headers=headers, max_tokens=LLM_EVAL_MAX_TOKENS,
+            )
+            
+            parsed = self._parse_json_response(response, {})
+            
+            # Determine if we should iterate
+            goal_achieved = bool(parsed.get("goal_achieved", False))
+
+            raw_score = parsed.get("score")
+            try:
+                score = int(raw_score)
+            except (TypeError, ValueError):
+                # If the evaluator didn't provide a numeric score, treat this as
+                # a parse failure and fall back to 0 instead of a magic 50.
+                score = 0
+            score = max(0, min(100, score))
+
+            should_iterate = bool(parsed.get("should_iterate", False))
+            
+            # Extract structured criteria breakdown and rationale (before overriding)
+            criteria = parsed.get("criteria")
+            rationale = parsed.get("rationale")
+            
+            # Apply user's success threshold as source of truth:
+            # - Score >= threshold: accept and stop.
+            # - Score < threshold: do not accept; force another iteration (ignore LLM's goal_achieved).
+            if state.success_threshold > 0:
+                if score >= state.success_threshold:
+                    goal_achieved = True
+                    should_iterate = False
+                else:
+                    goal_achieved = False
+                    should_iterate = True  # Always try again when below threshold (until max iterations)
+            
+            # Don't iterate if we've reached max iterations
+            if state.iteration + 1 >= state.max_iterations:
+                should_iterate = False
+            if goal_achieved:
+                should_iterate = False
+            
+            feedback = parsed.get("feedback", "") or ""
+            missing_aspects = parsed.get("missing_aspects", [])
+
+            # Decide when we *must* synthesize feedback:
+            # - whenever the evaluator suggests iterating again, OR
+            # - whenever the goal is not achieved, OR
+            # - whenever score is below the success threshold (if threshold > 0).
+            needs_feedback = (
+                not feedback.strip()
+                and (
+                    should_iterate
+                    or not goal_achieved
+                    or (state.success_threshold > 0 and score < state.success_threshold)
+                )
+            )
+
+            # Fallback: if LLM returns empty feedback but we need feedback, always synthesize
+            if needs_feedback:
+                parts = []
+                if rationale:
+                    parts.append(f"Previous rationale: {rationale}")
+                if missing_aspects:
+                    parts.append(f"Missing or weak aspects: {', '.join(str(x) for x in missing_aspects)}.")
+                # If we have no structured rationale/aspects at all (e.g., JSON/Markdown parse failure),
+                # still provide a generic, actionable message so the user/next iteration can adapt.
+                if not parts:
+                    parts.append(
+                        f"Score {score}/100 is below the acceptance threshold of {state.success_threshold}. "
+                        "The evaluator did not provide detailed feedback; consider refining the expert "
+                        "team composition, clarifying the task instructions, or tightening the evaluation "
+                        "criteria so the next iteration can focus on the gaps."
+                    )
+                feedback = " ".join(parts).strip()
+            
+            result = EvaluationResult(
+                goal_achieved=goal_achieved,
+                score=score,
+                criteria=criteria,
+                rationale=rationale,
+                feedback=feedback,
+                missing_aspects=missing_aspects,
+                should_iterate=should_iterate,
+            )
+            
+            # If we had to truncate the evaluation prompt for length, ensure this
+            # is visible in telemetry and in the UI via the feedback field.
+            if truncated_for_length:
+                span.set_attribute("app.evaluation_prompt_truncation_note", True)
+                if trimmed_tokens is not None and final_prompt_tokens is not None:
+                    note = (
+                        "[System] Evaluation input was truncated to respect the model's "
+                        "context window. "
+                        f"Approximately {trimmed_tokens} earlier result tokens were "
+                        f"dropped; final prompt is ~{final_prompt_tokens} tokens."
+                    )
+                else:
+                    note = (
+                        "[System] Evaluation input was truncated to fit within the "
+                        "model's context window. "
+                        f"(Approx. prompt length: {len(prompt)} chars)"
+                    )
+                if result.feedback:
+                    result.feedback = f"{result.feedback}\n\n{note}"
+                else:
+                    result.feedback = note
+            
+            self.logger.log(
+                task_id=state.task_id,
+                event_type="agentverse_evaluation_complete",
+                message=f"Evaluation: goal_achieved={goal_achieved}, score={score}",
+                extra={
+                    "goal_achieved": goal_achieved,
+                    "score": score,
+                    "should_iterate": should_iterate,
+                },
+            )
+            
+            span.set_attribute("app.goal_achieved", goal_achieved)
+            span.set_attribute("app.score", score)
+            
+            # Send progress update: evaluation complete
+            self._send_progress("stage_complete", {
+                "stage": "evaluation",
+                "stage_number": 4,
+                "iteration": state.iteration,
+                "goal_achieved": goal_achieved,
+                "score": score,
+                "should_iterate": should_iterate,
+                "feedback": result.feedback
+            })
+            
+            return result
+    
+    # ========================================================================
+    # Main Workflow
+    # ========================================================================
+    
+    def run_workflow(
+        self,
+        task: str,
+        task_id: str,
+        max_iterations: int = 3,
+        success_threshold: int = 70,
+        force_structure: Optional[str] = None,
+        force_agent_count: Optional[int] = None,
+        full_mesh_max_rounds: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """
+        Run the complete AgentVerse 4-stage workflow.
+        success_threshold: score (0-100) required to accept and stop iterating.
+        force_structure: if "horizontal", "vertical", or "full_mesh",
+            overrides the LLM's own choice of discussion structure.
+            None (default) = LLM decides.
+        force_agent_count: if set, clamps the recruited expert list to exactly
+            this many agents (trimming or padding with executor defaults).
+            0 = solo mode (Agent A handles the workflow without sub-agents).
+            None (default) = use whatever the LLM recruits.
+        full_mesh_max_rounds: override FULL_MESH_MAX_ROUNDS env var for this
+            request only. None = use the env var (default 1).
+        """
+        with self.tracer.start_as_current_span(
+            "orchestrator.run_workflow",
+            kind=SpanKind.INTERNAL,
+        ) as span:
+            span.set_attribute("app.task_id", task_id)
+            span.set_attribute("app.success_threshold", success_threshold)
+            if force_structure:
+                span.set_attribute("app.force_structure", force_structure)
+            if force_agent_count is not None:
+                span.set_attribute("app.force_agent_count", force_agent_count)
+
+            _force_agent_count: Optional[int] = None
+            if force_agent_count is not None:
+                try:
+                    n = int(force_agent_count)
+                    if n >= 0:
+                        _force_agent_count = n
+                except (TypeError, ValueError):
+                    pass
+
+            _full_mesh_max_rounds: Optional[int] = None
+            if full_mesh_max_rounds is not None:
+                try:
+                    n = int(full_mesh_max_rounds)
+                    if n >= 1:
+                        _full_mesh_max_rounds = n
+                except (TypeError, ValueError):
+                    pass
+
+            state = AgentVerseState(
+                task_id=task_id,
+                original_task=task,
+                max_iterations=max_iterations,
+                success_threshold=min(100, max(0, success_threshold)),
+                force_structure=force_structure if force_structure in ("horizontal", "vertical", "full_mesh") else None,
+                force_agent_count=_force_agent_count,
+                full_mesh_max_rounds=_full_mesh_max_rounds,
+            )
+            
+            self.logger.log(
+                task_id=task_id,
+                event_type="agentverse_workflow_start",
+                message="Starting AgentVerse workflow",
+                extra={"max_iterations": max_iterations},
+            )
+            
+            feedback: Optional[str] = None
+            workflow_error: Optional[str] = None
+
+            try:
+                while state.iteration < state.max_iterations:
+                    iteration_start = time.time()
+
+                    # Send progress update: starting iteration
+                    self._send_progress("iteration_start", {
+                        "iteration": state.iteration,
+                        "max_iterations": state.max_iterations,
+                        "message": f"Starting iteration {state.iteration + 1} of {state.max_iterations}..."
+                    })
+
+                    # Stage 1: Expert Recruitment
+                    state.recruitment = self.recruit_experts(state, feedback)
+
+                    # Stage 2: Collaborative Decision-Making
+                    state.decision = self.collaborative_decision(state, state.recruitment)
+
+                    # Stage 3: Action Execution
+                    state.execution = self.execute_actions(
+                        state, state.recruitment, state.decision
+                    )
+
+                    # Stage 4: Evaluation
+                    state.evaluation = self.evaluate_results(state, state.execution)
+
+                    # Record iteration
+                    iteration_time = time.time() - iteration_start
+                    iteration_entry = {
+                        "iteration": state.iteration,
+                        "duration_seconds": round(iteration_time, 2),
+                        "recruitment": {
+                            "experts": [e.role for e in state.recruitment.experts],
+                            "structure": state.recruitment.communication_structure.value,
+                        },
+                        "decision": {
+                            "consensus": state.decision.consensus_reached,
+                            "rounds": len(state.decision.discussion_rounds),
+                        },
+                        "execution": {
+                            "success": state.execution.success_count,
+                            "failures": state.execution.failure_count,
+                        },
+                        "evaluation": {
+                            "goal_achieved": state.evaluation.goal_achieved,
+                            "score": state.evaluation.score,
+                            "criteria": state.evaluation.criteria,
+                            "rationale": state.evaluation.rationale,
+                            "feedback": state.evaluation.feedback or "",
+                        },
+                    }
+                    state.iteration_history.append(iteration_entry)
+
+                    # Stream iteration_complete so UI can update iteration history live
+                    self._send_progress("iteration_complete", {
+                        "iteration_history": state.iteration_history,
+                    })
+
+                    # Check if we should continue
+                    if not state.evaluation.should_iterate:
+                        break
+
+                    feedback = state.evaluation.feedback
+                    state.iteration += 1
+
+                # Generate final output
+                self._send_progress("stage_start", {
+                    "stage": "synthesis",
+                    "stage_number": 5,
+                    "iteration": state.iteration,
+                    "message": "Generating final synthesized output..."
+                })
+
+                state.final_output = self._generate_final_output(state)
+                state.completed = True
+
+                # Send progress update: synthesis complete
+                self._send_progress("stage_complete", {
+                    "stage": "synthesis",
+                    "stage_number": 5,
+                    "iteration": state.iteration,
+                    "final_output": state.final_output
+                })
+
+                self.logger.log(
+                    task_id=task_id,
+                    event_type="agentverse_workflow_complete",
+                    message="AgentVerse workflow complete",
+                    extra={
+                        "iterations": state.iteration + 1,
+                        "final_score": state.evaluation.score if state.evaluation else 0,
+                    },
+                )
+
+            except Exception as exc:
+                # Record the failure and emit an error progress event so that
+                # streaming UIs know the workflow aborted.  We still return
+                # whatever partial state was built up so the UI can show which
+                # LLM calls completed before the failure.
+                workflow_error = str(exc)
+                span.set_attribute("app.workflow_error", workflow_error)
+                self.logger.log(
+                    task_id=task_id,
+                    event_type="agentverse_workflow_error",
+                    message=f"Workflow aborted: {workflow_error}",
+                )
+                self._send_progress("workflow_error", {
+                    "error": workflow_error,
+                    "completed_llm_calls": len(state.llm_requests),
+                    "failed_calls": sum(1 for r in state.llm_requests if r.get("error")),
+                })
+
+            response = self._state_to_response(state)
+            if workflow_error is not None:
+                response["workflow_error"] = workflow_error
+                response["partial"] = True
+            return response
+    
+    def _generate_final_output(self, state: AgentVerseState) -> str:
+        """Generate the final synthesized output."""
+        if not state.execution:
+            return "No execution results available."
+        
+        _max_output_chars = 8000
+        def _cap(text: str) -> str:
+            if len(text) <= _max_output_chars:
+                return text
+            return text[:_max_output_chars] + f"\n... [truncated {len(text) - _max_output_chars} chars]"
+
+        results_text = "\n\n".join([
+            f"[{output['expert']}]:\n{_cap(output['output'])}"
+            for output in state.execution.outputs
+        ])
+        
+        iteration_summary = "\n".join([
+            f"Iteration {h['iteration'] + 1}: score={h['evaluation']['score']}, "
+            f"experts={h['recruitment']['experts']}"
+            for h in state.iteration_history
+        ])
+        
+        evaluation_text = ""
+        if state.evaluation:
+            evaluation_text = f"""
+Score: {state.evaluation.score}/100
+Goal Achieved: {state.evaluation.goal_achieved}
+Feedback: {state.evaluation.feedback}
+"""
+        
+        prompt = FINAL_SYNTHESIS_PROMPT.format(
+            task=state.original_task,
+            iteration_summary=iteration_summary or "(Single iteration)",
+            results=results_text,
+            evaluation=evaluation_text,
+        )
+        
+        headers: Dict[str, str] = {}
+        propagate.inject(headers)
+        response, _llm_meta = self._call_llm_tracked(
+            state, prompt, stage="synthesis", label="final_output",
+            headers=headers, max_tokens=4096,
+        )
+        return response
+    
+    def _state_to_response(self, state: AgentVerseState) -> Dict[str, Any]:
+        """Convert state to API response format."""
+        # Calculate total duration from iteration history
+        total_duration = sum(h.get("duration_seconds", 0) for h in state.iteration_history)
+        
+        return {
+            "task_id": state.task_id,
+            "original_task": state.original_task,
+            "completed": state.completed,
+            "iterations": state.iteration + 1,
+            "duration_seconds": total_duration,
+            "final_output": state.final_output,
+            
+            # Detailed stage results
+            "stages": {
+                "recruitment": {
+                    "experts": [
+                        {
+                            "role": e.role,
+                            "responsibilities": e.responsibilities,
+                            "endpoint": e.endpoint,
+                        }
+                        for e in (state.recruitment.experts if state.recruitment else [])
+                    ],
+                    "communication_structure": (
+                        state.recruitment.communication_structure.value
+                        if state.recruitment else None
+                    ),
+                    "reasoning": state.recruitment.reasoning if state.recruitment else "",
+                },
+                "decision": {
+                    "final_decision": state.decision.final_decision if state.decision else "",
+                    "consensus_reached": state.decision.consensus_reached if state.decision else False,
+                    "structure_used": state.decision.structure_used if state.decision else "",
+                    "discussion_rounds": state.decision.discussion_rounds if state.decision else [],
+                    "solver_role": state.decision.solver_role if state.decision else None,
+                    "reviewer_roles": state.decision.reviewer_roles if state.decision else [],
+                },
+                "execution": {
+                    "outputs": state.execution.outputs if state.execution else [],
+                    "success_count": state.execution.success_count if state.execution else 0,
+                    "failure_count": state.execution.failure_count if state.execution else 0,
+                },
+                "evaluation": {
+                    "goal_achieved": state.evaluation.goal_achieved if state.evaluation else False,
+                    "score": state.evaluation.score if state.evaluation else 0,
+                    "criteria": state.evaluation.criteria if state.evaluation else None,
+                    "rationale": state.evaluation.rationale if state.evaluation else None,
+                    "feedback": state.evaluation.feedback if state.evaluation else "",
+                    "missing_aspects": state.evaluation.missing_aspects if state.evaluation else [],
+                },
+            },
+            
+            # Iteration history
+            "iteration_history": state.iteration_history,
+            
+            # Detailed LLM request/response log for each call
+            "llm_requests": state.llm_requests,
+        }

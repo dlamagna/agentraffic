@@ -1,0 +1,77 @@
+[build-system]
+requires = ["setuptools>=71", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "agentraffic"
+version = "0.1.0"
+description = "Measurement framework for studying how coordination topology shapes LLM-call traffic in multi-agent systems"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+authors = [
+    { name = "Davide Lamagna",          email = "davidelamagna17@gmail.com" },
+    { name = "Berta Serracanta" },
+    { name = "Alberto Rodriguez Natal" },
+    { name = "Gábor Rétvári" },
+    { name = "Albert Cabellos" },
+]
+keywords = ["multi-agent", "llm", "traffic-modelling", "measurement", "agentverse"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "httpx>=0.27.0",
+    "aiohttp>=3.9.0",
+    "opentelemetry-api>=1.25.0",
+    "opentelemetry-sdk>=1.25.0",
+    "opentelemetry-exporter-otlp>=1.25.0",
+    "prometheus-client",
+]
+
+[project.optional-dependencies]
+llm = ["vllm==0.12.0"]
+queue = ["fastmcp>=0.4.0"]
+dev = [
+    "black>=24.0",
+    "ruff>=0.4.0",
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+]
+analysis = [
+    "matplotlib>=3.8",
+    "numpy>=1.26",
+    "scipy>=1.12",
+]
+
+[project.urls]
+Homepage   = "https://github.com/dlamagna/agentraffic"
+Repository = "https://github.com/dlamagna/agentraffic"
+Issues     = "https://github.com/dlamagna/agentraffic/issues"
+
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["agents*", "llm*"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

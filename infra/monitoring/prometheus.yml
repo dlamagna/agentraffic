@@ -1,0 +1,77 @@
+# Prometheus configuration for AgenTraffic
+global:
+  scrape_interval: 1s
+  evaluation_interval: 1s
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # cAdvisor - Container metrics (CPU, memory, network)
+  # In host-mode cAdvisor, metrics are exposed on the host at :8080.
+  # We use host.docker.internal for Docker Desktop, with a Linux fallback.
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['host.docker.internal:8080']
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: 'host.docker.internal:(.*)'
+        target_label: __address__
+        replacement: '172.17.0.1:$1'
+    metric_relabel_configs:
+    - source_labels: [__name__]
+      regex: 'container_blkio_device_usage_total|container_tasks_state|container_memory_failures_total|container_fs_.*'
+      action: drop
+
+  # TCP Metrics Collector (runs on host, captures packet-level metrics)
+  # Start with: python scripts/monitoring/tcp_metrics_collector.py
+  # (uses dumpcap — no sudo required; port 9100/9101 are taken by node_exporter/cAdvisor)
+  - job_name: 'tcp-metrics'
+    static_configs:
+      # Use host.docker.internal on Docker Desktop, or host IP on Linux
+      - targets: ['host.docker.internal:9102']
+    scrape_interval: 1s
+    # Fallback for Linux (Docker doesn't have host.docker.internal)
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: 'host.docker.internal:(.*)'
+        target_label: __address__
+        replacement: '172.17.0.1:$1'
+
+  # LLM Backend metrics (if exposed)
+  - job_name: 'llm-backend'
+    static_configs:
+      - targets: ['llm-backend:8000']
+    metrics_path: /metrics
+    scrape_interval: 1s
+
+  # Agent A metrics (if we add a /metrics endpoint)
+  - job_name: 'agent-a'
+    static_configs:
+      - targets: ['agent-a:8101']
+    metrics_path: /metrics
+    scrape_interval: 1s
+    # Don't fail if endpoint doesn't exist yet
+    honor_labels: true
+
+  # Agent B metrics
+  - job_name: 'agent-b'
+    static_configs:
+      - targets:
+        - 'agent-b:8102'
+        - 'agent-b-2:8103'
+        - 'agent-b-3:8104'
+        - 'agent-b-4:8105'
+        - 'agent-b-5:8106'
+    metrics_path: /metrics
+    scrape_interval: 1s
+    honor_labels: true
+
+  # Docker Mapping Exporter - Maps Docker IDs to human-readable names
+  - job_name: 'docker-mapping'
+    static_configs:
+      - targets: ['docker-mapping-exporter:9101']
+    metrics_path: /metrics
+    scrape_interval: 1s

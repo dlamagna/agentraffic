@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>agentraffic</title>
+  <link rel="stylesheet" href="common/css/base.css">
+  <style>
+    .benchmark-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .benchmark-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: border-color 0.15s;
+    }
+    .benchmark-card:hover {
+      border-color: var(--border-active);
+    }
+    .benchmark-card h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+    .benchmark-card p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      flex: 1;
+    }
+    .benchmark-card a.open-btn {
+      margin-top: 8px;
+      display: inline-block;
+      padding: 8px 16px;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      text-align: center;
+      transition: background 0.15s;
+    }
+    .benchmark-card a.open-btn:hover {
+      background: var(--accent-hover);
+      text-decoration: none;
+    }
+    .page-title {
+      margin-bottom: 4px;
+    }
+    .page-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <h1>agentraffic</h1>
+</header>
+
+<main class="container">
+  <h2 class="page-title">Tools</h2>
+  <p class="page-subtitle">Select a dashboard to view live metrics, run tasks, or inspect results.</p>
+
+  <div class="benchmark-list">
+
+    <div class="benchmark-card">
+      <h2>AgentVerse</h2>
+      <p>4-stage multi-agent orchestration: recruitment → discussion → execution → evaluation. Run and inspect topology experiments (sequential, star, full mesh).</p>
+      <a class="open-btn" href="agentverse/">Open Dashboard</a>
+    </div>
+
+    <div class="benchmark-card">
+      <h2>Chat</h2>
+      <p>Direct interface for sending tasks to Agent A. Useful for manual testing and one-off runs.</p>
+      <a class="open-btn" href="chat/">Open Chat</a>
+    </div>
+
+  </div>
+</main>
+
+</body>
+</html>

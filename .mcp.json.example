@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "testbed-queue": {
+      "type": "stdio",
+      "command": "/absolute/path/to/agentraffic/.venv/bin/python3",
+      "args": ["-m", "scripts.queue.server"],
+      "cwd": "/absolute/path/to/agentraffic",
+      "env": {
+        "PYTHONPATH": "/absolute/path/to/agentraffic",
+        "VIRTUAL_ENV": "/absolute/path/to/agentraffic/.venv"
+      }
+    }
+  }
+}

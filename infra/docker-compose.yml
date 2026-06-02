@@ -1,0 +1,251 @@
+# =============================================================================
+# AgenTraffic — core services
+# =============================================================================
+# Brings up:
+#   llm-backend   — vLLM-based LLM inference (GPU required)
+#   agent-a       — Orchestrator (AgentVerse workflow + /task endpoint)
+#   agent-b … -4  — Worker agents (4 replicas → supports up to 4 sub-agents)
+#   jaeger        — Distributed tracing UI
+#   chat-ui       — AgentVerse result viewer
+#
+# Usage:
+#   # Core stack only
+#   docker compose -f infra/docker-compose.yml up -d
+#
+#   # Core + monitoring (Prometheus / Grafana / cAdvisor)
+#   docker compose -f infra/docker-compose.yml \
+#                  -f infra/docker-compose.monitoring.yml up -d
+#
+# Configuration: copy infra/.env.example → infra/.env and set HF_TOKEN.
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # LLM backend — AsyncVLLM engine exposed on :8000/chat
+  # ---------------------------------------------------------------------------
+  llm-backend:
+    build:
+      context: ..
+      dockerfile: llm/Dockerfile
+    container_name: llm-backend
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - HF_TOKEN=${HF_TOKEN}
+      - HUGGINGFACE_HUB_TOKEN=${HUGGINGFACE_HUB_TOKEN:-${HF_TOKEN}}
+      - HF_HUB_DISABLE_XET=${HF_HUB_DISABLE_XET:-1}
+      - LLM_MODEL=${LLM_MODEL:-meta-llama/Llama-3.2-3B-Instruct}
+      - LLM_DTYPE=${LLM_DTYPE:-float16}
+      - LLM_MAX_NUM_SEQS=${LLM_MAX_NUM_SEQS:-8}
+      - LLM_MAX_NUM_BATCHED_TOKENS=${LLM_MAX_NUM_BATCHED_TOKENS:-11200}
+      - LLM_MAX_TOKENS=${LLM_MAX_TOKENS:-6144}
+      - LLM_MAX_MODEL_LEN=${LLM_MAX_MODEL_LEN:-11200}
+      - LLM_GPU_MEMORY_UTILIZATION=${LLM_GPU_MEMORY_UTILIZATION:-0.70}
+      - LLM_PROMPT_SAFETY_MARGIN_TOKENS=${LLM_PROMPT_SAFETY_MARGIN_TOKENS:-128}
+      - LLM_METRICS_ENABLED=${LLM_METRICS_ENABLED:-1}
+      - LLM_METRICS_INCLUDE_TOKENS=${LLM_METRICS_INCLUDE_TOKENS:-1}
+      - LLM_METRICS_PREFIX=${LLM_METRICS_PREFIX:-llm}
+      - LOG_LLM_REQUESTS=${LOG_LLM_REQUESTS:-0}
+      - LLM_LOG_MAX_CHARS=${LLM_LOG_MAX_CHARS:-500}
+    command:
+      - "python3"
+      - "-m"
+      - "llm.serve_llm"
+      - "--model"
+      - "${LLM_MODEL:-meta-llama/Llama-3.2-3B-Instruct}"
+      - "--host"
+      - "0.0.0.0"
+      - "--port"
+      - "8000"
+      - "--max-model-len"
+      - "${LLM_MAX_MODEL_LEN:-11200}"
+      - "--dtype"
+      - "${LLM_DTYPE:-float16}"
+      - "--max-num-seqs"
+      - "${LLM_MAX_NUM_SEQS:-8}"
+      - "--max-num-batched-tokens"
+      - "${LLM_MAX_NUM_BATCHED_TOKENS:-11200}"
+      - "--gpu-memory-utilization"
+      - "${LLM_GPU_MEMORY_UTILIZATION:-0.70}"
+    volumes:
+      - hf_model_cache:/root/.cache/huggingface
+    ports:
+      - "8000:8000"
+    networks:
+      - agent-net
+    healthcheck:
+      test:
+        - "CMD"
+        - "python3"
+        - "-c"
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2).read()"
+      interval: 15s
+      timeout: 3s
+      retries: 40
+      start_period: 600s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: ["gpu"]
+
+  # ---------------------------------------------------------------------------
+  # Agent A — orchestrator
+  # ---------------------------------------------------------------------------
+  agent-a:
+    build:
+      context: ..
+      dockerfile: agents/Dockerfile
+    container_name: agent-a
+    environment:
+      - LLM_SERVER_URL=${LLM_SERVER_URL:-http://llm-backend:8000/chat}
+      - AGENT_A_PORT=8101
+      - OTEL_SERVICE_NAME=agent-a
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318/v1/traces}
+      # Worker agent URLs — one per sub-agent slot (4 replicas match paper experiments)
+      - AGENT_B_URLS=${AGENT_B_URLS:-http://agent-b:8102/subtask,http://agent-b-2:8103/subtask,http://agent-b-3:8104/subtask,http://agent-b-4:8105/subtask}
+      - LLM_TIMEOUT_SECONDS=${LLM_TIMEOUT_SECONDS:-180}
+      - AGENT_B_TIMEOUT_SECONDS=${AGENT_B_TIMEOUT_SECONDS:-120}
+      - MAX_PARALLEL_WORKERS=${MAX_PARALLEL_WORKERS:-5}
+      - LLM_MODEL=${LLM_MODEL:-meta-llama/Llama-3.2-3B-Instruct}
+      - LLM_MAX_MODEL_LEN=${LLM_MAX_MODEL_LEN:-11200}
+      - LLM_MAX_TOKENS=${LLM_MAX_TOKENS:-6144}
+      - LLM_PROMPT_SAFETY_MARGIN_TOKENS=${LLM_PROMPT_SAFETY_MARGIN_TOKENS:-128}
+      - FULL_MESH_MAX_ROUNDS=${FULL_MESH_MAX_ROUNDS:-3}
+      - DISCUSSION_HISTORY_MAX_CHARS=${DISCUSSION_HISTORY_MAX_CHARS:-6000}
+      - LOG_LLM_REQUESTS=${LOG_LLM_REQUESTS:-0}
+    depends_on:
+      llm-backend:
+        condition: service_healthy
+    ports:
+      - "8101:8101"
+    command: ["python", "-m", "agents.agent_a.server"]
+    networks:
+      - agent-net
+    volumes:
+      - ../logs:/app/logs
+
+  # ---------------------------------------------------------------------------
+  # Agent B replicas — worker agents
+  # ---------------------------------------------------------------------------
+  agent-b:
+    build:
+      context: ..
+      dockerfile: agents/Dockerfile
+    container_name: agent-b
+    environment:
+      - LLM_SERVER_URL=${LLM_SERVER_URL:-http://llm-backend:8000/chat}
+      - AGENT_B_PORT=8102
+      - OTEL_SERVICE_NAME=agent-b-1
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318/v1/traces}
+      - LLM_TIMEOUT_SECONDS=${LLM_TIMEOUT_SECONDS:-180}
+      - LOG_LLM_REQUESTS=${LOG_LLM_REQUESTS:-0}
+    depends_on:
+      llm-backend:
+        condition: service_healthy
+    ports:
+      - "8102:8102"
+    command: ["python", "-m", "agents.agent_b.server"]
+    networks:
+      - agent-net
+
+  agent-b-2:
+    build:
+      context: ..
+      dockerfile: agents/Dockerfile
+    container_name: agent-b-2
+    environment:
+      - LLM_SERVER_URL=${LLM_SERVER_URL:-http://llm-backend:8000/chat}
+      - AGENT_B_PORT=8103
+      - OTEL_SERVICE_NAME=agent-b-2
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318/v1/traces}
+      - LLM_TIMEOUT_SECONDS=${LLM_TIMEOUT_SECONDS:-180}
+      - LOG_LLM_REQUESTS=${LOG_LLM_REQUESTS:-0}
+    depends_on:
+      llm-backend:
+        condition: service_healthy
+    ports:
+      - "8103:8103"
+    command: ["python", "-m", "agents.agent_b.server"]
+    networks:
+      - agent-net
+
+  agent-b-3:
+    build:
+      context: ..
+      dockerfile: agents/Dockerfile
+    container_name: agent-b-3
+    environment:
+      - LLM_SERVER_URL=${LLM_SERVER_URL:-http://llm-backend:8000/chat}
+      - AGENT_B_PORT=8104
+      - OTEL_SERVICE_NAME=agent-b-3
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318/v1/traces}
+      - LLM_TIMEOUT_SECONDS=${LLM_TIMEOUT_SECONDS:-180}
+      - LOG_LLM_REQUESTS=${LOG_LLM_REQUESTS:-0}
+    depends_on:
+      llm-backend:
+        condition: service_healthy
+    ports:
+      - "8104:8104"
+    command: ["python", "-m", "agents.agent_b.server"]
+    networks:
+      - agent-net
+
+  agent-b-4:
+    build:
+      context: ..
+      dockerfile: agents/Dockerfile
+    container_name: agent-b-4
+    environment:
+      - LLM_SERVER_URL=${LLM_SERVER_URL:-http://llm-backend:8000/chat}
+      - AGENT_B_PORT=8105
+      - OTEL_SERVICE_NAME=agent-b-4
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318/v1/traces}
+      - LLM_TIMEOUT_SECONDS=${LLM_TIMEOUT_SECONDS:-180}
+      - LOG_LLM_REQUESTS=${LOG_LLM_REQUESTS:-0}
+    depends_on:
+      llm-backend:
+        condition: service_healthy
+    ports:
+      - "8105:8105"
+    command: ["python", "-m", "agents.agent_b.server"]
+    networks:
+      - agent-net
+
+  # ---------------------------------------------------------------------------
+  # Jaeger — distributed tracing
+  # ---------------------------------------------------------------------------
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: jaeger
+    ports:
+      - "16686:16686"   # Jaeger UI
+      - "4317:4317"     # OTLP gRPC
+      - "4318:4318"     # OTLP HTTP
+    networks:
+      - agent-net
+
+  # ---------------------------------------------------------------------------
+  # Chat UI — AgentVerse result viewer
+  # ---------------------------------------------------------------------------
+  chat-ui:
+    build:
+      context: ..
+      dockerfile: ui/Dockerfile
+    container_name: chat-ui
+    ports:
+      - "3000:3000"
+    networks:
+      - agent-net
+    depends_on:
+      - agent-a
+
+networks:
+  agent-net:
+    driver: bridge
+
+volumes:
+  hf_model_cache:
