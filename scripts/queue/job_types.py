@@ -42,14 +42,14 @@ JOB_CONFIGS: dict[JobType, JobTypeConfig] = {
         output_glob="data/agentverse/experiment_*",
         output_flag="-o",
         duration_config={
-            # Empirical per-run medians from the paper (Table 2):
-            #   horizontal ~81s, vertical ~105s, full_mesh ~32s
+            # Empirical per-run times from observed queue jobs (5-run and 100-run samples).
+            # For topology="all" the estimator sums all three values (not averages),
+            # because N runs with topology=all executes N runs × 3 topologies.
             "setup_seconds": 30,
             "per_run_seconds": {
-                "horizontal": 82,
-                "vertical":   105,
-                "full_mesh":  32,
-                "all":        73,   # average across all three
+                "horizontal": 101,
+                "vertical":   129,
+                "full_mesh":  39,
             },
         },
         param_docs={

@@ -71,7 +71,11 @@ def format_duration(seconds: float) -> str:
 def _estimate_agentverse(params: dict, dc: dict) -> float:
     runs     = int(params.get("runs", 500))
     topology = params.get("topology", "all")
-    per_run  = dc["per_run_seconds"].get(topology, dc["per_run_seconds"]["all"])
+    prs = dc["per_run_seconds"]
+    if topology == "all":
+        per_run = sum(prs[t] for t in ("horizontal", "vertical", "full_mesh"))
+    else:
+        per_run = prs.get(topology, sum(prs.values()))
     return dc["setup_seconds"] + runs * per_run
 
 
