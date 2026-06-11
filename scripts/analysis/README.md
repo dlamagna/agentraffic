@@ -48,6 +48,30 @@ Figures land in `<output_path>/figures/` alongside the experiment JSONL.
 
 ---
 
+## Generating the data
+
+The paper figures are produced from experiment output created by `scripts/experiment/run_agentverse.sh`. To reproduce:
+
+```bash
+# 1. Start the stack
+scripts/deploy/deploy.sh
+
+# 2. Collect data (all three topologies, 500 runs each — matches the paper)
+scripts/experiment/run_agentverse.sh
+
+# 3. Plot figures
+python scripts/analysis/plot_paper_figures.py data/agentverse/<experiment_dir>
+```
+
+A quick smoke-test (10 runs, full_mesh only) takes ~7 minutes and produces valid figures:
+
+```bash
+scripts/experiment/run_agentverse.sh --topology full_mesh --runs 10
+python scripts/analysis/plot_paper_figures.py data/agentverse/<experiment_dir>
+```
+
+---
+
 ## Notes
 
 - **Reasoning-phase IATs**: Figs 3 and 4 filter out the fan-out mode (IAT ≤ 50 ms) before fitting. The 50 ms threshold is the visible trough between the two modes in the bimodal distributions.

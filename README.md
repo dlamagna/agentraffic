@@ -111,7 +111,7 @@ LLM_MODEL=meta-llama/Llama-3.1-8B-Instruct
 If you change the model, recalculate the KV-cache token limits for your GPU:
 
 ```bash
-python scripts/deploy/kv_cache_calc.py --free-gb <FREE_GiB>
+python scripts/deploy/kv_cache_calc.py -c 8   # 8 concurrent slots; reads GPU memory from nvidia-smi
 ```
 
 ### 2. Start the stack
