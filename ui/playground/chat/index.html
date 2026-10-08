@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat with Agent A · agentraffic</title>
+  <script>
+    /* Theme before first paint: the saved choice, else light (see common/js/theme.js). */
+    (function () {
+      var t;
+      try { t = localStorage.getItem('agentraffic-theme'); } catch (e) {}
+      if (t !== 'light' && t !== 'dark') t = 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  <link rel="stylesheet" href="../../common/css/theme.css">
+  <link rel="stylesheet" href="../../common/css/site.css">
+  <script type="module" src="../../common/js/theme.js"></script>
+  <script type="module" src="../../common/js/nav.js"></script>
+  <style>
+    /* Colours: common/css/theme.css tokens (light / dark). */
+    :root {
+      --console-bg: #f7f7f5;           /* response panes */
+      --console-fg: #1a1c21;
+      --console-border: #e0dfd9;
+    }
+    :root[data-theme="dark"] {
+      --console-bg: #0b1021;
+      --console-fg: #e6edf3;
+      --console-border: #0b1021;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: var(--font-sans); margin: 24px; background: var(--bg-primary); color: var(--text-primary); }
+    a { color: var(--accent-text); }
+    h1 { margin-bottom: 8px; }
+    .page-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .page-head h1 { margin: 0; font-size: 1.6rem; font-weight: 600; }
+    .page-links { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+    .page-links .site-links { gap: 10px; }
+    /* header links from common/js/nav.js (Docs panel: common/css/site.css) */
+    .page-links a, .page-links .site-menu__button { padding: 7px 14px; border-radius: var(--radius-md); font-size: 14px; text-decoration: none; background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-primary); }
+    .page-links a:hover, .page-links .site-menu__button:hover, .page-links .site-menu__button[aria-expanded="true"] { background: var(--bg-tertiary); color: var(--text-primary); }
+    .page-links .site-link--accent { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+    .page-links .site-link--accent:hover { background: var(--accent-hover); color: var(--on-accent); }
+    .layout { display: flex; gap: 16px; align-items: flex-start; }
+    .panel { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 16px; max-width: 1100px; flex: 1 1 auto; min-width: 0; }
+    .sidebar { width: 280px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 12px; flex-shrink: 0; }
+    .sidebar h2 { font-size: 16px; margin: 6px 0 12px; }
+    .history-section { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); max-height: 400px; overflow-y: auto; }
+    .history-section h3 { font-size: 14px; margin: 0 0 10px; color: var(--text-primary); }
+    .title-bar { margin-bottom: 16px; }
+    .title-bar label { display: inline-block; margin-right: 8px; }
+    .title-bar input { width: 400px; max-width: 100%; }
+    .history-list { display: flex; flex-direction: column; gap: 8px; }
+    .history-item { padding: 10px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-inset); cursor: pointer; }
+    .history-item:hover { background: var(--bg-tertiary); border-color: var(--border-active); }
+    .history-title { font-weight: 600; font-size: 14px; color: var(--text-primary); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .history-time { font-size: 12px; color: var(--text-muted); }
+    .history-empty { font-size: 13px; color: var(--text-muted); font-style: italic; }
+    .template-list { display: flex; flex-direction: column; gap: 8px; }
+    .template-btn { text-align: left; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-inset); color: var(--text-primary); cursor: pointer; font: inherit; font-size: 14px; }
+    .template-btn:hover { background: var(--bg-tertiary); }
+    label { display: block; margin: 8px 0 4px; font-weight: 600; }
+    input, select, textarea { font: inherit; font-size: 14px; color: var(--text-primary); background: var(--bg-input); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 6px 8px; }
+    input[type="radio"] { padding: 0; accent-color: var(--accent); }
+    input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 0; border-color: var(--focus-ring); }
+    textarea { width: 100%; min-height: 120px; }
+    .compact-textarea { min-height: 70px; }
+    input[type="text"], input[type="number"], select { width: 100%; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .row > div { flex: 1 1 260px; min-width: 0; }
+    button { padding: 10px 16px; font-size: 15px; cursor: pointer; }
+    #sendBtn { background: var(--accent); color: var(--on-accent); border: 1px solid var(--accent); border-radius: var(--radius-md); font-weight: 600; }
+    #sendBtn:hover { background: var(--accent-hover); }
+    #sendBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .status { font-size: 14px; color: var(--text-secondary); margin-top: 6px; }
+    .status.live { color: var(--accent-text); font-weight: 600; }
+    .note { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+    .columns { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+    .column { flex: 1 1 340px; min-width: 0; background: var(--console-bg); color: var(--console-fg); border: 1px solid var(--console-border); padding: 12px; border-radius: 6px; min-height: 160px; }
+    .col-title { font-weight: 700; margin-bottom: 8px; }
+    .mono { white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font-mono); font-size: 13px; }
+    .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 12px; background: var(--accent-soft); color: var(--accent-text); margin-left: 6px; }
+    .worker-card { background: var(--bg-inset); border: 1px solid var(--border); border-radius: 6px; padding: 10px; margin-bottom: 8px; }
+    .worker-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+    #outputWorkers, #outputRequests { overflow-x: auto; }
+    .worker-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .worker-table th, .worker-table td { border: 1px solid var(--border); padding: 8px; vertical-align: top; background: var(--bg-secondary); }
+    .worker-table th { background: var(--bg-inset); text-align: left; font-weight: 600; }
+    .worker-table pre { margin: 0; white-space: pre-wrap; font-family: var(--font-mono); }
+    .worker-status { font-weight: 600; }
+    .status-ok { color: var(--green); }
+    .status-failed { color: var(--red); }
+    .worker-summary { margin: 6px 0 10px; color: var(--text-muted); font-size: 12px; }
+    .llm-summary { margin: 6px 0 10px; color: var(--text-muted); font-size: 12px; }
+    .hidden { display: none; }
+    /* shown when no Agent A answers (demo / public mode): see the module script at the end */
+    .backend-note { margin: 0 0 16px; padding: 12px 16px; max-width: 1100px; background: var(--bg-secondary); border: 1px solid var(--border); border-left: 4px solid var(--orange); border-radius: var(--radius-card); font-size: 14px; line-height: 1.5; color: var(--text-secondary); }
+    .backend-note[hidden] { display: none; }
+    .backend-note strong { color: var(--text-primary); }
+    .backend-note p { margin: 4px 0 0; }
+    .backend-note code { font-family: var(--font-mono); font-size: 13px; overflow-wrap: anywhere; }
+    .backend-note button { padding: 2px 10px; font: inherit; font-size: 13px; color: var(--text-primary); background: var(--bg-inset); border: 1px solid var(--border-strong); border-radius: var(--radius-md); }
+    .backend-note button:hover { background: var(--bg-tertiary); }
+    @media (max-width: 820px) {
+      body { margin: 16px; }
+      .layout { flex-direction: column; align-items: stretch; }
+      .sidebar { width: auto; }
+      .row > div { flex-basis: 100%; }
+      .column { flex-basis: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header class="page-head">
+    <h1>Chat with Agent A</h1>
+    <div class="page-links">
+      <nav data-site-nav="chat" aria-label="Site"></nav>
+      <div class="theme-toggle" data-theme-toggle></div>
+    </div>
+  </header>
+  <section id="backendNote" class="backend-note" aria-labelledby="backendNoteTitle" hidden>
+    <strong id="backendNoteTitle">Needs the local backend</strong>
+    <p>This page sends one task straight to Agent A, the orchestrator, at <code id="backendUrl"></code>, and nothing
+      answers there: this copy of the site runs without a backend, so Send is off.</p>
+    <p>Without a backend, <a href="../run/">Run a workflow</a> replays recorded AgentVerse runs and
+      <a href="../../results/">Results</a> has the paper's findings. To use this page, start the stack on your machine
+      (<code>scripts/deploy/deploy.sh</code>, see the <a data-site-href="repo">README</a>), then
+      <button id="backendRetry" type="button">Check again</button></p>
+  </section>
+  <div id="demoNote" style="max-width:1100px" hidden></div>
+  <div class="title-bar">
+    <label for="requestTitle">Request Title:</label>
+    <input id="requestTitle" type="text" placeholder="e.g., Test parallel workers">
+  </div>
+  <div class="layout">
+    <div class="panel">
+    <div class="row">
+      <div>
+        <label>Agent</label>
+        <label><input type="radio" name="agent" value="a" checked> Agent A</label>
+        <label><input type="radio" name="agent" value="b"> Agent B</label>
+      </div>
+      <div>
+        <label for="scenario">Scenario (optional)</label>
+        <select id="scenario">
+          <option value="">none</option>
+          <option value="agentic_simple">agentic_simple</option>
+          <option value="agentic_multi_hop">agentic_multi_hop</option>
+          <option value="agentic_parallel">agentic_parallel</option>
+          <option value="tool_call">tool_call</option>
+        </select>
+      </div>
+      <div>
+        <label for="maxTurns">Max Agent B turns</label>
+        <input id="maxTurns" type="number" min="1" step="1" placeholder="3">
+      </div>
+      <div>
+        <label for="agentCount">Worker count (parallel)</label>
+        <input id="agentCount" type="number" min="1" max="4" step="1" placeholder="2">
+      </div>
+    </div>
+
+    <div class="row hidden">
+      <div>
+        <label>Agent A endpoint</label>
+        <input id="endpointA" type="text">
+      </div>
+      <div>
+        <label>Agent B endpoint</label>
+        <input id="endpointB" type="text">
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label for="agentARole">Agent A role (optional)</label>
+        <select id="agentARole">
+          <option value="">none</option>
+          <option value="planner">planner</option>
+          <option value="researcher">researcher</option>
+          <option value="critic">critic</option>
+          <option value="summarizer">summarizer</option>
+          <option value="executor">executor</option>
+        </select>
+        <label for="agentAContract">Agent A contract (optional)</label>
+        <textarea id="agentAContract" class="compact-textarea" placeholder="Describe the agent's contract or expectations"></textarea>
+      </div>
+      <div>
+        <label for="agentBRole">Agent B role (optional)</label>
+        <select id="agentBRole">
+          <option value="">none</option>
+          <option value="planner">planner</option>
+          <option value="researcher">researcher</option>
+          <option value="critic">critic</option>
+          <option value="summarizer">summarizer</option>
+          <option value="executor">executor</option>
+        </select>
+        <label for="agentBContract">Agent B contract (optional)</label>
+        <textarea id="agentBContract" class="compact-textarea" placeholder="Describe the agent's contract or expectations"></textarea>
+      </div>
+    </div>
+
+    <label>Parallel workers (Agent B instances)</label>
+    <div id="workers" class="worker-grid"></div>
+
+    <label for="prompt">Message</label>
+    <textarea id="prompt" placeholder="Ask a question or give a task"></textarea>
+
+    <div style="margin-top: 12px;">
+      <button id="sendBtn">Send</button>
+      <span class="status" id="status"></span>
+    </div>
+
+    <div style="margin-top: 16px;">
+      <div class="columns">
+        <div class="column">
+          <div class="col-title">Agent A Response <span id="badgeA" class="badge" style="display:none;">final</span></div>
+          <div id="outputA" class="mono"></div>
+        </div>
+        <div class="column">
+          <div class="col-title">Agent B Response (if multi-hop) <span id="badgeB" class="badge" style="display:none;">from A→B</span></div>
+          <div id="outputB" class="mono"></div>
+        </div>
+      </div>
+      <div style="margin-top: 12px;">
+        <div class="col-title">Worker Responses (parallel)</div>
+        <div id="outputWorkers"></div>
+      </div>
+      <div style="margin-top: 12px;">
+        <div class="col-title">LLM Requests</div>
+        <div id="outputRequests"></div>
+      </div>
+      <div style="margin-top: 8px;" class="mono" id="rawResp"></div>
+    </div>
+    </div>
+    <aside class="sidebar">
+      <h2>Templates</h2>
+      <div id="templateList" class="template-list"></div>
+      <button id="clearTemplates" type="button" class="template-btn">Clear</button>
+      <div class="history-section">
+        <h3>Request History</h3>
+        <div id="historyList" class="history-list">
+          <div class="history-empty">No requests yet</div>
+        </div>
+        <button id="clearHistory" type="button" class="template-btn" style="margin-top: 10px;">Clear History</button>
+      </div>
+    </aside>
+  </div>
+
+  <footer data-site-footer></footer>
+
+  <script>
+    const promptEl = document.getElementById('prompt');
+    const statusEl = document.getElementById('status');
+    const outputA = document.getElementById('outputA');
+    const outputB = document.getElementById('outputB');
+    const outputWorkersEl = document.getElementById('outputWorkers');
+    const outputRequestsEl = document.getElementById('outputRequests');
+    const rawResp = document.getElementById('rawResp');
+    const badgeA = document.getElementById('badgeA');
+    const badgeB = document.getElementById('badgeB');
+    const scenarioEl = document.getElementById('scenario');
+    const maxTurnsEl = document.getElementById('maxTurns');
+    const agentCountEl = document.getElementById('agentCount');
+    const endpointA = document.getElementById('endpointA');
+    const endpointB = document.getElementById('endpointB');
+    const agentARoleEl = document.getElementById('agentARole');
+    const agentAContractEl = document.getElementById('agentAContract');
+    const agentBRoleEl = document.getElementById('agentBRole');
+    const agentBContractEl = document.getElementById('agentBContract');
+    const workersEl = document.getElementById('workers');
+    const sendBtn = document.getElementById('sendBtn');
+    const templateListEl = document.getElementById('templateList');
+    const clearTemplatesBtn = document.getElementById('clearTemplates');
+    const requestTitleEl = document.getElementById('requestTitle');
+    const historyListEl = document.getElementById('historyList');
+    const clearHistoryBtn = document.getElementById('clearHistory');
+
+    let requestHistory = JSON.parse(localStorage.getItem('requestHistory') || '[]');
+
+    const roleOptions = [
+      { value: '', label: 'none' },
+      { value: 'planner', label: 'planner' },
+      { value: 'researcher', label: 'researcher' },
+      { value: 'critic', label: 'critic' },
+      { value: 'summarizer', label: 'summarizer' },
+      { value: 'executor', label: 'executor' }
+    ];
+
+    const templateDefinitions = [
+      {
+        id: 'mas_agent_contracts_enhanced',
+        label: 'MAS Agent Contracts (Enhanced)',
+        paths: [
+          './templates/mas_agent_contracts_enhanced.json',
+          '../../templates/mas_agent_contracts_enhanced.json',
+          '../../../agents/templates/mas_agent_contracts_enhanced.json'
+        ]
+      },
+      {
+        id: 'mas_agent_contracts_simple',
+        label: 'MAS Agent Contracts (Simple)',
+        paths: [
+          './templates/mas_agent_contracts_simple.json',
+          '../../templates/mas_agent_contracts_simple.json',
+          '../../../agents/templates/mas_agent_contracts_simple.json'
+        ]
+      },
+      {
+        id: 'mas_agent_contracts_debate',
+        label: 'debate',
+        paths: [
+          './templates/mas_agent_contracts_debate.json',
+          '../../templates/mas_agent_contracts_debate.json',
+          '../../../agents/templates/mas_agent_contracts_debate.json'
+        ]
+      },
+      {
+        id: 'mas_agent_contracts_auction',
+        label: 'auction',
+        paths: [
+          './templates/mas_agent_contracts_auction.json',
+          '../../templates/mas_agent_contracts_auction.json',
+          '../../../agents/templates/mas_agent_contracts_auction.json'
+        ]
+      }
+    ];
+
+    let timerId = null;
+    let startTs = null;
+
+    function startTimer(label) {
+      startTs = Date.now();
+      statusEl.classList.add('live');
+      statusEl.textContent = label;
+      timerId = setInterval(() => {
+        const elapsed = ((Date.now() - startTs) / 1000).toFixed(1);
+        statusEl.textContent = `${label} (${elapsed}s)`;
+      }, 500);
+    }
+
+    function stopTimer(msg, showElapsed = false) {
+      if (timerId) clearInterval(timerId);
+      const elapsed = startTs ? ((Date.now() - startTs) / 1000).toFixed(2) : null;
+      timerId = null;
+      startTs = null;
+      statusEl.classList.remove('live');
+      if (showElapsed && elapsed !== null) {
+        statusEl.textContent = `${msg} (${elapsed}s)`;
+      } else {
+        statusEl.textContent = msg;
+      }
+      return elapsed;
+    }
+
+    function saveHistory() {
+      localStorage.setItem('requestHistory', JSON.stringify(requestHistory));
+    }
+
+    function renderHistory() {
+      if (requestHistory.length === 0) {
+        historyListEl.innerHTML = '<div class="history-empty">No requests yet</div>';
+        return;
+      }
+      historyListEl.innerHTML = requestHistory
+        .map((item, index) => `
+          <div class="history-item" data-index="${index}">
+            <div class="history-title">${escapeHtml(item.title)}</div>
+            <div class="history-time">${item.duration}s • ${item.timestamp}</div>
+          </div>
+        `)
+        .join('');
+    }
+
+    function addToHistory(title, duration, data) {
+      const timestamp = new Date().toLocaleString();
+      requestHistory.unshift({ title, duration, timestamp, data });
+      if (requestHistory.length > 50) {
+        requestHistory = requestHistory.slice(0, 50);
+      }
+      saveHistory();
+      renderHistory();
+    }
+
+    function loadHistoryItem(index) {
+      const item = requestHistory[index];
+      if (!item || !item.data) return;
+      const data = item.data;
+      outputA.textContent = data.output || '';
+      outputB.textContent = data.agent_b_output || '';
+      if (Array.isArray(data.agent_b_outputs) && data.agent_b_outputs.length > 0) {
+        const isObjectList = data.agent_b_outputs.every(
+          (it) => it && typeof it === 'object'
+        );
+        if (isObjectList) {
+          outputWorkersEl.innerHTML = renderWorkerTable(data.agent_b_outputs);
+        }
+      } else {
+        outputWorkersEl.innerHTML = '';
+      }
+      if (Array.isArray(data.llm_requests) && data.llm_requests.length > 0) {
+        outputRequestsEl.innerHTML = renderRequestTable(data.llm_requests);
+      } else {
+        outputRequestsEl.innerHTML = '';
+      }
+      rawResp.textContent = JSON.stringify(data, null, 2);
+      badgeA.style.display = data.output ? 'inline-block' : 'none';
+      badgeB.style.display = data.agent_b_output ? 'inline-block' : 'none';
+      statusEl.textContent = `Loaded: ${item.title} (${item.duration}s)`;
+    }
+
+    function clearHistory() {
+      requestHistory = [];
+      saveHistory();
+      renderHistory();
+    }
+
+    function getDefaultProtocol() {
+      return window.location.protocol === 'file:' ? 'http:' : window.location.protocol;
+    }
+
+    function buildEndpoint(port, path) {
+      const protocol = getDefaultProtocol();
+      const host = window.location.hostname || 'localhost';
+      return `${protocol}//${host}:${port}${path}`;
+    }
+
+    function ensureDefaultEndpoints() {
+      if (!endpointA.value.trim()) {
+        endpointA.value = buildEndpoint(8101, '/task');
+      }
+      if (!endpointB.value.trim()) {
+        endpointB.value = buildEndpoint(8102, '/subtask');
+      }
+    }
+
+    function ensureDefaultScenario() {
+      if (!scenarioEl.value) {
+        scenarioEl.value = 'agentic_parallel';
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function renderWorkerTable(items) {
+      if (!Array.isArray(items) || items.length === 0) return '';
+      const rows = items
+        .map((item) => {
+          const index = item.agent_index || '?';
+          const endpoint = item.endpoint || '—';
+          const subtask = item.subtask || '';
+          const output = item.output || '';
+          const isFailed = /failed|timed out/i.test(output);
+          const statusLabel = isFailed ? 'failed' : 'ok';
+          const statusClass = isFailed ? 'status-failed' : 'status-ok';
+          return `
+            <tr>
+              <td>Worker ${escapeHtml(index)}</td>
+              <td>${escapeHtml(endpoint)}</td>
+              <td><pre>${escapeHtml(subtask)}</pre></td>
+              <td><pre>${escapeHtml(output)}</pre></td>
+              <td class="worker-status ${statusClass}">${statusLabel}</td>
+            </tr>
+          `;
+        })
+        .join('');
+
+      const successCount = items.filter((item) => !/failed|timed out/i.test(item.output || '')).length;
+      const failureCount = items.length - successCount;
+      const summary = `Total: ${items.length} • Success: ${successCount} • Failed: ${failureCount}`;
+
+      return `
+        <div class="worker-summary">${escapeHtml(summary)}</div>
+        <table class="worker-table">
+          <thead>
+            <tr>
+              <th>Worker</th>
+              <th>Endpoint</th>
+              <th>Subtask</th>
+              <th>Output</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function renderRequestTable(items) {
+      if (!Array.isArray(items) || items.length === 0) return '';
+      const rows = items
+        .map((item) => {
+          const source = item.source || 'unknown';
+          const label = item.label || '';
+          const agentIndex = item.agent_index || item.turn || '—';
+          const endpoint = item.endpoint || '—';
+          const prompt = item.prompt || '';
+          const response = item.response || '';
+          return `
+            <tr>
+              <td>${escapeHtml(source)}</td>
+              <td>${escapeHtml(label)}</td>
+              <td>${escapeHtml(agentIndex)}</td>
+              <td>${escapeHtml(endpoint)}</td>
+              <td><pre>${escapeHtml(prompt)}</pre></td>
+              <td><pre>${escapeHtml(response)}</pre></td>
+            </tr>
+          `;
+        })
+        .join('');
+      const summary = `Total requests: ${items.length}`;
+      return `
+        <div class="llm-summary">${escapeHtml(summary)}</div>
+        <table class="worker-table">
+          <thead>
+            <tr>
+              <th>Source</th>
+              <th>Label</th>
+              <th>Agent/Turn</th>
+              <th>Endpoint</th>
+              <th>Prompt</th>
+              <th>Response</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function renderWorkers() {
+      const requested = Number(agentCountEl.value) || 2;
+      const count = Math.max(1, Math.min(4, requested));
+      agentCountEl.value = count;
+      workersEl.innerHTML = '';
+      for (let i = 0; i < count; i += 1) {
+        const card = document.createElement('div');
+        card.className = 'worker-card';
+        const optionsHtml = roleOptions
+          .map((opt) => `<option value="${opt.value}">${opt.label}</option>`)
+          .join('');
+        card.innerHTML = `
+          <div><strong>Worker ${i + 1}</strong></div>
+          <label for="workerRole-${i}">Role</label>
+          <select id="workerRole-${i}">
+            ${optionsHtml}
+          </select>
+          <label for="workerContract-${i}">Contract</label>
+          <textarea id="workerContract-${i}" class="compact-textarea" placeholder="Describe the worker's focus"></textarea>
+        `;
+        workersEl.appendChild(card);
+      }
+    }
+
+    async function loadTemplate(paths) {
+      for (const path of paths) {
+        try {
+          const resp = await fetch(path, { cache: 'no-store' });
+          if (!resp.ok) continue;
+          return await resp.json();
+        } catch (err) {
+          // Try the next path.
+        }
+      }
+      return null;
+    }
+
+    function applyTemplateDefaults(defaults, templateTitle) {
+      if (!defaults) return;
+      if (templateTitle) {
+        requestTitleEl.value = templateTitle;
+      }
+      if (defaults.prompt) {
+        promptEl.value = defaults.prompt;
+      }
+      if (defaults.scenario) {
+        scenarioEl.value = defaults.scenario;
+      }
+      if (defaults.agentA) {
+        agentARoleEl.value = defaults.agentA.role || '';
+        agentAContractEl.value = defaults.agentA.contract || '';
+      }
+      if (defaults.agentB) {
+        agentBRoleEl.value = defaults.agentB.role || '';
+        agentBContractEl.value = defaults.agentB.contract || '';
+      }
+      if (Number.isInteger(defaults.worker_count)) {
+        agentCountEl.value = defaults.worker_count;
+      }
+    }
+
+    function applyWorkerDefaults(defaults) {
+      if (!defaults || !Array.isArray(defaults.workers)) return;
+      const count = Number(agentCountEl.value) || 2;
+      const safeCount = Math.max(1, Math.min(4, count));
+      for (let i = 0; i < safeCount; i += 1) {
+        const worker = defaults.workers[i];
+        if (!worker) continue;
+        const roleEl = document.getElementById(`workerRole-${i}`);
+        const contractEl = document.getElementById(`workerContract-${i}`);
+        if (roleEl) roleEl.value = worker.role || '';
+        if (contractEl) contractEl.value = worker.contract || '';
+      }
+    }
+
+    async function applyTemplate(definition) {
+      const template = await loadTemplate(definition.paths);
+      if (!template || !template.ui_defaults) return;
+      const templateTitle = template.title || definition.label;
+      applyTemplateDefaults(template.ui_defaults, templateTitle);
+      renderWorkers();
+      applyWorkerDefaults(template.ui_defaults);
+    }
+
+    function renderTemplates() {
+      templateListEl.innerHTML = '';
+      templateDefinitions.forEach((definition) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'template-btn';
+        button.textContent = definition.label;
+        button.addEventListener('click', () => applyTemplate(definition));
+        templateListEl.appendChild(button);
+      });
+    }
+
+    function clearTemplateFields() {
+      scenarioEl.value = '';
+      promptEl.value = '';
+      requestTitleEl.value = '';
+      agentARoleEl.value = '';
+      agentAContractEl.value = '';
+      agentBRoleEl.value = '';
+      agentBContractEl.value = '';
+      const count = Number(agentCountEl.value) || 2;
+      const safeCount = Math.max(1, Math.min(4, count));
+      for (let i = 0; i < safeCount; i += 1) {
+        const roleEl = document.getElementById(`workerRole-${i}`);
+        const contractEl = document.getElementById(`workerContract-${i}`);
+        if (roleEl) roleEl.value = '';
+        if (contractEl) contractEl.value = '';
+      }
+    }
+
+    function collectWorkers() {
+      const count = Number(agentCountEl.value) || 2;
+      const safeCount = Math.max(1, Math.min(4, count));
+      const workers = [];
+      for (let i = 0; i < safeCount; i += 1) {
+        const roleEl = document.getElementById(`workerRole-${i}`);
+        const contractEl = document.getElementById(`workerContract-${i}`);
+        workers.push({
+          role: roleEl ? roleEl.value.trim() : '',
+          contract: contractEl ? contractEl.value.trim() : ''
+        });
+      }
+      return { count: safeCount, workers };
+    }
+
+    async function sendMessage() {
+      if (document.body.dataset.backend === 'offline') return; // no Agent A: see #backendNote
+      ensureDefaultEndpoints();
+      const agent = document.querySelector('input[name="agent"]:checked').value;
+      const text = promptEl.value.trim();
+      const scenario = scenarioEl.value.trim() || null;
+      const url = agent === 'a' ? endpointA.value.trim() : endpointB.value.trim();
+      const field = agent === 'a' ? 'task' : 'subtask';
+
+      if (!text) {
+        statusEl.textContent = 'Please enter a message.';
+        return;
+      }
+
+      const label = scenario === 'agentic_multi_hop'
+        ? 'Sending (multi-hop A→B→LLM)'
+        : scenario === 'agentic_parallel'
+          ? 'Sending (parallel A→B workers)'
+          : 'Sending';
+      startTimer(label);
+      outputA.textContent = '';
+      outputB.textContent = '';
+      outputWorkersEl.innerHTML = '';
+      outputRequestsEl.innerHTML = '';
+      rawResp.textContent = '';
+      badgeA.style.display = 'none';
+      badgeB.style.display = 'none';
+
+      const maxTurnsRaw = maxTurnsEl.value.trim();
+      const maxTurns = maxTurnsRaw ? Number(maxTurnsRaw) : null;
+      const agentARole = agentARoleEl.value.trim() || null;
+      const agentAContract = agentAContractEl.value.trim() || null;
+      const agentBRole = agentBRoleEl.value.trim() || null;
+      const agentBContract = agentBContractEl.value.trim() || null;
+      const { count: workerCount, workers } = collectWorkers();
+      const extra = {};
+      if (agent === 'a' && Number.isInteger(maxTurns) && maxTurns > 0) {
+        extra.max_agent_turns = maxTurns;
+      }
+      if (agent === 'a') {
+        extra.agent_count = workerCount;
+        extra.agent_b_workers = workers;
+      }
+
+      try {
+        const controller = new AbortController();
+        const timeoutMs = 120000;
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+        const resp = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            [field]: text,
+            scenario: scenario || undefined,
+            agent_a_role: agentARole || undefined,
+            agent_a_contract: agentAContract || undefined,
+            agent_b_role: agentBRole || undefined,
+            agent_b_contract: agentBContract || undefined,
+            ...extra
+          })
+        });
+        clearTimeout(timeoutId);
+
+        if (!resp.ok) {
+          const err = await resp.text();
+          throw new Error(`HTTP ${resp.status}: ${err}`);
+        }
+
+        const data = await resp.json();
+        outputA.textContent = data.output || '';
+        outputB.textContent = data.agent_b_output || '';
+        if (Array.isArray(data.agent_b_outputs) && data.agent_b_outputs.length > 0) {
+          const isObjectList = data.agent_b_outputs.every(
+            (item) => item && typeof item === 'object'
+          );
+          if (isObjectList) {
+            outputWorkersEl.innerHTML = renderWorkerTable(data.agent_b_outputs);
+          }
+        }
+        if (Array.isArray(data.llm_requests) && data.llm_requests.length > 0) {
+          outputRequestsEl.innerHTML = renderRequestTable(data.llm_requests);
+        }
+        rawResp.textContent = JSON.stringify(data, null, 2);
+        badgeA.style.display = 'inline-block';
+        if (data.agent_b_output) {
+          badgeB.style.display = 'inline-block';
+        }
+        const elapsed = stopTimer('Done', true);
+        const title = requestTitleEl.value.trim() || `Request at ${new Date().toLocaleTimeString()}`;
+        addToHistory(title, elapsed, data);
+      } catch (err) {
+        outputA.textContent = '';
+        outputB.textContent = '';
+        outputWorkersEl.innerHTML = '';
+        outputRequestsEl.innerHTML = '';
+        const message =
+          err && err.name === 'AbortError'
+            ? 'Request timed out. Check the agent endpoint and port forwarding.'
+            : String(err);
+        rawResp.textContent = message;
+        stopTimer('Error');
+      }
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    promptEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        sendMessage();
+      }
+    });
+    agentCountEl.addEventListener('change', renderWorkers);
+    renderWorkers();
+    ensureDefaultEndpoints();
+    renderTemplates();
+    clearTemplatesBtn.addEventListener('click', clearTemplateFields);
+    renderHistory();
+    clearHistoryBtn.addEventListener('click', clearHistory);
+    historyListEl.addEventListener('click', (e) => {
+      const item = e.target.closest('.history-item');
+      if (item) {
+        const index = parseInt(item.dataset.index, 10);
+        loadHistoryItem(index);
+      }
+    });
+  </script>
+  <script type="module">
+    // Demo / public mode: no Agent A reachable (same probe as the Playground menu), so explain
+    // that this page needs the local backend and turn Send off instead of failing on send.
+    import { agentAUrl, backendReachable, getCustomEndpoint } from '../../common/js/backend.js';
+    import { getDataMode } from '../../common/js/data.js';
+    import { noticeElement } from '../../common/js/mode.js';
+
+    const note = document.getElementById('backendNote');
+    const demo = document.getElementById('demoNote');
+    const sendBtn = document.getElementById('sendBtn');
+    document.getElementById('backendUrl').textContent = agentAUrl();
+
+    async function check(fresh) {
+      const live = await backendReachable({ fresh });
+      document.body.dataset.backend = live ? 'live' : 'offline';
+      // public mode: the shared demo notice (common/js/mode.js) replaces "needs the local backend"
+      const synthetic = !live && (await getDataMode()).mode === 'public';
+      demo.replaceChildren(...(synthetic ? [noticeElement('chat')] : []));
+      demo.hidden = !synthetic;
+      note.hidden = live || synthetic;
+      sendBtn.disabled = !live;
+      sendBtn.title = live ? '' : 'Needs the local backend';
+    }
+    document.getElementById('backendRetry').addEventListener('click', () => check(true));
+    if (getCustomEndpoint()) { // Portal ▾ → Connect: send tasks to the saved backend
+      const own = agentAUrl('/task');
+      if (/:8101\/task$/.test(endpointA.value) || !endpointA.value.trim()) endpointA.value = own;
+    }
+    check(false);
+  </script>
+</body>
+</html>

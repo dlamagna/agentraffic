@@ -1,0 +1,900 @@
+[
+ {
+  "t_ms": 0,
+  "event": "iteration_start",
+  "data": {
+   "iteration": 0,
+   "max_iterations": 3,
+   "message": "Starting iteration 1 of 3..."
+  }
+ },
+ {
+  "t_ms": 0,
+  "event": "stage_start",
+  "data": {
+   "stage": "recruitment",
+   "stage_number": 1,
+   "iteration": 0,
+   "message": "Analyzing task and recruiting expert agents..."
+  }
+ },
+ {
+  "t_ms": 2770,
+  "event": "llm_request",
+  "data": {
+   "seq": 1,
+   "iteration": 0,
+   "stage": "recruitment",
+   "label": "expert_recruitment",
+   "source": "Agent A",
+   "prompt": "[synthetic] recruit experts for a Math problem task",
+   "response": "{\"experts\": [{\"role\": \"planner\", \"responsibilities\": \"[synthetic] planner duties for the Math problem\"}, {\"role\": \"researcher\", \"responsibilities\": \"[synthetic] researcher duties for the Math problem\"}, {\"role\": \"executor\", \"responsibilities\": \"[synthetic] executor duties for the Math problem\"}, {\"role\": \"critic\", \"responsibilities\": \"[synthetic] critic duties for the Math problem\"}], \"communication_structure\": \"horizontal\", \"reasoning\": \"[synthetic] horizontal structure chosen for illustration.\"}",
+   "endpoint": "http://llm:8000/chat",
+   "error": false,
+   "start_time_utc": "2026-01-01T00:00:00.000000+00:00",
+   "request_id": "1b5c479d",
+   "llm_meta": {
+    "request_id": "1b5c479d",
+    "latency_ms": 2770,
+    "queue_wait_s": 0.2212,
+    "prompt_tokens": 629,
+    "completion_tokens": 418,
+    "total_tokens": 1047
+   },
+   "agent_role": "orchestrator",
+   "duration_seconds": 2.77
+  }
+ },
+ {
+  "t_ms": 2770,
+  "event": "stage_complete",
+  "data": {
+   "stage": "recruitment",
+   "stage_number": 1,
+   "iteration": 0,
+   "experts": [
+    {
+     "role": "planner",
+     "responsibilities": "[synthetic] planner duties for the Math problem"
+    },
+    {
+     "role": "researcher",
+     "responsibilities": "[synthetic] researcher duties for the Math problem"
+    },
+    {
+     "role": "executor",
+     "responsibilities": "[synthetic] executor duties for the Math problem"
+    },
+    {
+     "role": "critic",
+     "responsibilities": "[synthetic] critic duties for the Math problem"
+    }
+   ],
+   "communication_structure": "horizontal",
+   "reasoning": "[synthetic] horizontal structure chosen for illustration."
+  }
+ },
+ {
+  "t_ms": 2770,
+  "event": "stage_start",
+  "data": {
+   "stage": "decision",
+   "stage_number": 2,
+   "iteration": 0,
+   "message": "Starting horizontal decision-making...",
+   "structure": "horizontal"
+  }
+ },
+ {
+  "t_ms": 5537,
+  "event": "llm_request",
+  "data": {
+   "seq": 2,
+   "iteration": 0,
+   "stage": "decision",
+   "label": "horizontal_discussion_round1",
+   "source": "agent-b-1",
+   "prompt": "[synthetic] planner, round 1: contribute to the discussion",
+   "response": "[synthetic] planner, round 1: suggests a concrete way to split the work.",
+   "endpoint": "http://llm:8000/chat",
+   "error": false,
+   "start_time_utc": "2026-01-01T00:00:02.777000+00:00",
+   "request_id": "0a590167",
+   "llm_meta": {
+    "request_id": "0a590167",
+    "latency_ms": 2760,
+    "queue_wait_s": 0.0647,
+    "prompt_tokens": 201,
+    "completion_tokens": 252,
+    "total_tokens": 453
+   },
+   "agent_role": "planner",
+   "round": 1,
+   "duration_seconds": 2.76
+  }
+ },
+ {
+  "t_ms": 9248,
+  "event": "llm_request",
+  "data": {
+   "seq": 3,
+   "iteration": 0,
+   "stage": "decision",
+   "label": "horizontal_discussion_round1",
+   "source": "agent-b-2",
+   "prompt": "[synthetic] researcher, round 1: contribute to the discussion",
+   "response": "[synthetic] researcher, round 1: raises a risk and a mitigation.",
+   "endpoint": "http://llm:8000/chat",
+   "error": false,
+   "start_time_utc": "2026-01-01T00:00:05.538000+00:00",
+   "request_id": "5f34f02a",
+   "llm_meta": {
+    "request_id": "5f34f02a",
+    "latency_ms": 3710,
+    "queue_wait_s": 0.0537,
+    "prompt_tokens": 216,
+    "completion_tokens": 347,
+    "total_tokens": 563
+   },
+   "agent_role": "researcher",
+   "round": 1,
+   "duration_seconds": 3.71
+  }
+ },
+ {
+  "t_ms": 13788,
+  "event": "llm_request",
+  "data": {
+   "seq": 4,
+   "iteration": 0,
+   "stage": "decision",
+   "label": "horizontal_discussion_round1",
+   "source": "agent-b-3",
+   "prompt": "[synthetic] executor, round 1: contribute to the discussion",
+   "response": "[synthetic] executor, round 1: proposes the next step of the plan.",
+   "endpoint": "http://llm:8000/chat",
+   "error": false,
+   "start_time_utc": "2026-01-01T00:00:09.248000+00:00",
+   "request_id": "2a3f421a",
+   "llm_meta": {
+    "request_id": "2a3f421a",
+    "latency_ms": 4540,
+    "queue_wait_s": 0.064,
+    "prompt_tokens": 218,
+    "completion_tokens": 563,
+    "total_tokens": 781
+   },
+   "agent_role": "executor",
+   "round": 1,
+   "duration_seconds": 4.54
+  }
+ },
+ {
+  "t_ms": 17182,
+  "event": "llm_request",
+  "data": {
+   "seq": 5,
+   "iteration": 0,
+   "stage": "decision",
+   "label": "horizontal_discussion_round1",
+   "source": "agent-b-4",
+   "prompt": "[synthetic] critic, round 1: contribute to the discussion",
+   "response": "[synthetic] critic, round 1: suggests a concrete way to split the work.",
+   "endpoint": "http://llm:8000/chat",
+   "error": false,
+   "start_time_utc": "2026-01-01T00:00:13.792000+00:00",
+   "request_id": "b9f8fa03",
+   "llm_meta": {
+    "request_id": "b9f8fa03",
+    "latency_ms": 3390,
+    "queue_wait_s": 0.0724,
+    "prompt_tokens": 246,
+    "completion_tokens": 354,
+    "total_tokens": 600
+   },
+   "agent_role": "critic",
+   "round": 1,
+   "duration_seconds": 3.39
+  }
+ },
+ {
+  "t_ms": 17182,
+  "event": "discussion_round",
+  "data": {
+   "stage": "decision",
+   "round": 1,
+   "iteration": 0,
+   "responses": [
+    {
+     "expert": "planner",
+     "index": 0,
+     "response": "[synthetic] planner, round 1: checks the previous contribution for gaps.",
+     "consensus": false
+    },
+    {
+     "expert": "researcher",
+     "index": 1,
+     "response": "[synthetic] researcher, round 1: suggests a concrete way to split the work.",
+     "consensus": false
+    },
+    {
+     "expert": "executor",
+     "index": 2,
+     "response": "[synthetic] executor, round 1: refines the shared outline.",
+     "consensus": false
+    },
+    {
+     "expert": "critic",
+     "index": 3,
+     "response": "[synthetic] critic, round 1: raises a risk and a mitigation.",
+     "consensus": false
+    }
+   ],
+   "consensus": false
+  }
+ },
+ {
+  "t_ms": 19296,
+  "event": "llm_request",
+  "data": {
+   "seq": 6,
+   "iteration": 0,
+   "stage": "decision",
+   "label": "horizontal_discussion_round2",
+   "source": "agent-b-1",
+   "prompt": "[synthetic] planner, round 2: contribute to the discussion",
+   "response": "[synthetic] planner, round 2: proposes the next step of the plan.",
+   "endpoint": "http://llm:8000/chat",
+   "error": false,
+   "start_time_utc": "2026-01-01T00:00:17.186000+00:00",
+   "request_id": "033be9e5",
+   "llm_meta": {
+    "request_id": "033be9e5",
+    "latency_ms": 2110,
+    "queue_wait_s": 0.1731,
+    "prompt_tokens": 1502,
+    "completion_tokens": 219,
+    "total_tokens": 1721
+   },
+   "agent_role": "planner",
+   "round": 2,
+   "duration_seconds": 2.11
+  }
+ },
+ {
+  "t_ms": 26392,
+  "event": "llm_request",
+  "data": {
+   "seq": 7,
+   "iteration": 0,
+   "stage": "decision",
+   "label": "horizontal_discussion_round2",
+   "source": "agent-b-2",
+   "prompt": "[synthetic] researcher, round 2: contribute to the discussion",
+   "response": "[synthetic] researcher, round 2: suggests a concrete way to split the work.",
+   "endpoint": "http://llm:8000/chat",
+   "error": false,
+   "start_time_utc": "2026-01-01T00:00:19.302000+00:00",
+   "request_id": "e9557e2e",
+   "llm_meta": {
+    "request_id": "e9557e2e",
+    "latency_ms": 7090,
+    "queue_wait_s": 0.2117,
+    "prompt_tokens": 1524,
+    "completion_tokens": 695,
+    "total_tokens": 2219
+   },
+   "agent_role": "researcher",
+   "round": 2,
+   "duration_seconds": 7.09
+  }
+ },
+ {
+  "t_ms": 32233,
+  "event": "llm_request",
+  "data": {
+   "seq": 8,
+   "iteration": 0,
+   "stage": "decision",
+   "label": "horizontal_discussion_round2",
+   "source": "agent-b-3",
+   "prompt": "[synthetic] executor, round 2: contribute to the discussion",
+   "response": "[synthetic] executor, round 2: raises a risk and a mitigation.",
+   "endpoint": "http://llm:8000/chat",
+   "error": false,
+   "start_time_utc": "2026-01-01T00:00:26.393000+00:00",
+   "request_id": "44250047",
+   "llm_meta": {
+    "request_id": "44250047",
+    "latency_ms": 5840,
+    "queue_wait_s": 0.1957,
+    "prompt_tokens": 1493,
+    "completion_tokens": 714,
+    "total_tokens": 2207
+   },
+   "agent_role": "executor",
+   "round": 2,
+   "duration_seconds": 5.84
+  }
+ },
+ {
+  "t_ms": 35522,
+  "event": "llm_request",
+  "data": {
+   "seq": 9,
+   "iteration": 0,
+   "stage": "decision",
+   "label": "horizontal_discussion_round2",
+   "source": "agent-b-4",
+   "prompt": "[synthetic] critic, round 2: contribute to the discussion",
+   "response": "[synthetic] critic, round 2: proposes the next step of the plan.",
+   "endpoint": "http://llm:8000/chat",
+   "error": false,
+   "start_time_utc": "2026-01-01T00:00:32.232000+00:00",
+   "request_id": "4c8d2cc5",
+   "llm_meta": {
+    "request_id": "4c8d2cc5",
+    "latency_ms": 3290,
+    "queue_wait_s": 0.1992,
+    "prompt_tokens": 1308,
+    "completion_tokens": 320,
+    "total_tokens": 1628
+   },
+   "agent_role": "critic",
+   "round": 2,
+   "duration_seconds": 3.29
+  }
+ },
+ {
+  "t_ms": 35522,
+  "event": "discussion_round",
+  "data": {
+   "stage": "decision",
+   "round": 2,
+   "iteration": 0,
+   "responses": [
+    {
+     "expert": "planner",
+     "index": 0,
+     "response": "[synthetic] planner, round 2: suggests a concrete way to split the work.",
+     "consensus": false
+    },
+    {
+     "expert": "researcher",
+     "index": 1,
+     "response": "[synthetic] researcher, round 2: refines the shared outline.",
+     "consensus": false
+    },
+    {
+     "expert": "executor",
+     "index": 2,
+     "response": "[synthetic] executor, round 2: raises a risk and a mitigation.",
+     "consensus": false
+    },
+    {
+     "expert": "critic",
+     "index": 3,
+     "response": "[synthetic] critic, round 2: summarises what the group has agreed so far.",
+     "consensus": false
+    }
+   ],
+   "consensus": false
+  }
+ },
+ {
+  "t_ms": 38793,
+  "event": "llm_request",
+  "data": {
+   "seq": 10,
+   "iteration": 0,
+   "stage": "decision",
+   "label": "horizontal_discussion_round3",
+   "source": "agent-b-1",
+   "prompt": "[synthetic] planner, round 3: contribute to the discussion",
+   "response": "[synthetic] planner, round 3: raises a risk and a mitigation.",
+   "endpoint": "http://llm:8000/chat",
+   "error": false,
+   "start_time_utc": "2026-01-01T00:00:35.523000+00:00",
+   "request_id": "c7a48dfb",
+   "llm_meta": {
+    "request_id": "c7a48dfb",
+    "latency_ms": 3270,
+    "queue_wait_s": 0.1434,
+    "prompt_tokens": 1206,
+    "completion_tokens": 386,
+    "total_tokens": 1592
+   },
+   "agent_role": "planner",
+   "round": 3,
+   "duration_seconds": 3.27
+  }
+ },
+ {
+  "t_ms": 42066,
+  "event": "llm_request",
+  "data": {
+   "seq": 11,
+   "iteration": 0,
+   "stage": "decision",
+   "label": "horizontal_discussion_round3",
+   "source": "agent-b-2",
+   "prompt": "[synthetic] researcher, round 3: contribute to the discussion",
+   "response": "[synthetic] researcher, round 3: proposes the next step of the plan.",
+   "endpoint": "http://llm:8000/chat",
+   "error": false,
+   "start_time_utc": "2026-01-01T00:00:38.796000+00:00",
+   "request_id": "d4009ad0",
+   "llm_meta": {
+    "request_id": "d4009ad0",
+    "latency_ms": 3270,
+    "queue_wait_s": 0.1753,
+    "prompt_tokens": 1432,
+    "completion_tokens": 400,
+    "total_tokens": 1832
+   },
+   "agent_role": "researcher",
+   "round": 3,
+   "duration_seconds": 3.27
+  }
+ },
+ {
+  "t_ms": 44895,
+  "event": "llm_request",
+  "data": {
+   "seq": 12,
+   "iteration": 0,
+   "stage": "decision",
+   "label": "horizontal_discussion_round3",
+   "source": "agent-b-3",
+   "prompt": "[synthetic] executor, round 3: contribute to the discussion",
+   "response": "[synthetic] executor, round 3: suggests a concrete way to split the work.",
+   "endpoint": "http://llm:8000/chat",
+   "error": false,
+   "start_time_utc": "2026-01-01T00:00:42.065000+00:00",
+   "request_id": "c5bf8d78",
+   "llm_meta": {
+    "request_id": "c5bf8d78",
+    "latency_ms": 2830,
+    "queue_wait_s": 0.1945,
+    "prompt_tokens": 1291,
+    "completion_tokens": 336,
+    "total_tokens": 1627
+   },
+   "agent_role": "executor",
+   "round": 3,
+   "duration_seconds": 2.83
+  }
+ },
+ {
+  "t_ms": 49136,
+  "event": "llm_request",
+  "data": {
+   "seq": 13,
+   "iteration": 0,
+   "stage": "decision",
+   "label": "horizontal_discussion_round3",
+   "source": "agent-b-4",
+   "prompt": "[synthetic] critic, round 3: contribute to the discussion",
+   "response": "[synthetic] critic, round 3: raises a risk and a mitigation.",
+   "endpoint": "http://llm:8000/chat",
+   "error": false,
+   "start_time_utc": "2026-01-01T00:00:44.896000+00:00",
+   "request_id": "e1eae672",
+   "llm_meta": {
+    "request_id": "e1eae672",
+    "latency_ms": 4240,
+    "queue_wait_s": 0.1525,
+    "prompt_tokens": 1143,
+    "completion_tokens": 455,
+    "total_tokens": 1598
+   },
+   "agent_role": "critic",
+   "round": 3,
+   "duration_seconds": 4.24
+  }
+ },
+ {
+  "t_ms": 49136,
+  "event": "discussion_round",
+  "data": {
+   "stage": "decision",
+   "round": 3,
+   "iteration": 0,
+   "responses": [
+    {
+     "expert": "planner",
+     "index": 0,
+     "response": "[synthetic] planner, round 3: refines the shared outline.",
+     "consensus": false
+    },
+    {
+     "expert": "researcher",
+     "index": 1,
+     "response": "[synthetic] researcher, round 3: raises a risk and a mitigation.",
+     "consensus": false
+    },
+    {
+     "expert": "executor",
+     "index": 2,
+     "response": "[synthetic] executor, round 3: summarises what the group has agreed so far.",
+     "consensus": false
+    },
+    {
+     "expert": "critic",
+     "index": 3,
+     "response": "[synthetic] critic, round 3: proposes the next step of the plan.",
+     "consensus": false
+    }
+   ],
+   "consensus": false
+  }
+ },
+ {
+  "t_ms": 56777,
+  "event": "llm_request",
+  "data": {
+   "seq": 14,
+   "iteration": 0,
+   "stage": "decision",
+   "label": "synthesize_discussion",
+   "source": "Agent A",
+   "prompt": "[synthetic] synthesise the discussion",
+   "response": "[synthetic] orchestrator: merges the discussion into one decision.",
+   "endpoint": "http://llm:8000/chat",
+   "error": false,
+   "start_time_utc": "2026-01-01T00:00:49.137000+00:00",
+   "request_id": "8b81efe7",
+   "llm_meta": {
+    "request_id": "8b81efe7",
+    "latency_ms": 7640,
+    "queue_wait_s": 0.2252,
+    "prompt_tokens": 3251,
+    "completion_tokens": 1067,
+    "total_tokens": 4318
+   },
+   "agent_role": "orchestrator",
+   "duration_seconds": 7.64
+  }
+ },
+ {
+  "t_ms": 56777,
+  "event": "stage_complete",
+  "data": {
+   "stage": "decision",
+   "stage_number": 2,
+   "iteration": 0,
+   "consensus_reached": false,
+   "structure": "horizontal",
+   "rounds": 3
+  }
+ },
+ {
+  "t_ms": 56777,
+  "event": "stage_start",
+  "data": {
+   "stage": "execution",
+   "stage_number": 3,
+   "iteration": 0,
+   "message": "Executing tasks with 4 agents...",
+   "expert_count": 4
+  }
+ },
+ {
+  "t_ms": 61989,
+  "event": "llm_request",
+  "data": {
+   "seq": 15,
+   "iteration": 0,
+   "stage": "execution",
+   "label": "execute_planner",
+   "source": "agent-b-1",
+   "prompt": "[synthetic] planner: execute your subtask",
+   "response": "[synthetic] planner: delivers its part of the plan.",
+   "endpoint": "http://llm:8000/chat",
+   "error": false,
+   "start_time_utc": "2026-01-01T00:00:56.779000+00:00",
+   "request_id": "6837cebb",
+   "llm_meta": {
+    "request_id": "6837cebb",
+    "latency_ms": 5210,
+    "queue_wait_s": 0.2373,
+    "prompt_tokens": 1704,
+    "completion_tokens": 1394,
+    "total_tokens": 3098
+   },
+   "agent_role": "planner",
+   "duration_seconds": 5.21
+  }
+ },
+ {
+  "t_ms": 61989,
+  "event": "execution_result",
+  "data": {
+   "stage": "execution",
+   "iteration": 0,
+   "expert": "planner",
+   "success": true,
+   "output_preview": "[synthetic] planner: delivers its part of the plan.",
+   "completed": 1,
+   "total": 4
+  }
+ },
+ {
+  "t_ms": 71940,
+  "event": "llm_request",
+  "data": {
+   "seq": 16,
+   "iteration": 0,
+   "stage": "execution",
+   "label": "execute_executor",
+   "source": "agent-b-3",
+   "prompt": "[synthetic] executor: execute your subtask",
+   "response": "[synthetic] executor: delivers its part of the plan.",
+   "endpoint": "http://llm:8000/chat",
+   "error": false,
+   "start_time_utc": "2026-01-01T00:00:56.780000+00:00",
+   "request_id": "0f3ae13e",
+   "llm_meta": {
+    "request_id": "0f3ae13e",
+    "latency_ms": 15160,
+    "queue_wait_s": 0.3452,
+    "prompt_tokens": 962,
+    "completion_tokens": 786,
+    "total_tokens": 1748
+   },
+   "agent_role": "executor",
+   "duration_seconds": 15.16
+  }
+ },
+ {
+  "t_ms": 71940,
+  "event": "execution_result",
+  "data": {
+   "stage": "execution",
+   "iteration": 0,
+   "expert": "executor",
+   "success": true,
+   "output_preview": "[synthetic] executor: delivers its part of the plan.",
+   "completed": 2,
+   "total": 4
+  }
+ },
+ {
+  "t_ms": 72151,
+  "event": "llm_request",
+  "data": {
+   "seq": 17,
+   "iteration": 0,
+   "stage": "execution",
+   "label": "execute_researcher",
+   "source": "agent-b-2",
+   "prompt": "[synthetic] researcher: execute your subtask",
+   "response": "[synthetic] researcher: delivers its part of the plan.",
+   "endpoint": "http://llm:8000/chat",
+   "error": false,
+   "start_time_utc": "2026-01-01T00:00:56.781000+00:00",
+   "request_id": "21aff697",
+   "llm_meta": {
+    "request_id": "21aff697",
+    "latency_ms": 15370,
+    "queue_wait_s": 0.2404,
+    "prompt_tokens": 1998,
+    "completion_tokens": 1634,
+    "total_tokens": 3632
+   },
+   "agent_role": "researcher",
+   "duration_seconds": 15.37
+  }
+ },
+ {
+  "t_ms": 72151,
+  "event": "execution_result",
+  "data": {
+   "stage": "execution",
+   "iteration": 0,
+   "expert": "researcher",
+   "success": true,
+   "output_preview": "[synthetic] researcher: delivers its part of the plan.",
+   "completed": 3,
+   "total": 4
+  }
+ },
+ {
+  "t_ms": 72151,
+  "event": "llm_request",
+  "data": {
+   "seq": 18,
+   "iteration": 0,
+   "stage": "execution",
+   "label": "execute_critic",
+   "source": "agent-b-4",
+   "prompt": "[synthetic] critic: execute your subtask",
+   "response": "[synthetic] critic: delivers its part of the plan.",
+   "endpoint": "http://llm:8000/chat",
+   "error": false,
+   "start_time_utc": "2026-01-01T00:00:56.782000+00:00",
+   "request_id": "4562ca7f",
+   "llm_meta": {
+    "request_id": "4562ca7f",
+    "latency_ms": 11190,
+    "queue_wait_s": 0.246,
+    "prompt_tokens": 727,
+    "completion_tokens": 595,
+    "total_tokens": 1322
+   },
+   "agent_role": "critic",
+   "duration_seconds": 11.19
+  }
+ },
+ {
+  "t_ms": 72151,
+  "event": "execution_result",
+  "data": {
+   "stage": "execution",
+   "iteration": 0,
+   "expert": "critic",
+   "success": true,
+   "output_preview": "[synthetic] critic: delivers its part of the plan.",
+   "completed": 4,
+   "total": 4
+  }
+ },
+ {
+  "t_ms": 72151,
+  "event": "stage_complete",
+  "data": {
+   "stage": "execution",
+   "stage_number": 3,
+   "iteration": 0,
+   "success_count": 4,
+   "failure_count": 0,
+   "total": 4
+  }
+ },
+ {
+  "t_ms": 72151,
+  "event": "stage_start",
+  "data": {
+   "stage": "evaluation",
+   "stage_number": 4,
+   "iteration": 0,
+   "message": "Evaluating results and determining if iteration is needed..."
+  }
+ },
+ {
+  "t_ms": 74239,
+  "event": "llm_request",
+  "data": {
+   "seq": 19,
+   "iteration": 0,
+   "stage": "evaluation",
+   "label": "evaluate_results",
+   "source": "Agent A",
+   "prompt": "[synthetic] evaluate the results",
+   "response": "[synthetic] evaluator: scores the combined result.",
+   "endpoint": "http://llm:8000/chat",
+   "error": false,
+   "start_time_utc": "2026-01-01T00:01:12.159000+00:00",
+   "request_id": "8e423c1a",
+   "llm_meta": {
+    "request_id": "8e423c1a",
+    "latency_ms": 2080,
+    "queue_wait_s": 0.6354,
+    "prompt_tokens": 3169,
+    "completion_tokens": 166,
+    "total_tokens": 3335
+   },
+   "agent_role": "orchestrator",
+   "duration_seconds": 2.08
+  }
+ },
+ {
+  "t_ms": 74239,
+  "event": "stage_complete",
+  "data": {
+   "stage": "evaluation",
+   "stage_number": 4,
+   "iteration": 0,
+   "goal_achieved": true,
+   "score": 92,
+   "should_iterate": false,
+   "feedback": "[synthetic] generated feedback."
+  }
+ },
+ {
+  "t_ms": 74239,
+  "event": "iteration_complete",
+  "data": {
+   "iteration_history": [
+    {
+     "iteration": 0,
+     "duration_seconds": 88.53,
+     "recruitment": {
+      "experts": [
+       "planner",
+       "researcher",
+       "executor",
+       "critic"
+      ],
+      "structure": "horizontal"
+     },
+     "decision": {
+      "consensus": false,
+      "rounds": 3
+     },
+     "execution": {
+      "success": 4,
+      "failures": 0
+     },
+     "evaluation": {
+      "goal_achieved": true,
+      "score": 92,
+      "criteria": {
+       "completeness": 89,
+       "correctness": 91,
+       "clarity": 93,
+       "relevance": 95,
+       "actionability": 97
+      },
+      "rationale": "[synthetic] generated rationale.",
+      "feedback": "[synthetic] generated feedback."
+     }
+    }
+   ]
+  }
+ },
+ {
+  "t_ms": 74239,
+  "event": "stage_start",
+  "data": {
+   "stage": "synthesis",
+   "stage_number": 5,
+   "iteration": 0,
+   "message": "Generating final synthesized output..."
+  }
+ },
+ {
+  "t_ms": 88531,
+  "event": "llm_request",
+  "data": {
+   "seq": 20,
+   "iteration": 0,
+   "stage": "synthesis",
+   "label": "final_output",
+   "source": "Agent A",
+   "prompt": "[synthetic] write the final output",
+   "response": "[synthetic] final answer for the Math problem task.",
+   "endpoint": "http://llm:8000/chat",
+   "error": false,
+   "start_time_utc": "2026-01-01T00:01:14.261000+00:00",
+   "request_id": "d9c35e9b",
+   "llm_meta": {
+    "request_id": "d9c35e9b",
+    "latency_ms": 14270,
+    "queue_wait_s": 0.6012,
+    "prompt_tokens": 3234,
+    "completion_tokens": 1078,
+    "total_tokens": 4312
+   },
+   "agent_role": "orchestrator",
+   "duration_seconds": 14.27
+  }
+ },
+ {
+  "t_ms": 88531,
+  "event": "stage_complete",
+  "data": {
+   "stage": "synthesis",
+   "stage_number": 5,
+   "iteration": 0,
+   "final_output": "[synthetic] final answer for the Math problem task."
+  }
+ },
+ {
+  "t_ms": 88531,
+  "event": "complete",
+  "data": {
+   "$ref": "math.response.json"
+  }
+ }
+]

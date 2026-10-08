@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>System load · Results · agentraffic</title>
+  <link rel="canonical" href="../system-load/">
+  <script>
+    /* Theme before first paint: the saved choice, else light (see common/js/theme.js). */
+    (function () {
+      var t;
+      try { t = localStorage.getItem('agentraffic-theme'); } catch (e) {}
+      if (t !== 'light' && t !== 'dark') t = 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  <style>
+    /* page background of the theme while redirecting (no white flash on dark) */
+    :root { color-scheme: light; background: #f7f7f5; }
+    :root[data-theme="dark"] { color-scheme: dark; background: #0f172a; }
+  </style>
+  <script>
+    // Old URL (results/system/): this page moved to results/system-load/. Keep the query and hash (?replay=…, ?demo=…, #run=…).
+    window.location.replace('../system-load/' + window.location.search + window.location.hash);
+  </script>
+</head>
+<body>
+  <noscript><p>This page moved to <a href="../system-load/">results/system-load/</a>.</p></noscript>
+</body>
+</html>

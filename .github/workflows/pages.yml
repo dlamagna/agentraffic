@@ -1,0 +1,57 @@
+name: Deploy public site to GitHub Pages
+
+# Publishes ui/ without ui/data/private/ (which is gitignored and so is not in the checkout anyway).
+# One-off setting, made by the repository owner: Settings > Pages > Build and deployment > Source:
+# "GitHub Actions". The site is then served at https://<owner>.github.io/<repo>/.
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Let a running deployment finish, but skip the ones queued in between and keep only the latest.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Check and build dist/public
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Guard (nothing private may be published)
+        run: python scripts/demo/check_public.py
+      - name: Build dist/public
+        # The same recipe as `make dist-public` (it runs the guard again, then copies ui/ and
+        # removes data/private). It needs no private data.
+        run: make dist-public PY=python
+      - name: Make sure no private data is in the build
+        run: test ! -e dist/public/data/private
+      - name: Make sure the Beta page is not in the build
+        run: test ! -e dist/public/results/beta
+      - run: touch dist/public/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/public
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

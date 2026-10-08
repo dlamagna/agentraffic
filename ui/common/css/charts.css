@@ -1,0 +1,123 @@
+/*
+ * ui/common/css/charts.css
+ * Chart roles and the shared chart furniture (SVG axes, tooltip, stat tiles, drill-down blocks):
+ * what the run charts of results/js/run-charts.js need, so the Results pages (imported by
+ * results.css) and the workflow runner (playground/run/) draw them the same way. Light in :root,
+ * dark in [data-theme="dark"]; charts paint with these variables, so they recolour with the theme.
+ */
+
+:root {
+  --surface: var(--bg-secondary);          /* card / chart surface #fff */
+  --surface-2: #f7f7f5;                    /* inset panels */
+  --ink-1: var(--text-primary);
+  --ink-2: var(--text-secondary);
+  --ink-3: var(--text-muted);              /* muted text, 5.0:1 on the card */
+  --grid: #ebeae5;                         /* hairline gridlines */
+  --axis: #bdbcb4;                         /* baselines */
+  --hover: rgba(26, 28, 33, 0.04);
+  --topo-horizontal: #256abf;
+  --topo-vertical: #d95926;
+  --topo-full_mesh: #199e70;
+  --neutral-mark: #b4b3ab;                 /* IAT bars outside the fit sample */
+  --burst-zone: rgba(26, 28, 33, 0.045);
+  --stage-band: #8a8c93;                   /* non-discussion stage bands (low opacity) */
+  --stage-bar-synth: #a3a5ab;              /* drill-down Gantt: synthesis calls */
+  --stage-bar-other: #6c707a;              /* drill-down Gantt: other non-discussion calls */
+  --row-sep: #ebeae5;
+  --chart-label: var(--text-primary);      /* category labels */
+  --chart-value: var(--text-secondary);    /* value labels */
+  --median-tick: #1a1c21;
+  --mark-ring: #ffffff;                    /* surface ring around dots */
+  --callout-bg: rgba(25, 158, 112, 0.08);
+}
+
+:root[data-theme="dark"] {
+  --surface: var(--bg-secondary);          /* #1e293b */
+  --surface-2: #172033;
+  --ink-3: #7c8ba1;                        /* 4.1:1 on the card */
+  --grid: #2a374b;
+  --axis: #475569;
+  --hover: rgba(148, 163, 184, 0.10);
+  --topo-horizontal: #3987e5;
+  --topo-vertical: #d95926;
+  --topo-full_mesh: #199e70;
+  --neutral-mark: #4b5a70;
+  --burst-zone: rgba(148, 163, 184, 0.07);
+  --stage-band: #94a3b8;
+  --stage-bar-synth: #94a3b8;
+  --stage-bar-other: #64748b;
+  --row-sep: #2a374b;
+  --chart-label: #f1f5f9;
+  --chart-value: #cbd5e1;
+  --median-tick: #cbd5e1;
+  --mark-ring: #1e293b;
+  --callout-bg: rgba(25, 158, 112, 0.08);
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+svg.viz { display: block; width: 100%; overflow: visible; font-family: inherit; }
+svg.viz text { fill: var(--ink-2); font-size: 11px; }
+svg.viz .tick line, svg.viz .grid line { stroke: var(--grid); stroke-width: 1; shape-rendering: crispEdges; }
+svg.viz .baseline { stroke: var(--axis); stroke-width: 1; shape-rendering: crispEdges; }
+svg.viz .axis-title { fill: var(--ink-2); font-size: 11px; }
+svg.viz .annot { fill: var(--ink-1); font-size: 11px; }
+svg.viz .annot-muted { fill: var(--ink-3); font-size: 10.5px; }
+svg.viz .annot-line { stroke: var(--ink-3); stroke-width: 1; shape-rendering: crispEdges; }
+svg.viz .burst-zone { fill: var(--burst-zone); }
+svg.viz .hit { fill: transparent; cursor: pointer; }
+svg.viz .mark-hover { stroke: var(--ink-1); stroke-width: 1.5; }
+
+.tooltip {
+  position: fixed;
+  z-index: 50;
+  pointer-events: none;
+  background: var(--tooltip-bg);
+  border: 1px solid var(--tooltip-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  color: var(--ink-2);
+  max-width: min(320px, calc(100vw - 16px));
+  box-shadow: var(--tooltip-shadow);
+}
+.tooltip .tt-title { color: var(--ink-1); font-weight: 600; margin-bottom: 2px; }
+.tooltip .tt-row { display: flex; align-items: baseline; gap: 6px; }
+.tooltip .tt-row b { color: var(--ink-1); font-variant-numeric: tabular-nums; }
+.tooltip .tt-key { display: inline-block; width: 12px; border-top: 2px solid; transform: translateY(-3px); }
+.tooltip .tt-note { color: var(--ink-3); font-size: 0.75rem; margin-top: 3px; }
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.tile {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.tile .tile-label { color: var(--ink-2); font-size: 0.78rem; }
+.tile .tile-value { color: var(--ink-1); font-size: 1.3rem; font-weight: 600; line-height: 1.25; }
+.tile .tile-sub { color: var(--ink-3); font-size: 0.75rem; }
+.detail-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+.detail-block h4 { font-size: 0.92rem; margin-bottom: 2px; }
+.detail-block .chart-sub { color: var(--ink-2); font-size: 0.8rem; margin-bottom: 6px; }
+.callout {
+  border-left: 3px solid var(--topo-full_mesh);
+  background: var(--callout-bg);
+  padding: 8px 12px;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.85rem;
+  color: var(--ink-1);
+  margin: 8px 0;
+}
+

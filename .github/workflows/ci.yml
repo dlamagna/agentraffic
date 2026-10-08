@@ -66,3 +66,17 @@ jobs:
           python-version: "3.11"
       - run: pip install pytest pytest-asyncio
       - run: pytest tests/
+
+  # The website's publication guard and the tests of its data scripts (stdlib plus pytest; the
+  # tests that need the private data skip themselves when it is absent, as it is in CI).
+  demo-site:
+    name: Public data guard and tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python scripts/demo/check_public.py
+      - run: pip install pytest pytest-asyncio
+      - run: pytest tests/

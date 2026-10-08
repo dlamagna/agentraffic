@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Same task, same model, different traffic · agentraffic</title>
+  <meta name="description" content="A short write-up of our NAIC 2026 paper: how the way LLM agents coordinate shapes the traffic they send to the model server.">
+  <script>
+    /* Theme before first paint: the saved choice, else light (see common/js/theme.js). */
+    (function () {
+      var t;
+      try { t = localStorage.getItem('agentraffic-theme'); } catch (e) {}
+      if (t !== 'light' && t !== 'dark') t = 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  <link rel="stylesheet" href="../../common/css/base.css">
+  <link rel="stylesheet" href="../../common/css/site.css">
+  <link rel="stylesheet" href="../css/docs.css">
+  <script type="module" src="../../common/js/theme.js"></script>
+  <script type="module" src="../../common/js/nav.js"></script>
+  <script type="module" src="../js/docs.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <a class="brand" href="../../">agentraffic</a>
+  <div class="header-end">
+    <nav data-site-nav="docs-blog" aria-label="Site"></nav>
+    <div class="theme-toggle" data-theme-toggle></div>
+  </div>
+</header>
+
+<main id="main" class="doc post" tabindex="-1">
+
+  <header class="doc-hero post-hero" aria-labelledby="pageTitle">
+    <p class="eyebrow">Blog · October 2026</p>
+    <h1 id="pageTitle">Same task, same model, different traffic</h1>
+    <p class="doc-lede">How the way LLM agents coordinate shapes the traffic they send to the model server.</p>
+    <p class="authors">Davide Lamagna, Albert Cabellos, Alberto Rodriguez-Natal, Gábor Rétvári, Berta Serracanta</p>
+    <p class="post-notice">This post is an informal write-up of our NAIC 2026 paper, <em>Towards Traffic Modelling of
+      Multi-Agent Systems: The Role of Coordination Topology</em>. For the method, the statistics and related work,
+      please refer to <a data-site-href="paper">the paper</a>.</p>
+    <div class="cta-row">
+      <a class="cta cta--primary" id="readPaper" data-site-href="paper">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>
+        Read the paper (ACM DL)
+      </a>
+      <a class="cta" id="viewCode" data-site-href="repo">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>
+        View the code
+      </a>
+      <a class="cta" href="../../results/">Explore the results</a>
+    </div>
+  </header>
+
+  <aside class="tldr" aria-label="TL;DR">
+    <p class="tldr-title">TL;DR</p>
+    <ul>
+      <li>The way LLM agents coordinate decides when their calls reach the model server.</li>
+      <li>Agents that fan out send calls in bursts. Agents that take turns send them one at a time. Neither
+        looks Poisson.</li>
+      <li>Two setups can make calls at the same average rate and still load the server differently.</li>
+    </ul>
+  </aside>
+
+  <section id="why" class="doc-section" aria-labelledby="whyTitle">
+    <h2 id="whyTitle">Why look at agent traffic at all?</h2>
+    <p>Most traffic models start with people. Someone clicks, a request goes out, and arrival rates follow human
+      behaviour. Agentic systems break that link. A single task from a user can turn into dozens of model calls, and
+      their timing is set by how the agents coordinate, not by the user.</p>
+    <p>This is no longer a niche concern. Cloudflare reported in June 2026 that traffic from AI agents and other bots
+      now surpasses that of people. There is a familiar lesson here too: in the 1990s, measurements of Ethernet,
+      wide-area and web traffic showed that Poisson models badly underestimate how bursty real traffic is (Leland et
+      al. 1994; Paxson and Floyd 1995; Crovella and Bestavros 1997). Each new kind of traffic has needed its own model.
+      We wanted to know whether agents are next.</p>
+    <p>A little background for readers outside networking. A traffic model describes when requests arrive and how
+      much work each one brings, in a form simple enough to reason about. Operators use such models to size servers
+      and links, to set rate limits and autoscaling rules, and to drive simulations and load tests. A model only
+      helps if it matches how the traffic really behaves.</p>
+    <p>The classic starting point is the Poisson process: requests arrive independently of each other at a constant
+      average rate. The gaps between arrivals then follow an exponential distribution, so a new request is no more
+      likely just after the last one than at any other moment, and a single number, the rate, describes everything.
+      That simplicity made it the default. Queueing results are easy to derive for it, and it described telephone
+      calls well. But it assumes arrivals are spread out fairly evenly. If real traffic comes in
+      bursts, queues typically grow longer and tail latency gets much worse than a Poisson model predicts at the
+      same average load. That gap is what this post is about.</p>
+  </section>
+
+  <section id="experiment" class="doc-section" aria-labelledby="experimentTitle">
+    <h2 id="experimentTitle">The experiment</h2>
+    <p>Each run hands an <a href="../agentverse/">AgentVerse</a> workflow a
+      task: a maths problem, a research question, a consulting brief or a small coding job. Four expert agents are
+      recruited, discuss the task, then carry out and evaluate a plan. They all use the same small model, Llama 3.2 3B,
+      served by a single vLLM instance.</p>
+    <p>The only thing we changed is how the agents discuss:</p>
+    <div class="topo-grid">
+      <article class="topo-card" data-topology="horizontal">
+        <h3>Sequential</h3>
+        <svg data-topology-diagram="horizontal"></svg>
+        <p>Agents speak one at a time, each seeing the turns before theirs.</p>
+      </article>
+      <article class="topo-card" data-topology="vertical">
+        <h3>Star</h3>
+        <svg data-topology-diagram="vertical"></svg>
+        <p>One agent proposes a solution and the other three review it at the same time.</p>
+      </article>
+      <article class="topo-card" data-topology="full_mesh">
+        <h3>Full mesh</h3>
+        <svg data-topology-diagram="full_mesh"></svg>
+        <p>Every agent messages every other agent: twelve messages per round.</p>
+      </article>
+    </div>
+    <p>We ran each pattern about 500 times (481 for star) and logged every model call, alongside metrics from the
+      model server, the containers and the network. Changing the topology also changes how many calls a run makes
+      and how long each one is, so the comparisons below are between whole setups. Most of what follows comes from one simple quantity: the gap
+      between the starts of consecutive model calls during the discussion<sup class="fn-ref"><a href="#fn1" id="fnref1">1</a></sup>.</p>
+  </section>
+
+  <section id="bursts" class="doc-section" aria-labelledby="burstsTitle">
+    <h2 id="burstsTitle">Bursts, then waiting</h2>
+    <figure class="post-figure">
+      <svg class="sketch" viewBox="0 0 640 202" role="img" aria-labelledby="fig1Title fig1Desc">
+<title id="fig1Title">Sketch of call starts during two discussion rounds</title>
+<desc id="fig1Desc">Sequential: single calls spaced evenly. Star: one call, then three together, twice. Full mesh: five calls together, then seven single calls, twice.</desc>
+<line class="sketch-axis" x1="104" x2="624" y1="34" y2="34"/>
+<text class="sketch-label" x="92" y="32" text-anchor="end">Sequential</text>
+<rect class="sketch-mark sketch-mark--horizontal" x="114.5" y="26" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--horizontal" x="177.3" y="26" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--horizontal" x="240.2" y="26" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--horizontal" x="303.0" y="26" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--horizontal" x="365.8" y="26" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--horizontal" x="428.7" y="26" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--horizontal" x="491.5" y="26" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--horizontal" x="554.3" y="26" width="5" height="6" rx="1"/>
+<line class="sketch-axis" x1="104" x2="624" y1="98" y2="98"/>
+<text class="sketch-label" x="92" y="96" text-anchor="end">Star</text>
+<rect class="sketch-mark sketch-mark--vertical" x="114.5" y="90" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--vertical" x="214.2" y="90" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--vertical" x="214.2" y="82" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--vertical" x="214.2" y="74" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--vertical" x="361.5" y="90" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--vertical" x="461.2" y="90" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--vertical" x="461.2" y="82" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--vertical" x="461.2" y="74" width="5" height="6" rx="1"/>
+<line class="sketch-axis" x1="104" x2="624" y1="162" y2="162"/>
+<text class="sketch-label" x="92" y="160" text-anchor="end">Full mesh</text>
+<rect class="sketch-mark sketch-mark--full_mesh" x="114.5" y="154" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--full_mesh" x="114.5" y="146" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--full_mesh" x="114.5" y="138" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--full_mesh" x="114.5" y="130" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--full_mesh" x="114.5" y="122" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--full_mesh" x="153.5" y="154" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--full_mesh" x="166.5" y="154" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--full_mesh" x="183.8" y="154" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--full_mesh" x="196.8" y="154" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--full_mesh" x="214.2" y="154" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--full_mesh" x="231.5" y="154" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--full_mesh" x="244.5" y="154" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--full_mesh" x="361.5" y="154" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--full_mesh" x="361.5" y="146" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--full_mesh" x="361.5" y="138" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--full_mesh" x="361.5" y="130" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--full_mesh" x="361.5" y="122" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--full_mesh" x="400.5" y="154" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--full_mesh" x="413.5" y="154" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--full_mesh" x="430.8" y="154" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--full_mesh" x="443.8" y="154" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--full_mesh" x="461.2" y="154" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--full_mesh" x="478.5" y="154" width="5" height="6" rx="1"/>
+<rect class="sketch-mark sketch-mark--full_mesh" x="491.5" y="154" width="5" height="6" rx="1"/>
+<text class="sketch-note" x="224.7" y="70">3 reviews together</text>
+<text class="sketch-note" x="125.0" y="118">a wave of 5</text>
+<line class="sketch-axis" x1="104" x2="624" y1="186" y2="186"/>
+<text class="sketch-label" x="624" y="198" text-anchor="end">time →</text>
+</svg>
+      <figcaption><strong>Figure 1.</strong> A sketch rather than measured data: when calls start during two
+        discussion rounds. Sequential agents wait for one another. Star sends its three reviews together. Full mesh
+        pushes twelve messages through five workers, so they leave in waves.</figcaption>
+    </figure>
+    <p>When agents take turns, every gap is a few seconds long, roughly the time the model takes to answer. Fan-out
+      changes this. In star, <span data-burst="vertical">53%</span> of the gaps are shorter than 50 ms, because the
+      reviews are dispatched together. In full mesh the share is <span data-burst="full_mesh">38%</span>, and for
+      sequential it is <span data-burst="horizontal">0%</span>. The remaining gaps form a second, slower group set by
+      how long the previous step takes to generate. The arrivals end up bimodal: a burst, then a wait.</p>
+    <aside class="post-aside">
+      <p>In full mesh the twelve peer messages go through a pool of five workers, so only five leave together and
+        the rest follow as workers free up. That is an orchestrator setting rather than a property of the topology,
+        and it caps the size of the burst. We have not measured how much it lowers the 38%.</p>
+    </aside>
+  </section>
+
+  <section id="poisson" class="doc-section" aria-labelledby="poissonTitle">
+    <h2 id="poissonTitle">Poisson doesn't fit</h2>
+    <p>The usual first guess for arrivals is a Poisson process, which implies exponentially distributed gaps. For
+      star and full mesh that fails almost by construction, since calls sent together cannot be Poisson. Sequential
+      is the more interesting case: it has no bursts, and the exponential still fits far worse than the alternatives
+      (KS distance 0.40, against 0.03 for the log-normal).</p>
+    <p>Looking only at the slower gaps, those above 50 ms, the log-normal has the lowest AIC of the three
+      distributions we tried in every pattern. How close it gets differs. The KS distance is 0.03 for sequential
+      and 0.08 and 0.09 for star and full mesh, so in the fan-out patterns the slow group has structure that a
+      single distribution does not capture. For full mesh the Weibull is slightly closer by KS distance. The fits,
+      tests and robustness checks are in <a data-site-href="paper">the paper</a>.</p>
+  </section>
+
+  <section id="load" class="doc-section" aria-labelledby="loadTitle">
+    <h2 id="loadTitle">Same rate, different load</h2>
+    <p>For us this is the most practical result. Star and sequential make discussion calls at almost the same average
+      rate, about 0.21 per second. Yet star keeps more calls in flight at the model server: 1.6 on average against
+      1.0. Its calls also take longer, 11.6 s on average against 5.7 s, although part of that is that they are
+      longer (2.7k tokens against 1.8k). Full mesh finishes its discussion in 32 s against 81 s and averages nearly
+      three calls in flight. It sends fewer bytes to the model server in total (39 kB per run against 51 kB), but in
+      so much less time that the mean byte rate is 77% higher, about 1.1 kB/s against 0.6 kB/s.</p>
+    <p>An average rate hides this. A rate limiter or autoscaler sized on averages would treat star and
+      sequential as the same workload, even though one arrives as a steady trickle and the other in bursts. It also means a
+      bursty trace from an agentic system may just reflect its structure, not a change in load.</p>
+  </section>
+
+  <section id="limits" class="doc-section" aria-labelledby="limitsTitle">
+    <h2 id="limitsTitle">Limits</h2>
+    <p>This is one framework, one small model, four kinds of task and a single machine. The topologies were fixed
+      in advance and the agents did not call external tools. The exact numbers are specific to this testbed. We expect the
+      pattern to carry over: fan-out creates bursts, and the coordination structure, not just the user, shapes what
+      the server sees.</p>
+  </section>
+
+  <section id="next" class="doc-section" aria-labelledby="nextTitle">
+    <h2 id="nextTitle">Where next</h2>
+    <p>Next we want more models and frameworks, deployments spread over several machines, a mixture model that
+      describes both groups of gaps, and a generative model that can produce synthetic agent traffic. Tool calls and
+      agents that choose their own call graph come after that.</p>
+  </section>
+
+  <section id="try" class="doc-section" aria-labelledby="tryTitle">
+    <h2 id="tryTitle">Try it</h2>
+    <p>The measurement framework and analysis scripts are <a data-site-href="repo">on GitHub</a>. In the browser you
+      can <a href="../../playground/run/?replay=full_mesh/math">replay a full-mesh run</a> and watch the edges of the
+      topology diagram light up as calls land, or <a href="../../results/">explore the results</a> in more depth.
+      The slides from the NAIC talk are here:</p>
+    <ul class="slides">
+      <li data-slides="../slides/naic2026-slides.pdf">
+        <span class="slides-title">NAIC 2026 talk<span>The workshop presentation of the paper</span></span>
+        <span class="slides-status" data-slides-status>Checking…</span>
+        <a class="cta" data-slides-link hidden>Slides (NAIC 2026 talk, PDF)</a>
+      </li>
+    </ul>
+  </section>
+
+  <section id="cite" class="doc-section" aria-labelledby="citeTitle">
+    <h2 id="citeTitle">Citation</h2>
+    <p>If this is useful for your work, please cite the paper:</p>
+    <p class="post-ref">D. Lamagna, A. Cabellos, A. Rodriguez-Natal, G. Rétvári and B. Serracanta. Towards Traffic
+      Modelling of Multi-Agent Systems: The Role of Coordination Topology. In <em>3rd ACM SIGCOMM Workshop on Networks
+      for AI Computing (NAIC)</em>. ACM, 2026. DOI <a data-site-href="doi" data-site-text="doi"></a>.</p>
+    <div data-site-cite></div>
+    <!-- Abstract: quoted exactly from the published paper (checked by scripts/demo/smoke_test.py, case "docs") -->
+    <details class="post-abstract" id="abstract">
+      <summary>The paper's abstract</summary>
+      <blockquote class="abstract" id="abstractText">
+      <p>Multi-agent LLM systems are an emerging networked workload whose rapid deployment raises questions about the traffic patterns they generate. Compared to conventional applications, these systems generate requests internally: a single user task can induce a structured sequence of model calls whose timing is governed by coordination logic rather than by user arrival rate. It is not clear whether classical traffic models, designed for human-driven workloads, apply to this setting.</p>
+      <p>We present an empirical characterisation of LLM-call inter-arrival time distributions across sequential, star, and full-mesh agentic coordination topologies, using a multi-layer measurement framework over 500 repeated runs per topology. We find that topology fundamentally shapes the arrival process of requests to the LLM backend: fan-out coordination introduces a structural bimodality absent in sequential execution, and the reasoning-phase component is best described by a log-normal distribution, with the Poisson exponential null model decisively rejected across all topologies. These differences propagate to inference and network level metrics. The framework and analysis pipeline are released openly at <a href="https://github.com/dlamagna/agentraffic">https://github.com/dlamagna/agentraffic</a>.</p>
+    </blockquote>
+    </details>
+  </section>
+
+  <section class="footnotes" aria-label="Footnotes">
+    <ol>
+      <li id="fn1">Pooled across all runs of a pattern, these gaps are the inter-arrival times we analyse in the
+        paper. A gap shorter than 50 ms counts as part of a burst. <a href="#fnref1" aria-label="Back to the text">↩</a></li>
+    </ol>
+  </section>
+
+</main>
+
+<footer data-site-footer></footer>
+</body>
+</html>

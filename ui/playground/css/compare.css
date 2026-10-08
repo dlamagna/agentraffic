@@ -1,0 +1,112 @@
+/**
+ * Compare topologies (playground/compare/): three replay panels and a shared arrivals timeline.
+ * Colours: the shared theme tokens plus one categorical colour per topology (the same hues as
+ * the Results charts, validated for both themes).
+ */
+:root {
+  --cmp-horizontal: #256abf;
+  --cmp-vertical: #d95926;
+  --cmp-full_mesh: #199e70;
+  --cmp-grid: #ebeae5;
+  --cmp-axis: #bdbcb4;
+  --cmp-future: rgba(26, 28, 33, 0.05);
+}
+:root[data-theme="dark"] {
+  --cmp-horizontal: #3987e5;
+  --cmp-vertical: #d95926;
+  --cmp-full_mesh: #199e70;
+  --cmp-grid: #2a374b;
+  --cmp-axis: #475569;
+  --cmp-future: rgba(148, 163, 184, 0.08);
+}
+
+.cmp { max-width: 1280px; margin: 0 auto; padding: 24px 16px 64px; display: grid; gap: 16px; min-width: 0; }
+.cmp > * { min-width: 0; }
+.cmp-lead { margin: 0; color: var(--text-secondary); font-size: 15px; line-height: 1.55; max-width: 80ch; }
+.cmp .card h2 { margin-bottom: 8px; }
+.cmp-sub { margin: 0 0 12px; color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
+
+.cmp-controls {
+  display: grid; gap: 12px 16px; align-items: end;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 110px) auto;
+}
+.cmp-controls[hidden] { display: none; }
+.cmp-field select { margin-bottom: 0; }
+.cmp-buttons { display: flex; gap: 8px; }
+.cmp-buttons button { padding: 10px 16px; }
+.cmp-scrub, .cmp-task { grid-column: 1 / -1; }
+.cmp-scrub label { display: flex; justify-content: space-between; gap: 8px; }
+.cmp-scrub output { font-family: var(--font-mono); color: var(--text-primary); }
+.cmp-scrub input[type="range"] { padding: 0; border: 0; background: none; accent-color: var(--accent); }
+.cmp-task { margin: 0; font-size: 13px; color: var(--text-secondary); line-height: 1.5; max-height: 4.5em; overflow: auto; }
+
+.cmp-panels { display: grid; gap: 12px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cmp-panel { padding: 14px; border-top: 3px solid var(--topo); min-width: 0; }
+.cmp-panel__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 8px; margin-bottom: 8px; }
+.cmp-panel h3 { margin: 0; font-size: 15px; display: flex; align-items: center; gap: 6px; }
+.cmp-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--topo); flex: none; }
+.cmp-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; background: var(--bg-tertiary); color: var(--text-secondary); }
+.cmp-badge.is-live { background: var(--badge-running-bg); color: var(--badge-running-fg); }
+.cmp-badge.is-done { background: var(--badge-complete-bg); color: var(--badge-complete-fg); }
+.cmp-metrics { display: flex; flex-wrap: wrap; gap: 2px 14px; margin: 0 0 6px; font-size: 12px; color: var(--text-secondary); }
+.cmp-metrics b { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.cmp-stage { margin: 0 0 6px; font-size: 12px; color: var(--text-muted); min-height: 1.3em; }
+.cmp svg { display: block; width: 100%; height: auto; overflow: visible; }
+.cmp svg text { font-family: var(--font-sans); fill: var(--text-muted); font-size: 10px; }
+.cmp svg .cmp-axis { stroke: var(--cmp-axis); stroke-width: 1; }
+.cmp svg .cmp-grid { stroke: var(--cmp-grid); stroke-width: 1; }
+.cmp svg .cmp-playhead { stroke: var(--text-primary); stroke-width: 1; stroke-dasharray: 3 2; }
+.cmp svg .cmp-bar { fill: var(--topo); }
+.cmp svg .cmp-bar--live { fill-opacity: 0.45; stroke: var(--topo); stroke-width: 1; }
+.cmp svg .cmp-lane { fill: var(--cmp-future); }
+.cmp svg .cmp-tick { stroke: var(--topo); stroke-width: 1.5; }
+.cmp svg .cmp-area { fill: var(--topo); fill-opacity: 0.35; stroke: var(--topo); stroke-width: 1; }
+.cmp svg .cmp-rowlabel { fill: var(--text-primary); font-size: 11px; font-weight: 600; }
+
+.cmp-table-wrap { overflow-x: auto; }
+.cmp-table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.cmp-table th, .cmp-table td { text-align: right; padding: 7px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.cmp-table th:first-child, .cmp-table td:first-child { text-align: left; }
+.cmp-table thead th { color: var(--text-secondary); font-weight: 600; font-size: 12px; white-space: normal; }
+.cmp-table .cmp-dot { display: inline-block; margin-right: 6px; vertical-align: baseline; }
+.cmp-table-wrap + .cmp-sub { margin-top: 12px; }
+.cmp-empty { margin: 0; color: var(--text-secondary); font-size: 14px; }
+
+@media (max-width: 900px) {
+  .cmp-panels { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 600px) {
+  .cmp-table th, .cmp-table td { padding: 6px 4px; white-space: normal; font-size: 12px; }
+  .cmp-table thead th .cmp-dot { display: block; margin: 0 0 2px auto; }
+  .cmp { padding: 16px; }
+  .cmp-controls { grid-template-columns: minmax(0, 1fr) minmax(0, 90px); }
+  .cmp-buttons { grid-column: 1 / -1; }
+  .cmp-buttons button { flex: 1; }
+}
+
+/* Embedded on the home page (index.html), which does not load playground/css/styles.css:
+   the few playground tokens and shared controls the page needs, scoped so the playground page
+   is unaffected. */
+.cmp--embedded {
+  --bg-card: var(--bg-secondary);
+  --primary: var(--accent);
+  --primary-light: var(--accent-hover);
+  --btn-secondary-hover: var(--bg-tertiary);
+  --badge-running-bg: var(--accent-soft); --badge-running-fg: var(--accent-text);
+  --badge-complete-bg: #e8f3ec; --badge-complete-fg: #1d7a3e;
+  padding: 0 0 24px; max-width: none;
+}
+:root[data-theme="dark"] .cmp--embedded {
+  --badge-running-bg: #2563eb; --badge-running-fg: #ffffff;
+  --badge-complete-bg: #16a34a; --badge-complete-fg: #ffffff;
+}
+.cmp--embedded .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 20px; }
+.cmp--embedded .card h2 { margin: 0 0 8px; font-size: 18px; color: var(--text-primary); }
+.cmp--embedded .page-title { margin: 0 0 4px; }
+.cmp--embedded label { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 500; color: var(--text-secondary); }
+.cmp--embedded select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-input); color: var(--text-primary); font: inherit; font-size: 14px; margin-bottom: 12px; }
+.cmp--embedded button { font: inherit; font-size: 15px; font-weight: 600; border: none; border-radius: var(--radius-md); cursor: pointer; }
+.cmp--embedded .btn-primary { background: var(--primary); color: var(--on-accent); }
+.cmp--embedded .btn-primary:hover { background: var(--primary-light); }
+.cmp--embedded .btn-secondary { background: transparent; color: var(--text-secondary); border: 1px solid var(--border); }
+.cmp--embedded .btn-secondary:hover { background: var(--btn-secondary-hover); }

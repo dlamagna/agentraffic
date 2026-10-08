@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Traffic patterns · Results · agentraffic</title>
+  <meta name="description" content="Inter-arrival times of LLM calls per coordination topology: bursts, gaps between bursts, full mesh with 3 to 5 agents, distribution fits and their robustness.">
+  <script>
+    /* Theme before first paint: the saved choice, else light (see common/js/theme.js). */
+    (function () {
+      var t;
+      try { t = localStorage.getItem('agentraffic-theme'); } catch (e) {}
+      if (t !== 'light' && t !== 'dark') t = 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  <link rel="stylesheet" href="../../common/css/base.css">
+  <link rel="stylesheet" href="../../common/css/site.css">
+  <link rel="stylesheet" href="../css/results.css">
+  <link rel="stylesheet" href="../css/traffic.css">
+  <script type="module" src="../../common/js/theme.js"></script>
+  <script type="module" src="../../common/js/nav.js"></script>
+  <script type="module" src="../js/main.js"></script>
+  <script type="module" src="../js/traffic.js"></script>
+</head>
+<body data-results-page="traffic">
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <a class="brand" href="../../">agentraffic</a>
+  <div class="header-end">
+    <nav data-site-nav="results" aria-label="Site"></nav>
+    <div class="theme-toggle" data-theme-toggle></div>
+  </div>
+</header>
+
+<nav class="results-tabs" data-results-tabs aria-label="Results pages"></nav>
+
+<main id="main" class="container" tabindex="-1">
+
+  <section class="hero hero--page" aria-labelledby="pageTitle">
+    <p class="eyebrow">Results</p>
+    <h1 id="pageTitle">Traffic patterns</h1>
+    <p class="page-question">When do calls reach the model server, and how should we model them?</p>
+  </section>
+
+  <p class="group-title" id="arrivals">Arrivals</p>
+
+  <!-- IAT --------------------------------------------------------------------------------- -->
+  <section id="iat" class="card" data-toc="IAT" aria-labelledby="iatTitle">
+    <h2 id="iatTitle" data-badge="aggregate">Inter-arrival times</h2>
+    <p class="lede">Gaps between consecutive discussion-call starts, pooled over all runs of each topology, on a
+      log time axis. Fan-out topologies are bimodal: a burst mode under 50 ms (calls dispatched together) and a
+      multi-second reasoning mode. The fitted curves cover the reasoning mode only (coloured bars); the
+      <a href="#fits">fit table</a> compares them. Switch to a linear axis to see why the log axis is needed: the
+      burst mode collapses into one off-scale spike at zero.</p>
+    <div class="controls" role="group" aria-label="Fit curves">
+      <span class="controls__label">X axis</span>
+      <div class="segmented" role="radiogroup" aria-label="IAT x-axis scale" id="iatScale">
+        <button type="button" role="radio" aria-checked="true" data-scale="log">Log</button>
+        <button type="button" role="radio" aria-checked="false" data-scale="linear">Linear</button>
+      </div>
+      <span class="controls__label">Show fits</span>
+      <label class="check"><input type="checkbox" data-fit="lognormal" checked> <span class="key key--lognormal" aria-hidden="true"></span> Log-normal</label>
+      <label class="check"><input type="checkbox" data-fit="exponential" checked> <span class="key key--exponential" aria-hidden="true"></span> Exponential</label>
+      <label class="check"><input type="checkbox" data-fit="weibull" checked> <span class="key key--weibull" aria-hidden="true"></span> Weibull</label>
+      <span class="controls__label"><span class="swatch swatch--neutral" aria-hidden="true"></span>grey bars: not fitted (burst mode, excluded tail)</span>
+    </div>
+    <div id="iatCharts" class="multiples multiples--3"></div>
+    <p id="iatSource" class="source"></p>
+  </section>
+
+  <!-- Bursts ------------------------------------------------------------------------------ -->
+  <section id="bursts" class="card" data-toc="Bursts" aria-labelledby="burstsTitle">
+    <h2 id="burstsTitle" data-badge="aggregate">Burst structure</h2>
+    <p class="lede">A burst is a run of calls that start less than 50 ms apart, the paper’s burst threshold.
+      Star always sends its three reviewers together; Full mesh opens each wave with five calls (its worker pool),
+      then refills one call at a time. Traffic is ON for milliseconds and OFF for seconds.</p>
+    <h3 class="subhead">Calls by burst size</h3>
+    <div id="burstSizes" class="multiples multiples--3"><p class="placeholder">Loading…</p></div>
+    <h3 class="subhead">ON and OFF periods</h3>
+    <p class="chart-note">ON: first to last call start of a burst of two or more calls. OFF: the silence until
+      the next burst. Bar: interquartile range; line: 5th to 95th percentile; tick: median.</p>
+    <div id="onOff"></div>
+    <div id="burstTable" class="table-wrap"></div>
+    <p id="burstSource" class="source"></p>
+  </section>
+
+  <!-- Gaps -------------------------------------------------------------------------------- -->
+  <section id="gaps" class="card" data-toc="Gaps" aria-labelledby="gapsTitle">
+    <h2 id="gapsTitle" data-badge="aggregate">Gaps with bursts removed</h2>
+    <p class="lede">Each burst merged into one arrival at its first call, then the gaps between arrivals again.
+      Without its fan-out, Star paces like Sequential, at about twice the gap (a solver call, then the reviewers).
+      Full mesh stays bursty: its refills arrive a few hundred milliseconds apart, too far apart to merge.</p>
+    <div class="legend" id="gapLegend"></div>
+    <div id="gapCharts" class="multiples multiples--3"><p class="placeholder">Loading…</p></div>
+    <div id="gapTable" class="table-wrap"></div>
+    <div id="gapNotes" class="footnotes"></div>
+  </section>
+
+  <!-- Agent count ------------------------------------------------------------------------- -->
+  <section id="scaling" class="card" data-toc="Agent count" aria-labelledby="scalingTitle">
+    <h2 id="scalingTitle" data-badge="aggregate">Full mesh with 3, 4 and 5 agents</h2>
+    <p class="lede">More agents mean more peer messages per round (N×(N−1)), sent through a pool of five workers.
+      The burst mode shrinks as the waves get longer, and the gaps fill in between.</p>
+    <div id="scalingCharts" class="multiples multiples--3"></div>
+    <div id="scalingTable" class="table-wrap"></div>
+    <p id="scalingSource" class="source"></p>
+  </section>
+
+  <p class="group-title" id="models">Models</p>
+
+  <!-- Fits -------------------------------------------------------------------------------- -->
+  <section id="fits" class="card" data-toc="Fits" aria-labelledby="fitsTitle">
+    <h2 id="fitsTitle" data-badge="aggregate">Goodness of fit</h2>
+    <p class="lede">Three families fitted to the reasoning-mode gaps (over 50 ms) by maximum likelihood, as in the
+      paper’s Table 3. Poisson arrivals would give exponential gaps; that fit is the worst for every topology.
+      Log-normal has the lowest AIC everywhere but fits closely only for Sequential (KS D 0.027, against 0.08
+      and 0.09). The curves are drawn on the <a href="#iat">histograms above</a>.</p>
+    <div id="iatTable" class="table-wrap"></div>
+    <div id="iatNotes" class="footnotes"></div>
+  </section>
+
+  <!-- Robustness -------------------------------------------------------------------------- -->
+  <section id="robustness" class="card" data-toc="Robustness" aria-labelledby="robTitle">
+    <h2 id="robTitle" data-badge="aggregate">Subsampling robustness</h2>
+    <p class="lede">With thousands of gaps, a KS test rejects every family. So the test is repeated on small samples: draw 500 random
+      samples of 50, 100 and 200 gaps, refit each family to each sample, and count how often KS rejects it at
+      α = 0.05. The exponential is rejected almost always; log-normal least often.</p>
+    <div id="robTable" class="table-wrap"></div>
+    <h3 class="subhead">The same rates as curves</h3>
+    <div class="legend" id="robLegend"></div>
+    <div id="robCharts" class="multiples multiples--3"><p class="placeholder">Loading…</p></div>
+    <div id="robNotes" class="footnotes"></div>
+  </section>
+
+  <nav data-results-end aria-label="On this page and next"></nav>
+
+</main>
+
+<footer class="site-footer">
+  <div data-site-footer></div>
+</footer>
+
+<div id="tooltip" class="tooltip" role="tooltip" hidden></div>
+</body>
+</html>
