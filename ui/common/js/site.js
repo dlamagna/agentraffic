@@ -26,6 +26,9 @@ export const DOI_URL = `https://doi.org/${DOI}`;
 export const PAPER_URL = `https://dl.acm.org/doi/${DOI}`;
 
 export const REPO_URL = 'https://github.com/dlamagna/agentraffic';
+
+/** The login-protected copy of the site with the real per-run data (research group only). */
+export const SIGN_IN_URL = 'https://agentraffic-private.pages.dev';
 export const REPO_BRANCH = 'main';
 
 /** A file or directory in the code base on GitHub, e.g. repoUrl('scripts/experiment/'). */

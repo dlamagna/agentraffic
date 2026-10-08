@@ -3304,6 +3304,7 @@ PORTAL_JS = """() => {
     left: r.left, right: r.right, vw: document.documentElement.clientWidth,
     groups: [...p.querySelectorAll('[data-portal-group]')].map((g) => g.dataset.portalGroup),
     signed: /Signed in: real data/.test(p.textContent),
+    signin: (p.querySelector('[data-portal-link="signin"]') || {}).href || null,
     switchPressed: [...p.querySelectorAll('.mode-switch button[aria-pressed="true"]')].map((x) => x.dataset.mode),
     stored: (() => { try { return localStorage.getItem('agentraffic-endpoint'); } catch (e) { return null; } })(),
     status: (p.querySelector('.portal-menu__status') || {}).textContent,
@@ -3335,6 +3336,7 @@ def check_portal(env: Env, t: Case, mode: str):
             t.eq(m["groups"], ["connect", "signin"], f"{what}: groups")
             if mode == "public":
                 t.check(not m["signed"], f"{what}: 'Signed in' on the public site")
+                t.eq(m["signin"], "https://agentraffic-private.pages.dev/", f"{what}: Sign in link")
                 t.eq(m["switchPressed"], [], f"{what}: switch on the public site")
             else:
                 t.check(m["signed"], f"{what}: 'Signed in: real data' missing")

@@ -337,3 +337,8 @@
 .portal-menu__panel details summary { cursor: pointer; font: 600 0.82rem var(--font-sans); color: var(--accent-text); }
 .portal-menu__panel input:focus-visible, .portal-menu__panel button:focus-visible, .portal-menu__panel summary:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 .portal-menu__signed { font-weight: 700; color: var(--text-primary); }
+
+/* Portal ▾ Sign in (public site): a button to the login-protected copy */
+.portal-menu .portal-menu__panel a.portal-menu__signin { display: inline-flex; align-items: center; min-height: 36px; margin-top: 6px; padding: 7px 16px; border-radius: var(--radius-md); background: var(--accent); color: var(--on-accent, #fff); font: 600 0.9rem var(--font-sans); text-decoration: none; }
+.portal-menu .portal-menu__panel a.portal-menu__signin:hover, .portal-menu .portal-menu__panel a.portal-menu__signin:focus-visible { background: var(--accent-hover, var(--accent)); text-decoration: none; }
+@media (pointer: coarse) { .portal-menu .portal-menu__panel a.portal-menu__signin { min-height: 44px; } }

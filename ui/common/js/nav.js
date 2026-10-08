@@ -30,7 +30,7 @@
  */
 
 import {
-  AGENTVERSE, AUTHORS, BIBTEX, DOI, DOI_URL, PAPER_URL, REPO_URL, TITLE, VENUE, VENUE_SHORT, repoUrl,
+  AGENTVERSE, AUTHORS, BIBTEX, DOI, DOI_URL, PAPER_URL, REPO_URL, SIGN_IN_URL, TITLE, VENUE, VENUE_SHORT, repoUrl,
 } from './site.js';
 import { backendReachable, getCustomEndpoint, parseEndpoint, setCustomEndpoint } from './backend.js';
 import { getDataMode } from './data.js';
@@ -319,7 +319,14 @@ function connectGroup() {
 
 /** The real-data state and the Real / Synthetic switch, shown only when the real data is reachable. */
 function signInGroup(data) {
-  if (!(data && data.privateAvailable)) return el('div', { hidden: '', 'data-portal-group': 'signin' });
+  if (!(data && data.privateAvailable)) {
+    // public site: a way in to the copy with the real data
+    return el('fieldset', { class: 'portal-menu__group', 'data-portal-group': 'signin' }, [
+      el('legend', { text: 'Sign in' }),
+      el('p', { class: 'portal-menu__text', text: 'The real per-run data is available to the research group after sign-in.' }),
+      el('a', { class: 'portal-menu__signin', href: SIGN_IN_URL, 'data-portal-link': 'signin', target: '_blank', rel: 'noopener', text: 'Sign in ↗' }),
+    ]);
+  }
   const group = el('fieldset', { class: 'portal-menu__group', 'data-portal-group': 'signin' }, [el('legend', { text: 'Real data' })]);
   group.append(el('p', { class: 'portal-menu__text portal-menu__signed', text: 'Signed in: real data' }));
   const sw = switchElement(data);
