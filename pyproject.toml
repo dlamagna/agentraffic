@@ -11,10 +11,10 @@ license = { file = "LICENSE" }
 requires-python = ">=3.11"
 authors = [
     { name = "Davide Lamagna",          email = "davidelamagna17@gmail.com" },
-    { name = "Berta Serracanta" },
-    { name = "Alberto Rodriguez Natal" },
-    { name = "Gábor Rétvári" },
     { name = "Albert Cabellos" },
+    { name = "Alberto Rodriguez-Natal" },
+    { name = "Gábor Rétvári" },
+    { name = "Berta Serracanta" },
 ]
 keywords = ["multi-agent", "llm", "traffic-modelling", "measurement", "agentverse"]
 classifiers = [

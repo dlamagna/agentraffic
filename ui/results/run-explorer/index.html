@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Run explorer · Results · agentraffic</title>
+  <meta name="description" content="All 1,481 recorded AgentVerse runs, with a drill-down into the LLM calls of each.">
+  <script>
+    /* Theme before first paint: the saved choice, else light (see common/js/theme.js). */
+    (function () {
+      var t;
+      try { t = localStorage.getItem('agentraffic-theme'); } catch (e) {}
+      if (t !== 'light' && t !== 'dark') t = 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  <link rel="stylesheet" href="../../common/css/base.css">
+  <link rel="stylesheet" href="../../common/css/site.css">
+  <link rel="stylesheet" href="../css/results.css">
+  <script type="module" src="../../common/js/theme.js"></script>
+  <script type="module" src="../../common/js/nav.js"></script>
+  <script type="module" src="../js/main.js"></script>
+  <script type="module" src="../js/outliers.js"></script>
+</head>
+<body data-results-page="runs">
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <a class="brand" href="../../">agentraffic</a>
+  <div class="header-end">
+    <nav data-site-nav="results" aria-label="Site"></nav>
+    <div class="theme-toggle" data-theme-toggle></div>
+  </div>
+</header>
+
+<nav class="results-tabs" data-results-tabs aria-label="Results pages"></nav>
+
+<main id="main" class="container" tabindex="-1">
+
+  <section class="hero hero--page" aria-labelledby="pageTitle">
+    <p class="eyebrow">Results</p>
+    <h1 id="pageTitle">Run explorer</h1>
+    <p class="page-question">What happened inside each recorded run?</p>
+  </section>
+  <div data-results-filter data-applies="the run table and the unusual runs"></div>
+
+  <!-- Run explorer ------------------------------------------------------------------------ -->
+  <section id="runs" class="card" data-toc="Run explorer" aria-labelledby="runsTitle">
+    <h2 id="runsTitle" data-badge="runs">Run explorer</h2>
+    <div data-mode-notice="runs" hidden></div>
+    <p class="lede">All 1,481 runs. Filter, sort, and open any run to see its LLM calls. The 12 runs used by the
+      AgentVerse demo can be replayed there.</p>
+    <div class="controls controls--filters" id="runFilters">
+      <label class="field"><span>Iterations</span>
+        <select id="runIter"><option value="">Any</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
+      <label class="field field--grow"><span>Run id</span>
+        <input id="runSearch" type="search" placeholder="run id, e.g. 1a2b3c4d" autocomplete="off" spellcheck="false"></label>
+      <label class="check"><input type="checkbox" id="runFixtures"> Demo runs only</label>
+      <label class="check"><input type="checkbox" id="runFlagged"> Flagged only</label>
+    </div>
+    <p id="runCount" class="count" aria-live="polite"></p>
+    <div id="runTable" class="table-wrap table-wrap--runs"><button type="button" class="btn" id="runLoad">Load the run table (2.3 MB)</button></div>
+    <div id="runPager" class="pager"></div>
+    <div id="runDetail" class="run-detail" tabindex="-1" hidden></div>
+  </section>
+
+  <!-- Unusual runs (js/outliers.js) ------------------------------------------------------- -->
+  <section id="outliers" class="card" data-toc="Unusual runs" aria-labelledby="outliersTitle">
+    <h2 id="outliersTitle" data-badge="runs">Unusual runs</h2>
+    <div data-mode-notice="runs" hidden></div>
+    <p class="lede">Runs that stand out from the others of their topology: very long, token-heavy, slow to
+      start at the model server, stopped by the output cap, or needing every retry. Pick a reason, then open a
+      run to see its calls.</p>
+    <div id="outlierBody" aria-busy="true"><p class="loading">Loading the flagged runs…</p></div>
+  </section>
+
+  <nav data-results-end aria-label="On this page and next"></nav>
+
+</main>
+
+<footer class="site-footer">
+  <div data-site-footer></div>
+</footer>
+
+<div id="tooltip" class="tooltip" role="tooltip" hidden></div>
+</body>
+</html>

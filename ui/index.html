@@ -4,19 +4,88 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>agentraffic</title>
+  <script>
+    /* Theme before first paint: the saved choice, else light (see common/js/theme.js). */
+    (function () {
+      var t;
+      try { t = localStorage.getItem('agentraffic-theme'); } catch (e) {}
+      if (t !== 'light' && t !== 'dark') t = 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
   <link rel="stylesheet" href="common/css/base.css">
+  <link rel="stylesheet" href="common/css/site.css">
+  <link rel="stylesheet" href="playground/css/compare.css">
+  <script type="module" src="common/js/theme.js"></script>
+  <script type="module" src="common/js/nav.js"></script>
   <style>
+    :root { --footer-width: 1120px; } /* align the shared footer with .container */
+    .header { flex-wrap: wrap; gap: 10px 16px; }
+    .header h1 {
+      font-family: var(--font-heading);
+      font-size: 1.3rem;
+      letter-spacing: 0.1px;
+    }
+    .header-end { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+    .paper-hero {
+      padding-bottom: 28px;
+      margin-bottom: 32px;
+      border-bottom: 1px solid var(--border);
+    }
+    .paper-hero .eyebrow {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+    .paper-hero h2 {
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      line-height: 1.22;
+      font-weight: 600;
+      margin: 6px 0 8px;
+      max-width: 30em;
+      text-wrap: balance;
+    }
+    .paper-hero .authors { color: var(--text-secondary); font-size: 0.95rem; }
+    .paper-hero .summary {
+      color: var(--text-secondary);
+      font-size: 0.98rem;
+      max-width: 46em;
+      margin: 12px 0 0;
+    }
+    .paper-hero .summary + .summary { margin-top: 10px; }
+    .paper-hero .cta-row { margin-top: 18px; }
+    .paper-hero--head { padding-bottom: 0; margin-bottom: 20px; border-bottom: none; }
+    /* Title and authors on the left, the summary and buttons on the right; stacked on narrow screens */
+    .home-top { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 20px 44px; align-items: start; }
+    .home-top .summary { font-size: 0.93rem; }
+    .home-top__title .cta-row { margin-top: 22px; gap: 10px; }
+    .home-top__title .cta { padding: 8px 14px; font-size: 0.9rem; white-space: nowrap; }
+    .home-top__intro .summary:first-child { margin-top: 0; }
+    @media (max-width: 1080px) { .home-top { grid-template-columns: minmax(0, 1fr); } .home-top__intro .summary:first-child { margin-top: 4px; } }
+    .container { max-width: 1120px; padding: 40px 24px 56px; }
+    .page-title {
+      font-size: 1.6rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .page-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.98rem;
+      max-width: 44em;
+    }
     .benchmark-list {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 16px;
-      margin-top: 24px;
+      margin-top: 28px;
     }
     .benchmark-card {
       background: var(--bg-secondary);
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 20px 24px;
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-1);
+      padding: 22px 24px;
       display: flex;
       flex-direction: column;
       gap: 8px;
@@ -26,21 +95,22 @@
       border-color: var(--border-active);
     }
     .benchmark-card h2 {
-      font-size: 1.1rem;
+      font-size: 1.15rem;
       font-weight: 600;
     }
     .benchmark-card p {
       color: var(--text-secondary);
-      font-size: 0.9rem;
+      font-size: 0.92rem;
       flex: 1;
     }
     .benchmark-card a.open-btn {
       margin-top: 8px;
       display: inline-block;
+      align-self: flex-start;
       padding: 8px 16px;
       background: var(--accent);
-      color: #fff;
-      border-radius: 6px;
+      color: var(--on-accent);
+      border-radius: var(--radius-md);
       font-size: 0.875rem;
       font-weight: 500;
       text-align: center;
@@ -48,14 +118,19 @@
     }
     .benchmark-card a.open-btn:hover {
       background: var(--accent-hover);
+      color: var(--on-accent);
       text-decoration: none;
     }
-    .page-title {
-      margin-bottom: 4px;
+    @media (max-width: 720px) {
+      /* title + theme toggle on the first row, the links below */
+      .header-end { display: contents; }
+      .header .theme-toggle { order: 2; }
+      .header .site-links { order: 3; flex-basis: 100%; gap: 6px; }
+      .header .site-link, .header .site-menu__button { padding: 5px 10px; }
     }
-    .page-subtitle {
-      color: var(--text-secondary);
-      font-size: 0.95rem;
+    @media (max-width: 600px) {
+      .header { padding: 12px 16px; }
+      .container { padding: 24px 16px 40px; }
     }
   </style>
 </head>
@@ -63,28 +138,121 @@
 
 <header class="header">
   <h1>agentraffic</h1>
+  <div class="header-end">
+    <nav data-site-nav="launcher" aria-label="Site"></nav>
+    <div class="theme-toggle" data-theme-toggle></div>
+  </div>
 </header>
 
 <main class="container">
+  <section class="paper-hero paper-hero--head home-top" aria-labelledby="paperTitle">
+    <div class="home-top__title">
+    <p class="eyebrow">NAIC 2026 · 3rd ACM SIGCOMM Workshop on Networks for AI Computing</p>
+    <h2 id="paperTitle">Towards Traffic Modelling of Multi-Agent Systems: The Role of Coordination Topology</h2>
+    <p class="authors">Davide Lamagna, Albert Cabellos, Alberto Rodriguez-Natal, Gábor Rétvári, Berta Serracanta</p>
+    <div class="cta-row">
+      <a class="cta cta--primary" href="docs/blog/">Read the blog post</a>
+      <a class="cta" data-site-href="paper" title="Read the paper in the ACM Digital Library">Read the paper</a>
+      <a class="cta" data-site-href="repo">View the code</a>
+    </div>
+    </div>
+    <div class="home-top__intro">
+      <p class="summary">When several LLM agents work on one task, a single request from a user can turn into dozens
+        of calls to the model server, and the way the agents coordinate decides when those calls arrive. We ran the
+        same tasks on the same model under three coordination patterns (agents taking turns, a star of reviewers, and
+        everyone messaging everyone) and measured the traffic from the application down to the network. Fan-out turns
+        the arrivals into bursts followed by long pauses, Poisson models don't fit, and two patterns with the same
+        average call rate can load the server very differently.</p>
+      <p class="summary">This site has the code, a replay demo and the results. For the story in plain words, start
+        with <a href="docs/blog/">the blog post</a>.</p>
+    </div>
+  </section>
+
+  <section class="cmp cmp--embedded" aria-label="The experiment: one task, three topologies">
+    <div class="card cmp-controls" id="cmpControls" hidden>
+      <div class="cmp-field">
+        <label for="cmpTask">Task</label>
+        <select id="cmpTask"></select>
+      </div>
+      <div class="cmp-field cmp-field--narrow">
+        <label for="cmpSpeed">Speed</label>
+        <select id="cmpSpeed">
+          <option value="1">1x</option>
+          <option value="5" selected>5x</option>
+          <option value="20">20x</option>
+        </select>
+      </div>
+      <div class="cmp-buttons">
+        <button type="button" class="btn-primary" id="cmpPlay">Play</button>
+        <button type="button" class="btn-secondary" id="cmpRestart">Restart</button>
+      </div>
+      <div class="cmp-scrub">
+        <label for="cmpScrub">Replay time <output id="cmpClock">0.0 s</output></label>
+        <input type="range" id="cmpScrub" min="0" max="1000" value="0" step="1">
+      </div>
+      <p class="cmp-task" id="cmpTaskText"></p>
+    </div>
+
+    <p class="cmp-empty card" id="cmpEmpty" hidden role="status"></p>
+
+    <div class="cmp-panels" id="cmpPanels"></div>
+
+    <section class="card cmp-timeline-card" id="cmpTimelineCard" hidden>
+      <h2>LLM-call arrivals, shared timeline</h2>
+      <p class="cmp-sub">One tick per call, at the moment it is sent. The filled area below each row is the number
+        of calls in flight at once, on a common scale.</p>
+      <div class="cmp-timeline" id="cmpTimeline"></div>
+    </section>
+
+    <section class="card" id="cmpStatsCard" hidden>
+      <h2>The three runs, whole</h2>
+      <div class="cmp-table-wrap">
+        <table class="cmp-table" id="cmpStats"></table>
+      </div>
+      <p class="cmp-sub" id="cmpTakeaway"></p>
+    </section>
+  </section>
+
   <h2 class="page-title">Tools</h2>
-  <p class="page-subtitle">Select a dashboard to view live metrics, run tasks, or inspect results.</p>
+  <p class="page-subtitle">Run or replay the AgentVerse workflow, open a saved run, chat with the orchestrator, or browse the paper's results.</p>
 
   <div class="benchmark-list">
 
-    <div class="benchmark-card">
-      <h2>AgentVerse</h2>
-      <p>4-stage multi-agent orchestration: recruitment → discussion → execution → evaluation. Run and inspect topology experiments (sequential, star, full mesh).</p>
-      <a class="open-btn" href="agentverse/">Open Dashboard</a>
+    <div class="benchmark-card" data-tool="runner">
+      <h2>Run a workflow</h2>
+      <p>Start an AgentVerse run, or replay a recorded one: recruitment → discussion → execution → evaluation, under the sequential, star or full-mesh topology.</p>
+      <a class="open-btn" href="playground/run/">Run a workflow</a>
+    </div>
+
+    <div class="benchmark-card" data-tool="viewer">
+      <h2>Open a saved run</h2>
+      <p>Load a response.json or a run ID and step through its stages, discussion rounds and LLM calls.</p>
+      <a class="open-btn" href="playground/open/">Open a saved run</a>
+    </div>
+
+    <div class="benchmark-card" data-tool="compare">
+      <h2>Compare topologies</h2>
+      <p>Replay the same task under the sequential, star and full-mesh topologies at once, with one shared timeline of LLM-call arrivals: the difference in burstiness at a glance.</p>
+      <a class="open-btn" href="playground/compare/">Compare topologies</a>
+    </div>
+
+    <div class="benchmark-card" data-tool="chat">
+      <h2>Chat with Agent A</h2>
+      <p>Send one task to the orchestrator and see its reply, the worker outputs and the LLM calls. Needs the live backend, so it works on a local install only.</p>
+      <a class="open-btn" href="playground/chat/">Chat with Agent A</a>
     </div>
 
     <div class="benchmark-card">
-      <h2>Chat</h2>
-      <p>Direct interface for sending tasks to Agent A. Useful for manual testing and one-off runs.</p>
-      <a class="open-btn" href="chat/">Open Chat</a>
+      <h2>Results</h2>
+      <p>The paper's traffic findings from 1,481 recorded runs: inter-arrival times and fits, cross-layer correlations, and a drill-down into every run's LLM-call timeline.</p>
+      <a class="open-btn" href="results/">Open Results</a>
     </div>
 
   </div>
 </main>
+
+<footer data-site-footer></footer>
+<script type="module" src="playground/js/compare.js"></script>
 
 </body>
 </html>

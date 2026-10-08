@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Topology Traffic Results</title>
+  <meta name="description" content="Findings of 'Towards Traffic Modelling of Multi-Agent Systems: The Role of Coordination Topology' (NAIC 2026), from 1,481 recorded AgentVerse runs.">
+  <script>
+    /* Old links to the single results page: #run=<id> and the sections that moved forward to
+       their new page (also on later hash changes, see js/shell.js). */
+    window.__resultsRedirect = function () {
+      var moved = { iat: 'traffic-patterns/', scaling: 'traffic-patterns/', correlations: 'system-load/', tasks: 'system-load/', network: 'system-load/', runs: 'run-explorer/' };
+      var hash = location.hash, m = /^#([\w-]+)/.exec(hash);
+      var target = /^#run=/i.test(hash) ? 'run-explorer/' : m && moved[m[1]];
+      if (target) location.replace(target + location.search + hash);
+    };
+    window.__resultsRedirect();
+  </script>
+  <script>
+    /* Theme before first paint: the saved choice, else light (see common/js/theme.js). */
+    (function () {
+      var t;
+      try { t = localStorage.getItem('agentraffic-theme'); } catch (e) {}
+      if (t !== 'light' && t !== 'dark') t = 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  <link rel="stylesheet" href="../common/css/base.css">
+  <link rel="stylesheet" href="../common/css/site.css">
+  <link rel="stylesheet" href="css/results.css">
+  <script type="module" src="../common/js/theme.js"></script>
+  <script type="module" src="../common/js/nav.js"></script>
+  <script type="module" src="js/main.js"></script>
+</head>
+<body data-results-page="overview">
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <a class="brand" href="../">agentraffic</a>
+  <div class="header-end">
+    <nav data-site-nav="results" aria-label="Site"></nav>
+    <div class="theme-toggle" data-theme-toggle></div>
+  </div>
+</header>
+
+<nav class="results-tabs" data-results-tabs aria-label="Results pages"></nav>
+
+<main id="main" class="container" tabindex="-1">
+
+  <!-- Header ------------------------------------------------------------------------------ -->
+  <section class="hero" aria-labelledby="pageTitle">
+    <p class="eyebrow">NAIC 2026 · 3rd ACM SIGCOMM Workshop on Networks for AI Computing</p>
+    <h1 id="pageTitle">Towards Traffic Modelling of Multi-Agent Systems: The Role of Coordination Topology</h1>
+    <p class="page-question">What does the coordination topology do to the traffic an agent system sends?</p>
+    <p class="authors">Davide Lamagna, Albert Cabellos, Alberto Rodriguez-Natal, Gábor Rétvári, Berta Serracanta</p>
+
+    <h2 class="visually-hidden">Main findings</h2>
+    <ul class="findings">
+      <li>
+        <strong>Fan-out makes bursts.</strong>
+        Star and Full mesh send calls together: <span data-fill="burst-vertical">53.3%</span> and
+        <span data-fill="burst-full_mesh">38.2%</span> of their gaps are under 50 ms.
+        Sequential has <span data-fill="burst-horizontal">0.0%</span>.
+      </li>
+      <li>
+        <strong>Poisson is rejected.</strong>
+        Gaps are not exponential in any topology. The best candidate, log-normal, is close for Sequential (KS D
+        <span data-fill="ks-horizontal">0.027</span>) but not for Star (<span data-fill="ks-vertical">0.080</span>)
+        or Full mesh (<span data-fill="ks-full_mesh">0.089</span>).
+      </li>
+      <li>
+        <strong>Same rate, different load.</strong>
+        Star calls at Sequential's rate (<span data-fill="rate-vertical">0.207</span> vs
+        <span data-fill="rate-horizontal">0.208</span> calls/s) but keeps <span data-fill="inflight-star">67%</span>
+        more calls in flight. Full mesh goes from <span data-fill="inflight">0.97 → 2.94</span> and sends
+        <span data-fill="tcp">77%</span> more bytes per second.
+      </li>
+    </ul>
+
+    <div class="hero-links">
+      <a class="btn btn--paper" id="paperLink">Read the paper (ACM DL)</a>
+      <a class="btn btn--code" id="codeLink">View the code</a>
+      <a class="btn btn--ghost" href="../docs/blog/">Read the blog post</a>
+      <a class="btn btn--ghost" href="../playground/run/">Open the AgentVerse runner</a>
+    </div>
+    <p class="data-note" id="dataNote">Every number and chart on this page comes from recorded runs of the paper's experiments.</p>
+  </section>
+
+  <!-- Motivation ---------------------------------------------------------------------- -->
+  <section id="motivation" class="card" data-toc="Motivation" aria-labelledby="motivationTitle">
+    <h2 id="motivationTitle">Why look at agent traffic</h2>
+    <div class="prose">
+      <p>Agents break the link between users and requests: one task triggers an unknown number of LLM calls,
+        timed by how the agents coordinate. That coordination topology is a design choice, studied for answer
+        quality and token cost but not for the traffic it sends.</p>
+      <p class="central-q">Does the coordination topology of a multi-agent system shape the arrival process of its
+        LLM calls?</p>
+      <p class="story-link"><a href="../docs/blog/">Background and the longer story are in the blog post →</a></p>
+    </div>
+  </section>
+
+  <!-- Set-up -------------------------------------------------------------------------- -->
+  <section id="setup" class="card" data-toc="Set-up" aria-labelledby="setupTitle">
+    <h2 id="setupTitle">The set-up</h2>
+    <p class="lede setup-claim">Same tasks, model and backend; only the topology changes.</p>
+    <div class="setup-grid">
+      <div class="setup-main">
+        <dl class="facts">
+          <div><dt>Workflow</dt><dd>AgentVerse: four expert agents discuss, execute and evaluate.</dd></div>
+          <div><dt>Tasks</dt><dd>Four fixed prompts: maths, research, consulting and coding.
+            <details class="explain example-task"><summary>Example: the maths prompt</summary>
+              <blockquote>A school is designing a small amusement park with three rides. The first ride costs $500
+                to build and makes $20 per ride. The second ride costs $700 and makes $25 per ride. The third ride
+                costs $900 and makes $30 per ride. The school has a budget of $2000 and wants to maximize revenue
+                in 1 day if 100 students ride each ride at most once. Determine which rides to build and calculate
+                the expected total revenue.</blockquote>
+            </details></dd></div>
+          <div><dt>Runs</dt><dd><span data-fill="runs-per-topo">500 Sequential, 481 Star and 500 Full mesh</span>
+            (<span data-fill="n-runs">1,481</span> in all).</dd></div>
+          <div><dt>Model</dt><dd>Llama-3.2-3B-Instruct on one vLLM server, on a single host.</dd></div>
+        </dl>
+
+        <details class="explain explain--iat" id="iatDef">
+          <summary>What is an inter-arrival time?</summary>
+          <p class="prose-sm">An <strong>arrival</strong> is the start of one LLM call. The <strong>inter-arrival
+          time (IAT)</strong> is the gap between two consecutive arrivals in a run's discussion stage, where the
+          topology decides who talks when. IATs are what classical traffic models are built on (a Poisson process
+          has exponential IATs), they do not depend on the average rate, and they show bursts directly: a gap
+          under 50 ms counts as part of a burst.</p>
+        <figure class="iat-schematic">
+          <svg viewBox="0 0 360 172" role="img" aria-labelledby="iatSchTitle iatSchDesc">
+            <title id="iatSchTitle">Arrivals and inter-arrival times, schematic</title>
+            <desc id="iatSchDesc">Top: agents taking turns produce evenly spaced arrivals, a few seconds apart.
+              Bottom: agents fanning out produce clusters of arrivals milliseconds apart (bursts), separated by long
+              gaps while the model reasons.</desc>
+            <text x="10" y="16" class="sch-title">Taking turns (Sequential)</text>
+            <line x1="10" x2="350" y1="50" y2="50" class="sch-axis"/>
+            <g class="sch-ticks sch-ticks--horizontal">
+              <line x1="24" x2="24" y1="30" y2="50"/><line x1="100" x2="100" y1="30" y2="50"/>
+              <line x1="172" x2="172" y1="30" y2="50"/><line x1="252" x2="252" y1="30" y2="50"/>
+              <line x1="326" x2="326" y1="30" y2="50"/>
+            </g>
+            <path d="M24,58 v5 H100 v-5" class="sch-bracket"/>
+            <text x="62" y="76" class="sch-label" text-anchor="middle">one IAT: seconds</text>
+
+            <text x="10" y="102" class="sch-title">Fanning out (Star)</text>
+            <line x1="10" x2="350" y1="136" y2="136" class="sch-axis"/>
+            <g class="sch-ticks sch-ticks--vertical">
+              <line x1="24" x2="24" y1="116" y2="136"/>
+              <line x1="120" x2="120" y1="116" y2="136"/><line x1="124" x2="124" y1="116" y2="136"/>
+              <line x1="128" x2="128" y1="116" y2="136"/>
+              <line x1="252" x2="252" y1="116" y2="136"/>
+              <line x1="318" x2="318" y1="116" y2="136"/><line x1="322" x2="322" y1="116" y2="136"/>
+              <line x1="326" x2="326" y1="116" y2="136"/>
+            </g>
+            <text x="135" y="125" class="sch-label">← burst: IATs &lt; 50 ms</text>
+            <path d="M128,144 v5 H252 v-5" class="sch-bracket"/>
+            <text x="190" y="162" class="sch-label" text-anchor="middle">reasoning gap: seconds</text>
+          </svg>
+          <figcaption class="source">Schematic, not measured data. Each tick is an arrival.</figcaption>
+        </figure>
+        </details>
+      </div>
+      <figure class="topo-figure">
+        <div id="topoCards" class="topo-cards"></div>
+        <figcaption class="source">Discussion-stage message pattern for four agents (<code>force_structure</code> values in brackets).</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- IAT at a glance --------------------------------------------------------------------- -->
+  <section id="iatGlance" class="card" data-toc="Arrivals" aria-labelledby="glanceTitle">
+    <h2 id="glanceTitle" data-badge="aggregate">Arrivals: bursts, then waiting</h2>
+    <p class="lede">Gaps between consecutive LLM calls, pooled over all runs, on a log axis. Sequential has one
+      mode of a few seconds; Star and Full mesh add a burst mode under 50 ms.
+      <a data-results-link="traffic#iat">Fits and the linear axis on Traffic →</a></p>
+    <div id="iatThumbs" class="multiples multiples--3 thumbs"></div>
+  </section>
+
+  <!-- Testbed ----------------------------------------------------------------------------- -->
+  <section id="architecture" class="card" data-toc="Testbed" aria-labelledby="archTitle">
+    <h2 id="archTitle">How it was measured</h2>
+    <p class="lede">The agents share one vLLM backend. Traffic is measured at four layers that share agent
+      identifiers and timestamps, so every run's metrics join across layers.</p>
+    <div class="arch-grid arch-grid--single">
+      <figure class="arch-figure">
+        <!-- Wide layout (≥ 720 px) -->
+        <svg class="arch arch--wide" viewBox="0 0 960 400" role="img" aria-labelledby="archWideTitle archWideDesc">
+          <title id="archWideTitle">Testbed architecture</title>
+          <desc id="archWideDesc">The experiment runner posts tasks to Agent A, the orchestrator on port 8101. Agent A
+            calls the Agent B workers on ports 8102 to 8104 (A to B traffic) and the LLM backend directly (A to LLM).
+            The workers call the LLM backend, vLLM serving Llama-3.2-3B-Instruct on port 8000 (B to LLM). Monitoring
+            covers the application, LLM backend, container and network layers.</desc>
+          <defs>
+            <marker id="arrW" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" class="arch-arrowhead"/>
+            </marker>
+          </defs>
+          <!-- runner -->
+          <g class="arch-node">
+            <rect x="16" y="96" width="150" height="76" rx="10"/>
+            <text x="91" y="128" class="arch-t1">Experiment</text>
+            <text x="91" y="148" class="arch-t1">runner</text>
+            <text x="91" y="164" class="arch-t3">run_agentverse.sh</text>
+          </g>
+          <!-- agent A -->
+          <g class="arch-node arch-node--accent">
+            <rect x="226" y="80" width="212" height="108" rx="10"/>
+            <text x="332" y="110" class="arch-t1">Agent A · orchestrator</text>
+            <text x="332" y="132" class="arch-t2">:8101 · POST /agentverse</text>
+            <text x="332" y="156" class="arch-t3">recruit → discuss → execute</text>
+            <text x="332" y="172" class="arch-t3">→ evaluate · 3 topologies</text>
+          </g>
+          <!-- agent B -->
+          <g class="arch-node">
+            <rect x="520" y="40" width="170" height="52" rx="10"/>
+            <text x="605" y="64" class="arch-t1">Agent B :8102</text>
+            <text x="605" y="81" class="arch-t3">worker</text>
+          </g>
+          <g class="arch-node">
+            <rect x="520" y="108" width="170" height="52" rx="10"/>
+            <text x="605" y="132" class="arch-t1">Agent B :8103</text>
+            <text x="605" y="149" class="arch-t3">worker</text>
+          </g>
+          <g class="arch-node">
+            <rect x="520" y="176" width="170" height="52" rx="10"/>
+            <text x="605" y="200" class="arch-t1">Agent B :8104</text>
+            <text x="605" y="217" class="arch-t3">worker</text>
+          </g>
+          <!-- LLM -->
+          <g class="arch-node arch-node--accent">
+            <rect x="772" y="72" width="172" height="124" rx="10"/>
+            <text x="858" y="102" class="arch-t1">LLM backend</text>
+            <text x="858" y="122" class="arch-t2">:8000 · vLLM</text>
+            <text x="858" y="146" class="arch-t3">AsyncLLMEngine</text>
+            <text x="858" y="164" class="arch-t3">Llama-3.2-3B-Instruct</text>
+            <text x="858" y="182" class="arch-t3">≤ 8 concurrent requests</text>
+          </g>
+          <!-- edges -->
+          <path class="arch-edge" d="M166,134 L222,134" marker-end="url(#arrW)"/>
+          <path class="arch-edge" d="M438,120 C478,120 480,66 516,66" marker-end="url(#arrW)"/>
+          <path class="arch-edge" d="M438,134 L516,134" marker-end="url(#arrW)"/>
+          <path class="arch-edge" d="M438,148 C478,148 480,202 516,202" marker-end="url(#arrW)"/>
+          <path class="arch-edge" d="M690,66 C730,66 730,110 768,110" marker-end="url(#arrW)"/>
+          <path class="arch-edge" d="M690,134 L768,134" marker-end="url(#arrW)"/>
+          <path class="arch-edge" d="M690,202 C730,202 730,158 768,158" marker-end="url(#arrW)"/>
+          <path class="arch-edge arch-edge--direct" d="M332,188 L332,262 L858,262 L858,200" marker-end="url(#arrW)"/>
+          <!-- edge labels -->
+          <text x="194" y="124" class="arch-label">tasks</text>
+          <text x="477" y="96" class="arch-label">A→B</text>
+          <text x="729" y="96" class="arch-label">B→LLM</text>
+          <text x="595" y="254" class="arch-label">A→LLM · recruitment, synthesis, evaluation</text>
+          <!-- monitoring band -->
+          <g class="arch-band">
+            <rect x="16" y="292" width="928" height="96" rx="10"/>
+            <text x="32" y="316" class="arch-t2 arch-left">Measured at four layers</text>
+            <text x="928" y="316" class="arch-t3 arch-right">Prometheus · Grafana · Jaeger · cAdvisor · passive TCP collector</text>
+          </g>
+          <g class="arch-chip"><rect x="32" y="330" width="214" height="44" rx="8"/><text x="139" y="349" class="arch-t2">Application</text><text x="139" y="366" class="arch-t3">call timing, IATs, tokens</text></g>
+          <g class="arch-chip"><rect x="262" y="330" width="214" height="44" rx="8"/><text x="369" y="349" class="arch-t2">LLM backend</text><text x="369" y="366" class="arch-t3">in-flight, TTFT, tok/s</text></g>
+          <g class="arch-chip"><rect x="492" y="330" width="214" height="44" rx="8"/><text x="599" y="349" class="arch-t2">Container</text><text x="599" y="366" class="arch-t3">CPU, memory, interfaces</text></g>
+          <g class="arch-chip"><rect x="722" y="330" width="206" height="44" rx="8"/><text x="825" y="349" class="arch-t2">Network</text><text x="825" y="366" class="arch-t3">TCP bytes per service pair</text></g>
+        </svg>
+
+        <!-- Narrow layout (< 720 px) -->
+        <svg class="arch arch--narrow" viewBox="0 0 340 600" role="img" aria-labelledby="archNarrowTitle archWideDesc">
+          <title id="archNarrowTitle">Testbed architecture</title>
+          <defs>
+            <marker id="arrN" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" class="arch-arrowhead"/>
+            </marker>
+          </defs>
+          <g class="arch-node"><rect x="70" y="8" width="200" height="50" rx="10"/><text x="170" y="30" class="arch-t1">Experiment runner</text><text x="170" y="47" class="arch-t3">run_agentverse.sh</text></g>
+          <path class="arch-edge" d="M170,58 L170,84" marker-end="url(#arrN)"/>
+          <text x="180" y="76" class="arch-label arch-left">tasks</text>
+          <g class="arch-node arch-node--accent"><rect x="40" y="88" width="260" height="76" rx="10"/><text x="170" y="112" class="arch-t1">Agent A · orchestrator</text><text x="170" y="132" class="arch-t2">:8101 · POST /agentverse</text><text x="170" y="152" class="arch-t3">recruit → discuss → execute → evaluate</text></g>
+          <path class="arch-edge" d="M110,164 L64,206" marker-end="url(#arrN)"/>
+          <path class="arch-edge" d="M150,164 L150,206" marker-end="url(#arrN)"/>
+          <path class="arch-edge" d="M190,164 L236,206" marker-end="url(#arrN)"/>
+          <text x="96" y="192" class="arch-label">A→B</text>
+          <g class="arch-node"><rect x="8" y="210" width="96" height="50" rx="10"/><text x="56" y="232" class="arch-t1">Agent B</text><text x="56" y="249" class="arch-t3">:8102</text></g>
+          <g class="arch-node"><rect x="112" y="210" width="96" height="50" rx="10"/><text x="160" y="232" class="arch-t1">Agent B</text><text x="160" y="249" class="arch-t3">:8103</text></g>
+          <g class="arch-node"><rect x="216" y="210" width="96" height="50" rx="10"/><text x="264" y="232" class="arch-t1">Agent B</text><text x="264" y="249" class="arch-t3">:8104</text></g>
+          <path class="arch-edge" d="M56,260 L110,302" marker-end="url(#arrN)"/>
+          <path class="arch-edge" d="M160,260 L160,302" marker-end="url(#arrN)"/>
+          <path class="arch-edge" d="M264,260 L214,302" marker-end="url(#arrN)"/>
+          <text x="96" y="290" class="arch-label">B→LLM</text>
+          <path class="arch-edge arch-edge--direct" d="M300,126 L328,126 L328,340 L294,340" marker-end="url(#arrN)"/>
+          <text x="322" y="188" class="arch-label arch-vertical" transform="rotate(90 322 188)">A→LLM</text>
+          <g class="arch-node arch-node--accent"><rect x="40" y="306" width="250" height="84" rx="10"/><text x="165" y="330" class="arch-t1">LLM backend :8000</text><text x="165" y="350" class="arch-t2">vLLM AsyncLLMEngine</text><text x="165" y="368" class="arch-t3">Llama-3.2-3B-Instruct</text><text x="165" y="383" class="arch-t3">≤ 8 concurrent requests</text></g>
+          <g class="arch-band"><rect x="8" y="410" width="324" height="182" rx="10"/><text x="170" y="434" class="arch-t2">Measured at four layers</text></g>
+          <g class="arch-chip"><rect x="20" y="446" width="146" height="48" rx="8"/><text x="93" y="466" class="arch-t2">Application</text><text x="93" y="483" class="arch-t3">timing, IATs, tokens</text></g>
+          <g class="arch-chip"><rect x="174" y="446" width="146" height="48" rx="8"/><text x="247" y="466" class="arch-t2">LLM backend</text><text x="247" y="483" class="arch-t3">in-flight, TTFT, tok/s</text></g>
+          <g class="arch-chip"><rect x="20" y="502" width="146" height="48" rx="8"/><text x="93" y="522" class="arch-t2">Container</text><text x="93" y="539" class="arch-t3">CPU, memory</text></g>
+          <g class="arch-chip"><rect x="174" y="502" width="146" height="48" rx="8"/><text x="247" y="522" class="arch-t2">Network</text><text x="247" y="539" class="arch-t3">TCP bytes per pair</text></g>
+          <text x="170" y="574" class="arch-t3">Prometheus · Grafana · Jaeger · cAdvisor</text>
+          <text x="170" y="588" class="arch-t3">passive TCP collector</text>
+        </svg>
+        <figcaption class="source">Services as deployed for the paper (<code>infra/docker-compose.yml</code>); four recruited experts per run.</figcaption>
+      </figure>
+
+    </div>
+  </section>
+
+  <!-- Table 2 ----------------------------------------------------------------------------- -->
+  <section id="table2" class="card" data-toc="Table 2" aria-labelledby="t2Title">
+    <h2 id="t2Title" data-badge="aggregate">Table 2 · Discussion-stage metrics by topology</h2>
+    <p class="lede">As published in the paper; percentages are relative to Sequential. The first rows are shown, and the button below opens the rest.</p>
+    <div id="table2Body" class="table-wrap" aria-busy="true"><p class="loading">Loading…</p></div>
+    <div id="table2Notes" class="footnotes"></div>
+  </section>
+
+  <!-- Takeaways --------------------------------------------------------------------------- -->
+  <section id="takeaways" class="card" data-toc="Takeaways" aria-labelledby="takeTitle">
+    <h2 id="takeTitle">Takeaways</h2>
+    <p class="lede">Topology decides whether LLM calls arrive as a steady trickle or as bursts followed by waits,
+      and the difference reaches the model server and the network.</p>
+    <div class="take-grid">
+      <div class="take-block">
+        <h3>What it means</h3>
+        <ul>
+          <li><strong>Traffic shape is a design axis</strong>, next to answer quality and token cost.</li>
+          <li><strong>Rate limits and autoscaling should know the topology.</strong> The same average rate can need
+            very different headroom.</li>
+          <li><strong>Report burst-sensitive metrics</strong>, not just mean rates.</li>
+        </ul>
+      </div>
+      <div class="take-block">
+        <h3>Limitations</h3>
+        <ul>
+          <li>One framework, one small model, four task prompts.</li>
+          <li>A single host, so no real network delay.</li>
+          <li>Fixed topologies and no tool calls.</li>
+        </ul>
+      </div>
+      <div class="take-block">
+        <h3>Future work</h3>
+        <ul>
+          <li>More models, frameworks and multi-host deployments.</li>
+          <li>Mixture models for bursts and reasoning gaps together.</li>
+          <li>A generative model for synthetic agent traffic.</li>
+        </ul>
+      </div>
+    </div>
+    <p class="story-link">Explore further: <a data-results-link="traffic">Traffic patterns →</a>
+      <a data-results-link="system">System load →</a> <a data-results-link="runs">Run explorer →</a></p>
+  </section>
+
+  <section id="cite" class="card" data-toc="Cite" aria-labelledby="citeTitle">
+    <h2 id="citeTitle">Cite</h2>
+    <p class="lede">If you use the framework or these results, please cite the paper.</p>
+    <div data-site-cite></div>
+  </section>
+
+  <nav data-results-end aria-label="On this page and next"></nav>
+
+</main>
+
+<footer class="site-footer">
+  <div data-site-footer></div>
+</footer>
+
+<div id="tooltip" class="tooltip" role="tooltip" hidden></div>
+</body>
+</html>

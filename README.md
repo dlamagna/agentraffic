@@ -3,14 +3,52 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
 [![CI](https://github.com/dlamagna/agentraffic/actions/workflows/ci.yml/badge.svg)](https://github.com/dlamagna/agentraffic/actions/workflows/ci.yml)
+[![DOI](https://img.shields.io/badge/DOI-10.1145%2F3789240.3828749-blue.svg)](https://doi.org/10.1145/3789240.3828749)
 
 A multi-layer measurement framework for studying how coordination topology shapes LLM-call arrival processes in multi-agent systems.
 
 This is the open-source release accompanying the paper:
 
 > **Towards Traffic Modelling of Multi-Agent Systems: The Role of Coordination Topology**
-> Davide Lamagna, Berta Serracanta, Alberto Rodriguez Natal, Gábor Rétvári, Albert Cabellos
+> Davide Lamagna, Albert Cabellos, Alberto Rodriguez-Natal, Gábor Rétvári, Berta Serracanta
 > *3rd ACM SIGCOMM Workshop on Networks for AI Computing (NAIC 2026)*
+> 📄 [Read the paper (ACM Digital Library)](https://dl.acm.org/doi/10.1145/3789240.3828749) · DOI [10.1145/3789240.3828749](https://doi.org/10.1145/3789240.3828749)
+
+---
+
+## Live demo
+
+> **Live:** <https://dlamagna.github.io/agentraffic/>
+> (published from `main` by `.github/workflows/pages.yml`).
+
+![The Overview page of the public site](docs/img/results-public.png)
+
+A static website that replays AgentVerse runs under the three topologies and shows the paper's
+traffic findings. What is real and what is not:
+
+- **Only the summary-level data is real:** the aggregates behind the paper's results (inter-arrival
+  distributions, fits, correlations, system load), computed from the 1,481 recorded runs.
+- **Everything below that level is synthetic:** the individual runs, the replayed prompts and
+  responses, and the run explorer's dots were generated to match the real aggregates. They are
+  labelled as synthetic in the site, and `scripts/demo/check_public.py` stops any real run or text
+  from reaching the published build.
+- The real per-run data stays on the owner's machine and is not part of this repository.
+
+Read more: [the blog post](https://dlamagna.github.io/agentraffic/docs/blog/) (source:
+[`ui/docs/blog/`](ui/docs/blog/index.html)) and
+[the paper](https://dl.acm.org/doi/10.1145/3789240.3828749) (ACM Digital Library).
+
+### Run the website locally, with the real data
+
+```bash
+make data    # builds ui/data/private/ from the paper-branch data (sparse clone into data/att-paper)
+make local   # serves ui/ on http://localhost:8080/ in private mode (real data)
+```
+
+Without `ui/data/private/` the site falls back to the public data by itself. `make public` builds
+`dist/public/` exactly as the deployment does (no private data) and serves it on
+http://localhost:8081/. `make check` runs the publication guard. `ui/data/private/` is gitignored
+and must never be committed or published.
 
 ---
 
@@ -271,14 +309,25 @@ Prometheus scrapes it at `http://host.docker.internal:9102/metrics` (configured 
 │   ├── docker-compose.monitoring.yml
 │   └── monitoring/           # Prometheus config + Grafana dashboards
 ├── scripts/
-│   ├── deploy/               # deploy.sh / stop.sh
+│   ├── demo/                 # Website data: export, public-data guard (check_public.py), local server
+│   ├── deploy/               # deploy.sh / stop.sh, check_subpath.py
 │   ├── experiment/           # run_agentverse.sh — data collection script
 │   ├── analysis/             # plot_paper_figures.py — reproduces paper figures
 │   ├── queue/                # Experiment queue daemon + MCP server
 │   ├── monitoring/           # TCP metrics collector + Docker mapping exporter
 │   └── ci/                   # smoketest.sh
 ├── tests/                    # Pure-Python unit tests (no GPU required)
-└── ui/agentverse/            # Browser-based run viewer
+├── ui/                       # The static website (relative paths only, so it works under any sub-path)
+│   ├── index.html            # Launcher
+│   ├── playground/           # Run a workflow (replay), open a saved run, chat
+│   ├── results/              # The paper's results: Overview, Traffic patterns, System load, Run explorer
+│   ├── docs/                 # Blog post on the paper, AgentVerse explained
+│   ├── common/               # Shared theme, header and data-mode loader
+│   └── data/
+│       ├── public/           # Committed: real aggregates plus synthetic runs
+│       └── private/          # Gitignored: the real data (make data)
+├── docs/                     # Owner notes and README images
+└── .github/workflows/        # ci.yml, pages.yml (GitHub Pages deployment)
 ```
 
 ---
@@ -288,9 +337,12 @@ Prometheus scrapes it at `http://host.docker.internal:9102/metrics` (configured 
 ```bibtex
 @inproceedings{lamagna2026agentraffic,
   title     = {Towards Traffic Modelling of Multi-Agent Systems: The Role of Coordination Topology},
-  author    = {Lamagna, Davide and Serracanta, Berta and Rodriguez Natal, Alberto and R{\'e}tv{\'a}ri, G{\'a}bor and Cabellos, Albert},
+  author    = {Lamagna, Davide and Cabellos, Albert and Rodriguez-Natal, Alberto and R{\'e}tv{\'a}ri, G{\'a}bor and Serracanta, Berta},
   booktitle = {3rd ACM SIGCOMM Workshop on Networks for AI Computing (NAIC)},
   year      = {2026},
+  publisher = {ACM},
+  doi       = {10.1145/3789240.3828749},
+  url       = {https://doi.org/10.1145/3789240.3828749},
 }
 ```
 
@@ -330,7 +382,8 @@ Confirm the stack is up (`docker compose ps`) and Agent A is healthy (`curl http
 | Running experiments | [scripts/experiment/README.md](scripts/experiment/README.md) |
 | Experiment queue (batch runs, lifecycle, plots) | [scripts/queue/README.md](scripts/queue/README.md) |
 | Docker Compose stack and environment config | [infra/README.md](infra/README.md) |
-| AgentVerse browser UI | [ui/agentverse/README.md](ui/agentverse/README.md) |
+| AgentVerse browser UI | [ui/playground/README.md](ui/playground/README.md) |
+| Publishing the public site on GitHub Pages (owner steps) | [docs/github-pages.md](docs/github-pages.md) |
 | Contributing guide | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | Changelog | [CHANGELOG.md](CHANGELOG.md) |
 

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compare topologies · agentraffic</title>
+  <script>
+    /* Theme before first paint: the saved choice, else light (see common/js/theme.js). */
+    (function () {
+      var t;
+      try { t = localStorage.getItem('agentraffic-theme'); } catch (e) {}
+      if (t !== 'light' && t !== 'dark') t = 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  <link rel="stylesheet" href="../../common/css/theme.css">
+  <link rel="stylesheet" href="../../common/css/site.css">
+  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="../css/compare.css">
+  <script type="module" src="../../common/js/theme.js"></script>
+  <script type="module" src="../../common/js/nav.js"></script>
+</head>
+<body>
+  <header class="header">
+    <h1>
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
+        <path d="M2 12h20"/>
+      </svg>
+      Compare topologies
+    </h1>
+    <div class="header-end">
+      <nav class="header-links" data-site-nav="compare" aria-label="Site"></nav>
+      <div class="theme-toggle" data-theme-toggle></div>
+    </div>
+  </header>
+
+  <main class="cmp">
+    <p class="cmp-lead">
+      The same task, replayed under the sequential, star and full-mesh topologies at the same time.
+      The three panels share one clock; the timeline below marks every LLM call the moment it is sent, so
+      the difference in burstiness shows at a glance.
+    </p>
+    <div data-mode-notice="playground" hidden></div>
+
+    <div class="card cmp-controls" id="cmpControls" hidden>
+      <div class="cmp-field">
+        <label for="cmpTask">Task</label>
+        <select id="cmpTask"></select>
+      </div>
+      <div class="cmp-field cmp-field--narrow">
+        <label for="cmpSpeed">Speed</label>
+        <select id="cmpSpeed">
+          <option value="1">1x</option>
+          <option value="5" selected>5x</option>
+          <option value="20">20x</option>
+        </select>
+      </div>
+      <div class="cmp-buttons">
+        <button type="button" class="btn-primary" id="cmpPlay">Play</button>
+        <button type="button" class="btn-secondary" id="cmpRestart">Restart</button>
+      </div>
+      <div class="cmp-scrub">
+        <label for="cmpScrub">Replay time <output id="cmpClock">0.0 s</output></label>
+        <input type="range" id="cmpScrub" min="0" max="1000" value="0" step="1">
+      </div>
+      <p class="cmp-task" id="cmpTaskText"></p>
+    </div>
+
+    <p class="cmp-empty card" id="cmpEmpty" hidden role="status"></p>
+
+    <div class="cmp-panels" id="cmpPanels"></div>
+
+    <section class="card cmp-timeline-card" id="cmpTimelineCard" hidden>
+      <h2>LLM-call arrivals, shared timeline</h2>
+      <p class="cmp-sub">One tick per call, at the moment it is sent. The filled area below each row is the number
+        of calls in flight at once, on a common scale.</p>
+      <div class="cmp-timeline" id="cmpTimeline"></div>
+    </section>
+
+    <section class="card" id="cmpStatsCard" hidden>
+      <h2>The three runs, whole</h2>
+      <div class="cmp-table-wrap">
+        <table class="cmp-table" id="cmpStats"></table>
+      </div>
+      <p class="cmp-sub" id="cmpTakeaway"></p>
+    </section>
+  </main>
+
+  <footer data-site-footer></footer>
+  <script type="module" src="../js/compare.js"></script>
+</body>
+</html>

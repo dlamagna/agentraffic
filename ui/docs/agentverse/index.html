@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgentVerse · agentraffic</title>
+  <meta name="description" content="The AgentVerse workflow (Chen et al.) used as the workload in the agentraffic measurements: its stages, the sequential, star and full-mesh topologies, and how this repository instruments it.">
+  <script>
+    /* Theme before first paint: the saved choice, else light (see common/js/theme.js). */
+    (function () {
+      var t;
+      try { t = localStorage.getItem('agentraffic-theme'); } catch (e) {}
+      if (t !== 'light' && t !== 'dark') t = 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  <link rel="stylesheet" href="../../common/css/base.css">
+  <link rel="stylesheet" href="../../common/css/site.css">
+  <link rel="stylesheet" href="../css/docs.css">
+  <script type="module" src="../../common/js/theme.js"></script>
+  <script type="module" src="../../common/js/nav.js"></script>
+  <script type="module" src="../js/docs.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <a class="brand" href="../../">agentraffic</a>
+  <div class="header-end">
+    <nav data-site-nav="docs-agentverse" aria-label="Site"></nav>
+    <div class="theme-toggle" data-theme-toggle></div>
+  </div>
+</header>
+
+<main id="main" class="doc" tabindex="-1">
+
+  <section class="doc-hero" aria-labelledby="pageTitle">
+    <p class="eyebrow">Docs · The workload</p>
+    <h1 id="pageTitle">AgentVerse</h1>
+    <p class="doc-lede">AgentVerse is a multi-agent framework that structures collaborative problem solving into
+      expert recruitment, collaborative decision-making, action execution and evaluation. This repository
+      re-implements that task-solving loop as the workload of our paper (<a href="../blog/">blog post</a>), runs its discussion
+      stage under three coordination topologies, and records every LLM call it makes.</p>
+    <div class="callout">
+      <p><strong>Original work:</strong> Chen et al., <em>AgentVerse: Facilitating Multi-Agent Collaboration and
+        Exploring Emergent Behaviors</em>, <a data-site-href="agentverse-paper">arXiv:2308.10848</a>. Framework:
+        <a data-site-href="agentverse-repo">github.com/OpenBMB/AgentVerse</a>. The workflow here is our
+        re-implementation of its stages, not the original code.</p>
+    </div>
+    <div class="cta-row">
+      <a class="cta cta--primary" href="../../playground/run/">Run a workflow</a>
+      <a class="cta" href="../../playground/open/">Open a saved run</a>
+      <a class="cta" href="../blog/">Blog post</a>
+    </div>
+    <nav class="doc-toc" aria-label="On this page">
+      <a href="#workflow">Workflow</a>
+      <a href="#topologies">Topologies</a>
+      <a href="#instrumentation">Instrumentation</a>
+      <a href="#try">Try it</a>
+    </nav>
+  </section>
+
+  <section id="workflow" class="doc-section" aria-labelledby="workflowTitle">
+    <h2 id="workflowTitle">The workflow</h2>
+    <p>An orchestrator (Agent A) runs the stages; worker agents (Agent B) carry out the experts' LLM calls against one
+      shared model backend. A run can loop: a low evaluation score starts another iteration from recruitment.</p>
+    <ol class="steps">
+      <li>
+        <h3>Expert recruitment</h3>
+        <p>One orchestrator call reads the task and recruits experts, each with a role and a contract (what it is
+          responsible for). The paper fixes the team at four subagents.</p>
+      </li>
+      <li>
+        <h3>Collaborative decision-making <span class="tag">measured</span></h3>
+        <p>The experts discuss the approach under one communication structure (below) for up to three rounds, or
+          until they agree. A synthesis call condenses the discussion into a decision. The paper's traffic analysis
+          uses the LLM calls of this stage.</p>
+      </li>
+      <li>
+        <h3>Action execution</h3>
+        <p>Each expert carries out its part of the decision; the calls run in parallel, one per expert.</p>
+      </li>
+      <li>
+        <h3>Evaluation</h3>
+        <p>The orchestrator scores the result from 0 to 100 and writes feedback. Below the acceptance threshold
+          (70 by default) another iteration starts, up to the iteration limit (3 by default).</p>
+      </li>
+      <li class="step--extra">
+        <h3>Final synthesis</h3>
+        <p>A last call writes the answer from the execution results.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section id="topologies" class="doc-section" aria-labelledby="topologiesTitle">
+    <h2 id="topologiesTitle">Three topologies</h2>
+    <p>Sequential and star are AgentVerse's horizontal and vertical decision-making structures; full mesh is added
+      here as the densest case. The topology is chosen per request with <code>force_structure</code>.</p>
+    <div class="topo-grid">
+      <article class="topo-card" data-topology="horizontal">
+        <h3>Sequential</h3>
+        <p class="topo-key"><code>horizontal</code></p>
+        <svg data-topology-diagram="horizontal"></svg>
+        <p>Agents speak one at a time in a fixed order, each seeing the turns before it. One LLM call is in flight at
+          a time.</p>
+      </article>
+      <article class="topo-card" data-topology="vertical">
+        <h3>Star</h3>
+        <p class="topo-key"><code>vertical</code></p>
+        <svg data-topology-diagram="vertical"></svg>
+        <p>A solver (S) proposes; the other three agents review the proposal in parallel (R) and the solver revises
+          from their critiques. Up to three calls in flight.</p>
+      </article>
+      <article class="topo-card" data-topology="full_mesh">
+        <h3>Full mesh</h3>
+        <p class="topo-key"><code>full_mesh</code></p>
+        <svg data-topology-diagram="full_mesh"></svg>
+        <p>Each round, every agent messages every other: N×(N−1) = 12 directed messages for four agents, submitted at
+          once and run five at a time.</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="instrumentation" class="doc-section" aria-labelledby="instrTitle">
+    <h2 id="instrTitle">How this repository instruments it</h2>
+    <ul>
+      <li><strong>Services.</strong> Agent A, the orchestrator, takes <code>POST /agentverse</code> on port 8101;
+        Agent B workers on ports 8102–8104 forward subtasks to the vLLM backend on port 8000. Each runs in its own
+        container on Docker bridge networks.</li>
+      <li><strong>Every LLM call is recorded</strong> in the run's response with a label that names its stage, role
+        and round (for example <code>vertical_reviewer_&lt;role&gt;_iter2</code> or
+        <code>full_mesh_message_round1_agent2_to_agent3</code>), its UTC start time, duration and token counts, and the backend's own timing.
+        A request ID (<code>X-Request-ID</code>) and the OpenTelemetry trace context travel with each call.</li>
+      <li><strong>Four layers, one time axis.</strong> Application: call records and traces (Jaeger). LLM backend: vLLM
+        metrics such as in-flight requests, token throughput and queue wait (Prometheus). Container: CPU, memory and
+        interface counters (cAdvisor). Network: a passive collector on the Docker bridge reconstructs TCP flows and
+        exports bytes and packets per directed service pair and connection events. The layers share agent
+        identifiers and timestamps, so a run's metrics join across them.</li>
+      <li><strong>Controlled variables.</strong> Topology, team size and rounds are request parameters
+        (<code>force_structure</code>, <code>force_agent_count</code>, <code>full_mesh_max_rounds</code>); the task
+        source, prompts, model and monitoring stay the same.</li>
+    </ul>
+<pre class="code"><code>curl -X POST http://localhost:8101/agentverse -H "Content-Type: application/json" \
+  -d '{"task": "Explain gradient descent.", "force_structure": "full_mesh", "force_agent_count": 4}'</code></pre>
+    <p>Code: <a data-site-href="repo:agents/agent_a/orchestrator.py"><code>agents/agent_a/orchestrator.py</code></a>
+      (the workflow), <a data-site-href="repo:llm/serve_llm.py"><code>llm/serve_llm.py</code></a> (the backend and its
+      metrics), <a data-site-href="repo:scripts/monitoring/tcp_metrics_collector.py"><code>scripts/monitoring/tcp_metrics_collector.py</code></a>
+      (the network layer).</p>
+  </section>
+
+  <section id="try" class="doc-section" aria-labelledby="tryTitle">
+    <h2 id="tryTitle">Try it</h2>
+    <div class="link-grid">
+      <a class="link-card" href="../../playground/run/?replay=horizontal/math"><strong>Replay Sequential</strong><span>A recorded math run, one call at a time</span></a>
+      <a class="link-card" href="../../playground/run/?replay=vertical/math"><strong>Replay Star</strong><span>The same task with parallel reviewers</span></a>
+      <a class="link-card" href="../../playground/run/?replay=full_mesh/math"><strong>Replay Full mesh</strong><span>Twelve peer messages per round</span></a>
+      <a class="link-card" href="../../playground/open/"><strong>Open a saved run</strong><span>Load a recorded response.json or a run ID</span></a>
+      <a class="link-card" href="../../results/"><strong>Results</strong><span>Traffic findings from 1,481 recorded runs</span></a>
+      <a class="link-card" href="../blog/"><strong>Blog post</strong><span>Question, method, findings and citation</span></a>
+    </div>
+  </section>
+
+</main>
+
+<footer data-site-footer></footer>
+</body>
+</html>

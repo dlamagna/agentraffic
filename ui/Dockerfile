@@ -1,7 +1,13 @@
 FROM python:3.11-slim
 WORKDIR /app
 
+COPY ui/playground /app/playground
+# redirect stubs at the old URLs (agentverse/, agentverse/viewer.html, agentverse/viewer/)
 COPY ui/agentverse /app/agentverse
+# shared light / dark theme (css tokens + toggle), header nav and paper links used by the playground pages
+COPY ui/common /app/common
+# docs pages linked from the header's Docs menu
+COPY ui/docs /app/docs
 
 RUN echo '<!DOCTYPE html>\n\
 <html lang="en">\n\
@@ -27,7 +33,7 @@ RUN echo '<!DOCTYPE html>\n\
     <h1>Agent Testbed</h1>\n\
     <p>Multi-agent collaboration and traffic analysis platform</p>\n\
     <div class="cards">\n\
-      <a href="/agentverse/" class="card">\n\
+      <a href="/playground/run/" class="card">\n\
         <div class="icon">&#127758;</div>\n\
         <h2>AgentVerse</h2>\n\
         <p>4-stage workflow with dynamic expert recruitment and collaborative decision-making</p>\n\

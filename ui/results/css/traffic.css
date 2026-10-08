@@ -1,0 +1,151 @@
+/*
+ * ui/results/css/traffic.css
+ * Traffic page additions (results/traffic-patterns/, js/traffic.js): group titles, the burst,
+ * gap and robustness charts and the playground. Loads after results.css and uses its tokens,
+ * so both themes come from results.css / theme.css; only the tokens below are new.
+ */
+
+:root {
+  --tr-capacity: #6c707a;
+  --tr-outline: #6c707a;
+}
+:root[data-theme="dark"] {
+  --tr-capacity: #a3b1c4;
+  --tr-outline: #a3b1c4;
+}
+
+/* "Arrivals" / "Models" between the cards */
+.group-title {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--ink-1);
+  margin: 10px 0 -6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+  scroll-margin-top: 60px;
+}
+
+.chart-note { color: var(--ink-2); font-size: 0.82rem; margin: -2px 0 6px; max-width: 60em; }
+
+/* legend keys */
+.tr-key { display: inline-block; width: 18px; height: 0; border-top: 2px solid; margin-right: 6px; }
+.tr-swatch-row { display: inline-flex; gap: 2px; margin-right: 6px; }
+.tr-swatch-row .swatch { margin: 0; }
+
+/* chart marks */
+svg.viz .tr-row-label { fill: var(--ink-1); font-size: 12px; font-weight: 600; }
+svg.viz .tr-median { stroke: var(--median-tick); stroke-width: 2; }
+svg.viz .tr-outline { fill: none; stroke: var(--tr-outline); stroke-width: 1.5; stroke-linejoin: round; }
+svg.viz .tr-ours { stroke: var(--mark-ring); stroke-width: 1.5; }
+svg.viz .tr-step { fill: none; stroke-width: 2; stroke-linejoin: round; }
+svg.viz .tr-step--poisson { stroke-dasharray: 6 4; }
+svg.viz .tr-capacity { stroke: var(--tr-capacity); stroke-width: 1; stroke-dasharray: 3 3; }
+svg.viz .hit:focus-visible { outline: none; stroke: var(--focus-ring); stroke-width: 2; }
+
+/* tables */
+.tr-nw { white-space: nowrap; }
+table.tr-rob tr.tr-group > * { border-top: 1px solid var(--border-strong); }
+table.tr-rob td.num b { font-weight: 600; color: var(--ink-1); }
+table.tr-rob .tr-short { display: none; }
+
+/* playground */
+.pg-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 22px;
+  margin-bottom: 14px;
+  padding: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.pg-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.pg-range { flex: 1 1 200px; }
+.pg-range input[type="range"] { width: 100%; accent-color: var(--accent); min-height: 24px; }
+.pg-field b { color: var(--ink-1); font-variant-numeric: tabular-nums; }
+.pg-slots { color: var(--ink-3); }
+.pg-tiles { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+.pg-tiles .tile-sub { color: var(--ink-2); }
+.tr-warn { grid-column: 1 / -1; color: var(--warn-ink); font-size: 0.85rem; margin: 0; }
+
+@media (max-width: 720px) {
+  .group-title { font-size: 1.2rem; }
+  .pg-controls { gap: 12px; }
+  .pg-range { flex-basis: 100%; }
+  table.tr-rob .key { display: none; }
+  table.tr-rob .tr-long { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  table.tr-rob .tr-short { display: inline; }
+  table.tr-rob th, table.tr-rob td,
+  table.tr-compact th, table.tr-compact td { padding-left: 4px; padding-right: 4px; }
+}
+
+/* Full-screen chart view (js/fullscreen.js): a corner button on the figure and a modal <dialog> */
+.chart.has-fs { position: relative; }
+.chart.has-fs > h3 { padding-right: 40px; }
+.fs-btn {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: var(--ink-2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.fs-btn:hover { color: var(--ink-1); background: var(--bg-tertiary); }
+.fs-btn:focus-visible, .fs-close:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.fs-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+@media (pointer: coarse), (max-width: 720px) {
+  .fs-btn { width: 44px; height: 44px; top: -8px; right: -8px; }
+  .chart.has-fs > h3 { padding-right: 48px; }
+}
+html.fs-lock { overflow: hidden; }
+.fs-dialog {
+  box-sizing: border-box;
+  width: min(1600px, 100vw - 24px);
+  height: min(1000px, 100dvh - 24px);
+  max-width: none;
+  max-height: none;
+  margin: auto;
+  padding: 14px 16px 16px;
+  color: var(--ink-1);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-strong, var(--border));
+  border-radius: 10px;
+  overflow: auto;
+}
+.fs-dialog[open] { display: flex; flex-direction: column; gap: 6px; }
+.fs-dialog::backdrop { background: rgba(10, 12, 16, 0.72); }
+.fs-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.fs-title { font-size: 1.1rem; margin: 0; }
+.fs-close {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 14px;
+  white-space: nowrap;
+  flex: none;
+  font: inherit;
+  color: var(--ink-1);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.fs-close:hover { background: var(--bg-tertiary); }
+.fs-sub { color: var(--ink-2); font-size: 0.85rem; margin: 0; }
+.fs-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.fs-body { flex: 1 1 auto; min-height: 280px; min-width: 0; overflow: hidden; }
+.fs-body svg { display: block; }
+@media (max-width: 720px) {
+  .fs-dialog { width: 100vw; height: 100dvh; border-radius: 0; border: 0; padding: 10px 12px 12px; }
+}
+.fs-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--ink-2); font-size: 0.82rem; }
+.fs-legend__item { display: inline-flex; align-items: center; gap: 5px; }

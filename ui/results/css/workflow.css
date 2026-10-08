@@ -1,0 +1,50 @@
+/*
+ * ui/results/css/workflow.css
+ * "Inside the workflow" sections on results/system-load/ and results/beta/ (js/workflow.js). Loads after
+ * results.css and uses its chart tokens, so everything follows the light / dark theme.
+ */
+
+.wf-group { display: flex; flex-direction: column; gap: 20px; }
+.wf-group__head { padding: 12px 0 0; border-top: 1px solid var(--border); }
+.wf-group__title { font-size: 1.35rem; margin-bottom: 4px; }
+.wf-group__lede { color: var(--ink-2); font-size: 0.93rem; max-width: 60em; }
+
+.wf-sub { font-size: 0.95rem; margin: 18px 0 6px; }
+.wf-note { color: var(--ink-2); font-size: 0.85rem; max-width: 80ch; margin-top: 8px; }
+.wf-chart { min-width: 0; }
+
+.wf-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.wf-fig { margin: 0; min-width: 0; }
+.wf-fig__title { font-size: 0.92rem; font-weight: 600; color: var(--ink-1); margin-bottom: 6px; }
+.wf-matrix-wrap { overflow-x: auto; }
+.wf-matrix-wrap svg.viz { width: auto; max-width: 100%; }
+
+svg.viz .wf-cat { fill: var(--chart-label); font-size: 11.5px; }
+svg.viz .wf-val { fill: var(--chart-value); font-size: 10.5px; font-variant-numeric: tabular-nums; }
+svg.viz .wf-direct { fill: var(--chart-label); font-size: 11px; font-weight: 600; }
+svg.viz .wf-cell { fill: var(--topo-full_mesh); }
+svg.viz .wf-cell--empty { fill: var(--cell-null); stroke: var(--grid); }
+svg.viz .wf-cell-text { fill: var(--ink-1); font-size: 11px; font-variant-numeric: tabular-nums; pointer-events: none; }
+:root[data-theme="dark"] svg.viz .wf-cell-text.hi { fill: #0b1222; }
+svg.viz .hit:focus-visible { outline: none; stroke: var(--hi-ring); stroke-width: 1.5; }
+
+.wf-ramp {
+  display: inline-block;
+  width: 64px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--topo-full_mesh) 12%, transparent), var(--topo-full_mesh));
+}
+.wf-key { display: inline-block; width: 18px; height: 0; border-top: 2px solid; margin-right: 6px; }
+.wf-seg { display: inline-block; width: 14px; height: 10px; margin-right: 6px; border-radius: 2px; background: var(--ink-2); }
+.wf-seg--3 { opacity: 0.45; }
+
+@media (max-width: 900px) {
+  .wf-pair { grid-template-columns: minmax(0, 1fr); }
+}

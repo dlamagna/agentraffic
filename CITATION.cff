@@ -1,0 +1,37 @@
+cff-version: 1.2.0
+message: "If you use this software or its data, please cite the paper below."
+title: "agentraffic"
+type: software
+repository-code: "https://github.com/dlamagna/agentraffic"
+license: MIT
+authors:
+  - family-names: Lamagna
+    given-names: Davide
+  - family-names: Cabellos
+    given-names: Albert
+  - family-names: Rodriguez-Natal
+    given-names: Alberto
+  - family-names: Rétvári
+    given-names: Gábor
+  - family-names: Serracanta
+    given-names: Berta
+preferred-citation:
+  type: conference-paper
+  title: "Towards Traffic Modelling of Multi-Agent Systems: The Role of Coordination Topology"
+  authors:
+    - family-names: Lamagna
+      given-names: Davide
+    - family-names: Cabellos
+      given-names: Albert
+    - family-names: Rodriguez-Natal
+      given-names: Alberto
+    - family-names: Rétvári
+      given-names: Gábor
+    - family-names: Serracanta
+      given-names: Berta
+  collection-title: "3rd ACM SIGCOMM Workshop on Networks for AI Computing (NAIC)"
+  publisher:
+    name: ACM
+  year: 2026
+  doi: "10.1145/3789240.3828749"
+  url: "https://doi.org/10.1145/3789240.3828749"

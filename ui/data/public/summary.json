@@ -1,0 +1,4228 @@
+{
+ "schema_version": 1,
+ "generator": "scripts/demo/export_results.py",
+ "source": {
+  "repository": "dlamagna/agentraffic",
+  "branch": "paper-branch",
+  "n_runs": {
+   "horizontal": 500,
+   "vertical": 481,
+   "full_mesh": 500
+  },
+  "n_runs_total": 1481,
+  "join": {
+   "runs": 1481,
+   "csv_rows": 1481,
+   "matched_by_order": 1481,
+   "matched_by_fingerprint": 0,
+   "unmatched_runs": 0,
+   "ambiguous_runs": 0,
+   "unused_csv_rows": 0,
+   "match_rate": 1.0,
+   "method": "row i <-> i-th response (experiments in chronological order, task dirs sorted, as correlate_structure_metrics.load_all_runs); accepted only if structure, task_slug and all 20 response-derived columns match (rel. tol. 1e-09); otherwise a unique full-fingerprint match among unused rows"
+  }
+ },
+ "topologies": [
+  {
+   "key": "horizontal",
+   "label": "Sequential"
+  },
+  {
+   "key": "vertical",
+   "label": "Star"
+  },
+  {
+   "key": "full_mesh",
+   "label": "Full Mesh"
+  }
+ ],
+ "tasks": [
+  {
+   "key": "math",
+   "category": "mathematical-problem",
+   "label": "Math problem"
+  },
+  {
+   "key": "research",
+   "category": "research-task",
+   "label": "Research task"
+  },
+  {
+   "key": "consulting",
+   "category": "consulting",
+   "label": "Consulting"
+  },
+  {
+   "key": "coding",
+   "category": "software-development",
+   "label": "Software development"
+  }
+ ],
+ "table2": {
+  "title": "Table 2 — Discussion-stage metrics by topology",
+  "runs": {
+   "horizontal": 500,
+   "vertical": 481,
+   "full_mesh": 500
+  },
+  "pooled_iats": {
+   "horizontal": 6513,
+   "vertical": 7355,
+   "full_mesh": 14493
+  },
+  "notes": ["All metrics are discussion-stage only unless marked [NOT disc-only].","Percent changes are relative to the Sequential baseline."],
+  "sections": [
+   {
+    "title": "Application",
+    "rows": [
+     {
+      "metric": "Mean LLM req / rep",
+      "values": {
+       "horizontal": "14.03",
+       "vertical": "16.29 (+16%)",
+       "full_mesh": "29.99 (+114%)"
+      }
+     },
+     {
+      "metric": "Total LLM requests",
+      "values": {
+       "horizontal": "7,013",
+       "vertical": "7,836 (+12%)",
+       "full_mesh": "14,993 (+114%)"
+      }
+     },
+     {
+      "metric": "Discussion call rate",
+      "values": {
+       "horizontal": "0.208 calls/s",
+       "vertical": "0.207 calls/s (-0%)",
+       "full_mesh": "1.366 calls/s (+557%)"
+      }
+     },
+     {
+      "metric": "Duration",
+      "values": {
+       "horizontal": "81.10 s",
+       "vertical": "105.22 s (+30%)",
+       "full_mesh": "31.63 s (-61%)"
+      }
+     },
+     {
+      "metric": "Tokens / run",
+      "values": {
+       "horizontal": "25.5k",
+       "vertical": "43.7k (+71%)",
+       "full_mesh": "35.2k (+38%)"
+      }
+     },
+     {
+      "metric": "Tokens / call",
+      "values": {
+       "horizontal": "1.8k",
+       "vertical": "2.7k (+52%)",
+       "full_mesh": "1.1k (-39%)"
+      }
+     },
+     {
+      "metric": "Mean call latency",
+      "values": {
+       "horizontal": "5.68 s",
+       "vertical": "11.57 s (+104%)",
+       "full_mesh": "3.11 s (-45%)"
+      }
+     },
+     {
+      "metric": "Failed discussion calls",
+      "values": {
+       "horizontal": "0",
+       "vertical": "0",
+       "full_mesh": "0"
+      }
+     }
+    ]
+   },
+   {
+    "title": "Inter-arrival times",
+    "rows": [
+     {
+      "metric": "Mean IAT",
+      "values": {
+       "horizontal": "6.23 s",
+       "vertical": "6.88 s (+11%)",
+       "full_mesh": "1.09 s (-82%)"
+      }
+     },
+     {
+      "metric": "Median IAT",
+      "values": {
+       "horizontal": "4.56 s",
+       "vertical": "0.41 ms (-100%)",
+       "full_mesh": "236 ms (-95%)"
+      }
+     },
+     {
+      "metric": "IAT p95",
+      "values": {
+       "horizontal": "10.79 s",
+       "vertical": "20.74 s (+92%)",
+       "full_mesh": "2.82 s (-74%)"
+      }
+     },
+     {
+      "metric": "Burst fraction (IAT < 50 ms)",
+      "values": {
+       "horizontal": "0.0%",
+       "vertical": "53.3%",
+       "full_mesh": "38.2%"
+      }
+     },
+     {
+      "metric": "IAT jitter p50",
+      "values": {
+       "horizontal": "4.90 s",
+       "vertical": "0.47 ms (-100%)",
+       "full_mesh": "235 ms (-95%)"
+      }
+     },
+     {
+      "metric": "IAT jitter p95",
+      "values": {
+       "horizontal": "11.24 s",
+       "vertical": "20.68 s (+84%)",
+       "full_mesh": "2.82 s (-75%)"
+      }
+     }
+    ]
+   },
+   {
+    "title": "LLM backend",
+    "rows": [
+     {
+      "metric": "LLM latency p50",
+      "values": {
+       "horizontal": "4.89 s",
+       "vertical": "8.78 s (+80%)",
+       "full_mesh": "2.78 s (-43%)"
+      }
+     },
+     {
+      "metric": "LLM latency p95",
+      "values": {
+       "horizontal": "10.35 s",
+       "vertical": "24.02 s (+132%)",
+       "full_mesh": "5.10 s (-51%)"
+      }
+     },
+     {
+      "metric": "TTFT p50",
+      "values": {
+       "horizontal": "125 ms",
+       "vertical": "228 ms (+83%)",
+       "full_mesh": "99 ms (-21%)"
+      }
+     },
+     {
+      "metric": "TTFT p95",
+      "values": {
+       "horizontal": "265 ms",
+       "vertical": "489 ms (+85%)",
+       "full_mesh": "427 ms (+61%)"
+      }
+     },
+     {
+      "metric": "Mean LLM concurrency",
+      "values": {
+       "horizontal": "0.97",
+       "vertical": "1.62 (+67%)",
+       "full_mesh": "2.94 (+203%)"
+      }
+     },
+     {
+      "metric": "Peak LLM concurrency",
+      "values": {
+       "horizontal": "1.99",
+       "vertical": "3.80 (+91%)",
+       "full_mesh": "6.03 (+203%)"
+      }
+     },
+     {
+      "metric": "Prompt tok/s",
+      "values": {
+       "horizontal": "236.5 tok/s",
+       "vertical": "317.6 tok/s (+34%)",
+       "full_mesh": "1052.3 tok/s (+345%)"
+      }
+     },
+     {
+      "metric": "Completion tok/s",
+      "values": {
+       "horizontal": "110.1 tok/s",
+       "vertical": "177.3 tok/s (+61%)",
+       "full_mesh": "363.5 tok/s (+230%)"
+      }
+     }
+    ]
+   },
+   {
+    "title": "Network",
+    "rows": [
+     {
+      "metric": "LLM TCP bytes / run",
+      "values": {
+       "horizontal": "50.7k",
+       "vertical": "86.3k (+70%)",
+       "full_mesh": "38.6k (-24%)"
+      },
+      "footnote": "¹"
+     },
+     {
+      "metric": "Mean LLM TCP byte rate",
+      "values": {
+       "horizontal": "617 B/s",
+       "vertical": "770 B/s (+25%)",
+       "full_mesh": "1.09 kB/s (+77%)"
+      }
+     },
+     {
+      "metric": "Peak LLM TCP byte rate",
+      "values": {
+       "horizontal": "841 B/s",
+       "vertical": "1.21 kB/s (+44%)",
+       "full_mesh": "1.48 kB/s (+76%)"
+      }
+     },
+     {
+      "metric": "TCP flow dur p50",
+      "values": {
+       "horizontal": "20.14 s",
+       "vertical": "24.36 s (+21%)",
+       "full_mesh": "26.32 s (+31%)"
+      },
+      "note": "NOT discussion-only"
+     },
+     {
+      "metric": "TCP flow dur p95",
+      "values": {
+       "horizontal": "155.39 s",
+       "vertical": "220.31 s (+42%)",
+       "full_mesh": "154.10 s (-1%)"
+      },
+      "note": "NOT discussion-only"
+     }
+    ]
+   }
+  ],
+  "footnotes": [
+   {
+    "mark": "¹",
+    "text": "LLM TCP bytes / run: computed as tcp_bytes_llm_mean_Bps × disc_duration_s (discussion-windowed rate × discussion duration). This gives bytes transferred during the discussion window only."
+   }
+  ]
+ },
+ "iat": {
+  "definition": "Discussion-stage inter-arrival times: per run, sorted start_time_utc of the LLM calls labelled horizontal_discussion / synthesize_discussion (Sequential), plus vertical_solver / vertical_reviewer (Star), full_mesh_message / synthesize_discussion (Full Mesh); consecutive differences pooled over runs (_compute_table2.collect_iats). Burst = IAT < 50 ms.",
+  "burst_threshold_s": 0.05,
+  "bins_s": [5e-05,6.66761e-05,8.8914e-05,0.000118569,0.000158114,0.000210848,0.000281171,0.000374947,0.0005,0.000666761,0.00088914,0.00118569,0.00158114,0.00210848,0.00281171,0.00374947,0.005,0.00666761,0.0088914,0.0118569,0.0158114,0.0210848,0.0281171,0.0374947,0.05,0.0666761,0.088914,0.118569,0.158114,0.210848,0.281171,0.374947,0.5,0.666761,0.88914,1.18569,1.58114,2.10848,2.81171,3.74947,5,6.66761,8.8914,11.8569,15.8114,21.0848,28.1171,37.4947,50,66.6761,88.914,118.569,158.114,210.848,281.171,374.947,500],
+  "linear_bins_s": [0.0,0.25,0.5,0.75,1.0,1.25,1.5,1.75,2.0,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.25,4.5,4.75,5.0,5.25,5.5,5.75,6.0,6.25,6.5,6.75,7.0,7.25,7.5,7.75,8.0,8.25,8.5,8.75,9.0,9.25,9.5,9.75,10.0,10.25,10.5,10.75,11.0,11.25,11.5,11.75,12.0,12.25,12.5,12.75,13.0,13.25,13.5,13.75,14.0,14.25,14.5,14.75,15.0,15.25,15.5,15.75,16.0,16.25,16.5,16.75,17.0,17.25,17.5,17.75,18.0,18.25,18.5,18.75,19.0,19.25,19.5,19.75,20.0,20.25,20.5,20.75,21.0,21.25,21.5,21.75,22.0,22.25,22.5,22.75,23.0,23.25,23.5,23.75,24.0,24.25,24.5,24.75,25.0,25.25,25.5,25.75,26.0,26.25,26.5,26.75,27.0,27.25,27.5,27.75,28.0,28.25,28.5,28.75,29.0,29.25,29.5,29.75,30.0],
+  "bins_note": "8 log-spaced bins per decade, edges 0.05 s * 10^(j/8); counts[i] covers [bins_s[i], bins_s[i+1]); underflow / overflow count values outside; fit_counts bins the fit sample. linear_bins_s / linear_counts / linear_fit_counts: the same on 0.25 s linear bins over [0, 30) s for the linear-scale view (linear_overflow: IATs beyond).",
+  "per_topology": {
+   "horizontal": {
+    "n_runs": 500,
+    "n": 6513,
+    "mean_s": 6.22589,
+    "median_s": 4.56064,
+    "p95_s": 10.7857,
+    "burst_fraction": 0,
+    "counts": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,26,300,1408,2258,1485,505,249,79,25,47,19,3,89,18,2,0,0,0,0,0],
+    "underflow": 0,
+    "overflow": 0,
+    "fit_counts": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,26,300,1408,2258,1485,505,186,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    "linear_counts": [0,0,0,0,0,0,1,10,41,65,153,234,364,386,481,446,461,486,467,397,353,315,258,214,159,125,87,61,72,73,48,56,43,59,40,52,45,29,37,12,21,9,22,17,12,11,7,8,10,7,5,5,4,1,3,6,6,7,2,6,5,2,4,3,4,4,3,1,2,1,2,2,0,0,1,0,0,1,0,0,0,1,0,0,1,0,2,0,2,1,2,1,0,3,2,2,3,2,1,1,1,8,4,2,0,0,3,1,1,1,3,0,1,1,3,0,0,2,0,1],
+    "linear_overflow": 123,
+    "linear_fit_counts": [0,0,0,0,0,0,1,10,41,65,153,234,364,386,481,446,461,486,467,397,353,315,258,214,159,125,87,61,72,73,48,56,43,59,40,52,45,29,37,12,21,9,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+   },
+   "vertical": {
+    "n_runs": 481,
+    "n": 7355,
+    "mean_s": 6.88107,
+    "median_s": 0.000408888,
+    "p95_s": 20.7423,
+    "burst_fraction": 0.532699,
+    "counts": [0,0,0,1,35,1445,1414,935,15,65,3,2,1,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,3,1,15,80,326,1127,606,661,257,86,75,34,101,39,4,2,19,0,0,0],
+    "underflow": 0,
+    "overflow": 0,
+    "fit_counts": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,3,1,15,80,326,1127,606,661,257,86,35,0,0,0,0,0,0,0,0,0],
+    "linear_counts": [3918,0,0,1,0,0,1,1,1,1,0,1,5,3,6,10,8,26,17,19,23,24,44,34,62,83,88,122,147,150,151,134,132,108,104,80,75,68,41,62,53,45,44,39,41,40,35,63,49,54,51,54,31,40,46,47,42,32,40,35,34,39,25,36,26,18,12,11,13,20,23,12,13,11,9,15,4,9,5,6,5,4,6,4,10,7,3,5,7,5,4,5,1,1,3,3,1,2,2,4,6,2,0,2,2,4,1,0,3,2,1,3,2,1,4,2,3,3,3,1],
+    "linear_overflow": 256,
+    "linear_fit_counts": [0,0,0,1,0,0,1,1,1,1,0,1,5,3,6,10,8,26,17,19,23,24,44,34,62,83,88,122,147,150,151,134,132,108,104,80,75,68,41,62,53,45,44,39,41,40,35,63,49,54,51,54,31,40,46,47,42,32,40,35,34,39,25,36,26,18,12,11,13,20,23,12,13,11,9,15,4,9,5,6,5,4,6,4,10,7,3,5,7,5,4,5,1,1,3,3,1,2,2,4,6,2,0,2,2,4,1,0,3,2,1,3,2,1,4,2,3,3,3,1]
+   },
+   "full_mesh": {
+    "n_runs": 500,
+    "n": 14493,
+    "mean_s": 1.09133,
+    "median_s": 0.236142,
+    "p95_s": 2.81619,
+    "burst_fraction": 0.381771,
+    "counts": [0,0,0,1,31,1203,1655,702,159,655,169,147,71,23,21,21,19,19,143,41,79,78,177,119,247,208,217,263,504,776,854,800,727,543,467,480,845,1299,468,69,9,5,2,23,18,73,15,1,15,30,2,0,0,0,0,0],
+    "underflow": 0,
+    "overflow": 0,
+    "fit_counts": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,247,208,217,263,504,776,854,800,727,543,467,480,845,1299,468,69,9,5,2,23,18,46,0,0,0,0,0,0,0,0,0,0],
+    "linear_counts": [7412,1990,958,526,351,300,299,416,505,518,416,235,160,92,53,24,21,14,2,8,4,2,0,0,1,1,1,1,1,0,0,1,0,0,2,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,2,3,4,3,1,1,3,2,4,3,0,2,0,0,1,0,0,0,0,0,2,0,0,2,0,2,1,2,0,3,3,2,0,1,2,1,4,2,5,4,3,3,1,4,4,5,1,6,3,5,2,2,2,1,1,1,3,1,0,1,1,1,3,0,0],
+    "linear_overflow": 56,
+    "linear_fit_counts": [1879,1990,958,526,351,300,299,416,505,518,416,235,160,92,53,24,21,14,2,8,4,2,0,0,1,1,1,1,1,0,0,1,0,0,2,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,2,3,4,3,1,1,3,2,4,3,0,2,0,0,1,0,0,0,0,0,2,0,0,2,0,2,1,2,0,3,3,2,0,1,2,1,4,2,5,4,3,3,1,4,4,5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+   }
+  },
+  "fit_scope": "Paper Table 3 (tab:gof) pipeline, make_session_proxy_figures.py: pooled IATs > 0; 3x IQR upper fence (Q3 + 3 IQR) for Sequential and Star; IAT > 50 ms (reasoning-phase mode); values above the 99th percentile of that sample dropped. Maximum likelihood with location 0. lognormal: mu, sigma of ln(IAT); exponential: lambda = 1/mean; weibull: shape, scale. ks: one-sample KS statistic; p_value: exact two-sided KS distribution (scipy.stats.kstest), not corrected for estimated parameters; aic = 2k - 2 log L.",
+  "fits": {
+   "horizontal": {
+    "n": 6168,
+    "fraction_of_iats": 0.947029,
+    "range_s": [1.68222,10.5696],
+    "fence_s": 11.7788,
+    "clip_s": 10.5712,
+    "n_positive": 6513,
+    "n_after_fence": 6231,
+    "n_reasoning": 6231,
+    "lognormal": {
+     "mu": 1.5118742,
+     "sigma": 0.31179112,
+     "median_s": 4.5352229,
+     "ks": 0.027317,
+     "p_value": 0.00019714,
+     "aic": 21781.863
+    },
+    "exponential": {
+     "lambda": 0.2097627,
+     "mean_s": 4.7672919,
+     "ks": 0.396343,
+     "p_value": 0,
+     "aic": 31604.098
+    },
+    "weibull": {
+     "shape": 3.0916584,
+     "scale_s": 5.3216446,
+     "ks": 0.0908578,
+     "p_value": 9.29472e-45,
+     "aic": 23165.432
+    },
+    "best_aic": "lognormal",
+    "best_ks": "lognormal"
+   },
+   "vertical": {
+    "source": "paper",
+    "n": 3303,
+    "fraction_of_iats": null,
+    "range_s": [0.91957,32.0542],
+    "fence_s": 36.1789,
+    "clip_s": 32.1217,
+    "lognormal": {
+     "mu": 2.2721259,
+     "sigma": 0.4,
+     "median_s": 9.7,
+     "ks": 0.077,
+     "p_value": 1.7675e-17,
+     "aic": 18377
+    },
+    "exponential": {
+     "lambda": 0.09478673,
+     "mean_s": 10.55,
+     "ks": 0.359,
+     "p_value": 0,
+     "aic": 22173
+    },
+    "weibull": {
+     "shape": 2.38,
+     "scale_s": 11.92,
+     "ks": 0.104,
+     "p_value": 1.47009e-31,
+     "aic": 19131
+    },
+    "best_aic": "lognormal",
+    "best_ks": "lognormal",
+    "sample": {
+     "source": "published_runs",
+     "n": 3198,
+     "fraction_of_iats": 0.434806,
+     "n_positive": 7355,
+     "n_after_fence": 7149,
+     "n_reasoning": 3231
+    }
+   },
+   "full_mesh": {
+    "n": 8870,
+    "fraction_of_iats": 0.61202,
+    "range_s": [0.0501111,25.2099],
+    "fence_s": null,
+    "clip_s": 25.2292,
+    "n_positive": 14493,
+    "n_after_fence": 14493,
+    "n_reasoning": 8960,
+    "lognormal": {
+     "mu": -0.40680578,
+     "sigma": 1.1598842,
+     "median_s": 0.66577348,
+     "ks": 0.0887387,
+     "p_value": 3.17403e-61,
+     "aic": 20590.436
+    },
+    "exponential": {
+     "lambda": 0.7831493,
+     "mean_s": 1.2768957,
+     "ks": 0.116436,
+     "p_value": 3.17178e-105,
+     "aic": 22078.222
+    },
+    "weibull": {
+     "shape": 0.87978145,
+     "scale_s": 1.1821617,
+     "ks": 0.0682198,
+     "p_value": 2.45017e-36,
+     "aic": 21760.388
+    },
+    "best_aic": "lognormal",
+    "best_ks": "weibull"
+   }
+  }
+ },
+ "metrics": [
+  {
+   "key": "disc_n_requests",
+   "label": "Discussion calls",
+   "paper_label": "Discussion Requests (count)",
+   "unit": "calls",
+   "layer": "application",
+   "description": "Number of discussion calls in the run.",
+   "source": "response"
+  },
+  {
+   "key": "disc_duration_s",
+   "label": "Discussion duration",
+   "paper_label": "Discussion Duration (s)",
+   "unit": "s",
+   "layer": "application",
+   "description": "Last minus first discussion-call start time.",
+   "source": "response"
+  },
+  {
+   "key": "disc_total_tokens",
+   "label": "Discussion tokens",
+   "paper_label": "Discussion Tokens (total)",
+   "unit": "tokens",
+   "layer": "application",
+   "description": "Prompt + completion tokens of all discussion calls (llm_meta).",
+   "source": "response"
+  },
+  {
+   "key": "disc_mean_latency_s",
+   "label": "Mean call latency",
+   "paper_label": "Discussion LLM Latency Mean (s)",
+   "unit": "s",
+   "layer": "application",
+   "description": "Mean end-to-end duration of a discussion call (duration_seconds, timed by the calling agent).",
+   "source": "response"
+  },
+  {
+   "key": "disc_mean_iat_s",
+   "label": "Mean discussion IAT",
+   "paper_label": "Discussion IAT Mean (s)",
+   "unit": "s",
+   "layer": "application",
+   "description": "Mean gap between consecutive discussion-call starts = duration / (calls - 1).",
+   "source": "response"
+  },
+  {
+   "key": "llm_latency_p50_mean_s",
+   "label": "Call latency p50",
+   "paper_label": "LLM Latency p50 (s)",
+   "unit": "s",
+   "layer": "llm",
+   "description": "Median discussion-call duration within the run.",
+   "source": "response"
+  },
+  {
+   "key": "llm_latency_p95_mean_s",
+   "label": "Call latency p95",
+   "paper_label": "LLM Latency p95 (s)",
+   "unit": "s",
+   "layer": "llm",
+   "description": "95th percentile of discussion-call durations within the run.",
+   "source": "response"
+  },
+  {
+   "key": "llm_ttft_p50_mean_s",
+   "label": "TTFT p50",
+   "paper_label": "TTFT p50 (s)",
+   "unit": "s",
+   "layer": "llm",
+   "description": "Median time to first token of the run's discussion calls: llm_meta.queue_wait_s, timed by the vLLM server from submission to the first output (queueing + prefill). Same values as llm_queue_wait_p50_mean_s.",
+   "source": "response"
+  },
+  {
+   "key": "llm_ttft_p95_mean_s",
+   "label": "TTFT p95",
+   "paper_label": "TTFT p95 (s)",
+   "unit": "s",
+   "layer": "llm",
+   "description": "95th percentile of llm_meta.queue_wait_s (time to first token) of the run's discussion calls. Same values as llm_queue_wait_p95_mean_s.",
+   "source": "response"
+  },
+  {
+   "key": "llm_inflight_mean",
+   "label": "Mean in-flight calls",
+   "paper_label": "In-flight LLM Req (mean)",
+   "unit": "calls",
+   "layer": "llm",
+   "description": "Time-weighted mean number of concurrent discussion calls over the discussion window ([start, start + duration] intervals).",
+   "source": "response"
+  },
+  {
+   "key": "llm_inflight_peak",
+   "label": "Peak in-flight calls",
+   "paper_label": "In-flight LLM Req (peak)",
+   "unit": "calls",
+   "layer": "llm",
+   "description": "Maximum number of concurrent discussion calls.",
+   "source": "response"
+  },
+  {
+   "key": "llm_queue_wait_p50_mean_s",
+   "label": "Queue wait p50",
+   "paper_label": "Queue Wait p50 (s)",
+   "unit": "s",
+   "layer": "llm",
+   "description": "Median llm_meta.queue_wait_s of the run's discussion calls (duplicate of TTFT p50).",
+   "source": "response",
+   "duplicate_of": "llm_ttft_p50_mean_s"
+  },
+  {
+   "key": "llm_queue_wait_p95_mean_s",
+   "label": "Queue wait p95",
+   "paper_label": "Queue Wait p95 (s)",
+   "unit": "s",
+   "layer": "llm",
+   "description": "95th percentile of llm_meta.queue_wait_s (duplicate of TTFT p95).",
+   "source": "response",
+   "duplicate_of": "llm_ttft_p95_mean_s"
+  },
+  {
+   "key": "prompt_tokens_per_s_mean",
+   "label": "Prompt tokens/s",
+   "paper_label": "Prompt Tokens/s",
+   "unit": "tok/s",
+   "layer": "llm",
+   "description": "Prompt tokens of all discussion calls / discussion duration.",
+   "source": "response"
+  },
+  {
+   "key": "completion_tokens_per_s_mean",
+   "label": "Completion tokens/s",
+   "paper_label": "Completion Tokens/s",
+   "unit": "tok/s",
+   "layer": "llm",
+   "description": "Completion tokens of all discussion calls / discussion duration.",
+   "source": "response"
+  },
+  {
+   "key": "iat_mean_s",
+   "label": "Mean IAT",
+   "paper_label": "IAT Mean (s)",
+   "unit": "s",
+   "layer": "traffic",
+   "description": "Mean discussion-call IAT (identical to disc_mean_iat_s).",
+   "source": "response",
+   "duplicate_of": "disc_mean_iat_s"
+  },
+  {
+   "key": "burstiness_mean",
+   "label": "Burstiness (max/mean IAT)",
+   "paper_label": "Burstiness (mean)",
+   "unit": "ratio",
+   "layer": "traffic",
+   "description": "Largest discussion IAT of the run divided by its mean IAT (runs with >= 3 calls).",
+   "source": "response"
+  },
+  {
+   "key": "burstiness_max",
+   "label": "Max IAT",
+   "paper_label": "Burstiness (max)",
+   "unit": "s",
+   "layer": "traffic",
+   "description": "Largest discussion IAT of the run, in seconds (named burstiness_max in the paper's code).",
+   "source": "response"
+  },
+  {
+   "key": "iat_jitter_p50_mean_s",
+   "label": "IAT p50",
+   "paper_label": "IAT Jitter p50 (s)",
+   "unit": "s",
+   "layer": "traffic",
+   "description": "Median discussion IAT within the run (Table 2 'IAT jitter p50' is its mean over runs).",
+   "source": "response"
+  },
+  {
+   "key": "iat_jitter_p95_mean_s",
+   "label": "IAT p95",
+   "paper_label": "IAT Jitter p95 (s)",
+   "unit": "s",
+   "layer": "traffic",
+   "description": "95th percentile of the run's discussion IATs.",
+   "source": "response"
+  },
+  {
+   "key": "tcp_rtt_p50_mean_s",
+   "label": "TCP RTT p50",
+   "paper_label": "TCP RTT p50 (s)",
+   "unit": "s",
+   "layer": "network",
+   "description": "RTT of the TCP handshake from Agent A to the model server, histogram p50; measured passively on the network, samples inside the discussion window [first discussion-call start, last discussion-call end]. Constant (0.25 ms) in every run, so it carries no information.",
+   "source": "prometheus"
+  },
+  {
+   "key": "tcp_rtt_p95_mean_s",
+   "label": "TCP RTT p95",
+   "paper_label": "TCP RTT p95 (s)",
+   "unit": "s",
+   "layer": "network",
+   "description": "RTT of the TCP handshake from Agent A to the model server, histogram p95; measured passively on the network, samples inside the discussion window [first discussion-call start, last discussion-call end]. Constant (0.475 ms) in every run.",
+   "source": "prometheus"
+  },
+  {
+   "key": "tcp_flow_dur_p50_mean_s",
+   "label": "TCP flow duration p50",
+   "paper_label": "TCP Flow Dur p50 (s)",
+   "unit": "s",
+   "layer": "network",
+   "description": "TCP flow duration Agent A -> LLM, histogram p50; measured passively on the network, samples inside the discussion window [first discussion-call start, last discussion-call end]. Not discussion-only: flows span the whole task.",
+   "source": "prometheus"
+  },
+  {
+   "key": "tcp_flow_dur_p95_mean_s",
+   "label": "TCP flow duration p95",
+   "paper_label": "TCP Flow Dur p95 (s)",
+   "unit": "s",
+   "layer": "network",
+   "description": "TCP flow duration Agent A -> LLM, histogram p95; measured passively on the network, samples inside the discussion window [first discussion-call start, last discussion-call end]. Not discussion-only.",
+   "source": "prometheus"
+  },
+  {
+   "key": "tcp_bytes_llm_mean_Bps",
+   "label": "LLM TCP byte rate",
+   "paper_label": "TCP Bytes/s from LLM (mean)",
+   "unit": "B/s",
+   "layer": "network",
+   "description": "Bytes/s sent by the LLM backend, mean; measured passively on the network, samples inside the discussion window [first discussion-call start, last discussion-call end].",
+   "source": "prometheus"
+  },
+  {
+   "key": "tcp_bytes_llm_peak_Bps",
+   "label": "Peak LLM TCP byte rate",
+   "paper_label": "TCP Bytes/s from LLM (peak)",
+   "unit": "B/s",
+   "layer": "network",
+   "description": "Bytes/s sent by the LLM backend, max; measured passively on the network, samples inside the discussion window [first discussion-call start, last discussion-call end].",
+   "source": "prometheus"
+  },
+  {
+   "key": "tcp_bytes_a_to_llm_mean_Bps",
+   "label": "TCP bytes/s A->LLM",
+   "paper_label": "TCP Bytes/s A→LLM",
+   "unit": "B/s",
+   "layer": "network",
+   "description": "Bytes/s Agent A -> LLM backend, mean; measured passively on the network, samples inside the discussion window [first discussion-call start, last discussion-call end].",
+   "source": "prometheus"
+  },
+  {
+   "key": "tcp_bytes_b_to_llm_mean_Bps",
+   "label": "TCP bytes/s B->LLM",
+   "paper_label": "TCP Bytes/s B→LLM (sum)",
+   "unit": "B/s",
+   "layer": "network",
+   "description": "Bytes/s of all Agent B instances -> LLM backend (summed per sample), mean; measured passively on the network, samples inside the discussion window [first discussion-call start, last discussion-call end].",
+   "source": "prometheus"
+  },
+  {
+   "key": "tcp_bytes_a_to_b_mean_Bps",
+   "label": "TCP bytes/s A->B",
+   "paper_label": "TCP Bytes/s A→B (sum)",
+   "unit": "B/s",
+   "layer": "network",
+   "description": "Bytes/s Agent A -> all Agent B instances (summed per sample), mean; measured passively on the network, samples inside the discussion window [first discussion-call start, last discussion-call end].",
+   "source": "prometheus"
+  }
+ ],
+ "layers": ["application","llm","traffic","network"],
+ "correlations": {
+  "method": "Spearman rank correlation, pairwise-complete rows, average ranks for ties (pandas DataFrame.corr(method='spearman')); null where a column is constant",
+  "metric_keys": ["disc_n_requests","disc_duration_s","disc_total_tokens","disc_mean_latency_s","disc_mean_iat_s","llm_latency_p50_mean_s","llm_latency_p95_mean_s","llm_ttft_p50_mean_s","llm_ttft_p95_mean_s","llm_inflight_mean","llm_inflight_peak","llm_queue_wait_p50_mean_s","llm_queue_wait_p95_mean_s","prompt_tokens_per_s_mean","completion_tokens_per_s_mean","iat_mean_s","burstiness_mean","burstiness_max","iat_jitter_p50_mean_s","iat_jitter_p95_mean_s","tcp_rtt_p50_mean_s","tcp_rtt_p95_mean_s","tcp_flow_dur_p50_mean_s","tcp_flow_dur_p95_mean_s","tcp_bytes_llm_mean_Bps","tcp_bytes_llm_peak_Bps","tcp_bytes_a_to_llm_mean_Bps","tcp_bytes_b_to_llm_mean_Bps","tcp_bytes_a_to_b_mean_Bps"],
+  "groups": {
+   "all": {
+    "n": 1481,
+    "rho": [
+     [1.0,0.1754,0.5859,-0.4588,-0.3013,-0.5364,-0.4116,-0.0912,0.3874,0.2646,0.4769,-0.0912,0.3874,0.3216,0.0832,-0.3013,0.7111,0.0733,0.0742,-0.3491,-0.2594,0.2564,0.1984,-0.1002,0.6412,0.7023,0.3351,0.5284,0.5209],
+     [0.1754,1.0,0.6591,0.6517,0.8138,0.5587,0.6611,0.5683,0.3484,-0.5811,-0.4537,0.5683,0.3484,-0.6577,-0.7106,0.8138,0.2165,0.8903,-0.0009,0.7455,0.3639,-0.1905,-0.1831,0.1365,-0.1648,0.1184,-0.5362,0.2273,0.2295],
+     [0.5859,0.6591,1.0,0.2975,0.2985,0.1986,0.2896,0.6367,0.8369,0.0957,0.178,0.6367,0.8369,0.0017,-0.1425,0.2985,0.6368,0.6151,-0.2914,0.3656,0.0511,0.0359,0.1783,0.151,0.3139,0.5758,-0.2238,0.7024,0.702],
+     [-0.4588,0.6517,0.2975,1.0,0.8434,0.9363,0.9644,0.6945,0.2043,-0.3985,-0.4831,0.6945,0.2043,-0.6243,-0.4125,0.8434,-0.1304,0.6868,-0.3122,0.9519,0.3712,-0.2304,-0.1168,0.276,-0.4247,-0.1964,-0.707,0.0247,0.0329],
+     [-0.3013,0.8138,0.2985,0.8434,1.0,0.7769,0.8302,0.4699,0.1087,-0.7142,-0.7055,0.4699,0.1087,-0.8831,-0.7387,1.0,-0.1334,0.747,0.1074,0.8835,0.3272,-0.1565,-0.2941,0.1202,-0.5073,-0.247,-0.6607,-0.1298,-0.1261],
+     [-0.5364,0.5587,0.1986,0.9363,0.7769,1.0,0.8738,0.6621,0.1502,-0.374,-0.4866,0.6621,0.1502,-0.5722,-0.3731,0.7769,-0.2693,0.5748,-0.3215,0.874,0.3904,-0.2717,-0.1222,0.323,-0.3849,-0.2332,-0.6599,0.0404,0.0491],
+     [-0.4116,0.6611,0.2896,0.9644,0.8302,0.8738,1.0,0.6642,0.1752,-0.4089,-0.4592,0.6642,0.1752,-0.6313,-0.4182,0.8302,-0.0633,0.7142,-0.3134,0.9502,0.3698,-0.2277,-0.1107,0.2753,-0.4042,-0.1773,-0.6788,-0.0059,0.0019],
+     [-0.0912,0.5683,0.6367,0.6945,0.4699,0.6621,0.6642,1.0,0.5967,-0.0248,-0.0999,1.0,0.5967,-0.1066,-0.1904,0.4699,0.1578,0.5959,-0.5651,0.6893,0.3382,-0.2299,0.1422,0.3326,-0.0947,0.1219,-0.5654,0.4201,0.4274],
+     [0.3874,0.3484,0.8369,0.2043,0.1087,0.1502,0.1752,0.5967,1.0,0.3662,0.3543,0.5967,1.0,0.2137,0.131,0.1087,0.54,0.3784,-0.3483,0.2083,-0.0044,0.0495,0.2565,0.1565,0.3173,0.5238,-0.1577,0.6778,0.677],
+     [0.2646,-0.5811,0.0957,-0.3985,-0.7142,-0.374,-0.4089,-0.0248,0.3662,1.0,0.8879,-0.0248,0.3662,0.8434,0.9235,-0.7142,0.4082,-0.4392,-0.4897,-0.4897,-0.3103,0.1722,0.478,0.0547,0.5848,0.4867,0.3909,0.4563,0.4551],
+     [0.4769,-0.4537,0.178,-0.4831,-0.7055,-0.4866,-0.4592,-0.0999,0.3543,0.8879,1.0,-0.0999,0.3543,0.7779,0.8384,-0.7055,0.626,-0.2771,-0.4737,-0.5232,-0.3531,0.2342,0.4965,0.0144,0.7453,0.6579,0.4905,0.5047,0.5028],
+     [-0.0912,0.5683,0.6367,0.6945,0.4699,0.6621,0.6642,1.0,0.5967,-0.0248,-0.0999,1.0,0.5967,-0.1066,-0.1904,0.4699,0.1578,0.5959,-0.5651,0.6893,0.3382,-0.2299,0.1422,0.3326,-0.0947,0.1219,-0.5654,0.4201,0.4274],
+     [0.3874,0.3484,0.8369,0.2043,0.1087,0.1502,0.1752,0.5967,1.0,0.3662,0.3543,0.5967,1.0,0.2137,0.131,0.1087,0.54,0.3784,-0.3483,0.2083,-0.0044,0.0495,0.2565,0.1565,0.3173,0.5238,-0.1577,0.6778,0.677],
+     [0.3216,-0.6577,0.0017,-0.6243,-0.8831,-0.5722,-0.6313,-0.1066,0.2137,0.8434,0.7779,-0.1066,0.2137,1.0,0.7943,-0.8831,0.2588,-0.5898,-0.3366,-0.6772,-0.2129,0.0617,0.4261,0.0076,0.5503,0.3582,0.4995,0.3941,0.3923],
+     [0.0832,-0.7106,-0.1425,-0.4125,-0.7387,-0.3731,-0.4182,-0.1904,0.131,0.9235,0.8384,-0.1904,0.131,0.7943,1.0,-0.7387,0.2788,-0.532,-0.463,-0.5286,-0.3317,0.1683,0.4369,0.0351,0.4992,0.3397,0.4578,0.2786,0.2785],
+     [-0.3013,0.8138,0.2985,0.8434,1.0,0.7769,0.8302,0.4699,0.1087,-0.7142,-0.7055,0.4699,0.1087,-0.8831,-0.7387,1.0,-0.1334,0.747,0.1074,0.8835,0.3272,-0.1565,-0.2941,0.1202,-0.5073,-0.247,-0.6607,-0.1298,-0.1261],
+     [0.7111,0.2165,0.6368,-0.1304,-0.1334,-0.2693,-0.0633,0.1578,0.54,0.4082,0.626,0.1578,0.54,0.2588,0.2788,-0.1334,1.0,0.3872,-0.3351,-0.0373,-0.267,0.2703,0.3407,0.0241,0.5883,0.7386,0.2033,0.5473,0.5451],
+     [0.0733,0.8903,0.6151,0.6868,0.747,0.5748,0.7142,0.5959,0.3784,-0.4392,-0.2771,0.5959,0.3784,-0.5898,-0.532,0.747,0.3872,1.0,-0.23,0.7734,0.3074,-0.1429,-0.0908,0.1683,-0.1084,0.1778,-0.4758,0.2341,0.2391],
+     [0.0742,-0.0009,-0.2914,-0.3122,0.1074,-0.3215,-0.3134,-0.5651,-0.3483,-0.4897,-0.4737,-0.5651,-0.3483,-0.3366,-0.463,0.1074,-0.3351,-0.23,1.0,-0.2681,-0.0737,0.1042,-0.3548,-0.2822,-0.3073,-0.3397,0.0999,-0.4706,-0.4791],
+     [-0.3491,0.7455,0.3656,0.9519,0.8835,0.874,0.9502,0.6893,0.2083,-0.4897,-0.5232,0.6893,0.2083,-0.6772,-0.5286,0.8835,-0.0373,0.7734,-0.2681,1.0,0.3623,-0.219,-0.1452,0.2485,-0.4117,-0.161,-0.6798,0.0213,0.0288],
+     [-0.2594,0.3639,0.0511,0.3712,0.3272,0.3904,0.3698,0.3382,-0.0044,-0.3103,-0.3531,0.3382,-0.0044,-0.2129,-0.3317,0.3272,-0.267,0.3074,-0.0737,0.3623,1.0,-0.7531,-0.123,0.1272,-0.2379,-0.2037,-0.329,0.0107,0.0144],
+     [0.2564,-0.1905,0.0359,-0.2304,-0.1565,-0.2717,-0.2277,-0.2299,0.0495,0.1722,0.2342,-0.2299,0.0495,0.0617,0.1683,-0.1565,0.2703,-0.1429,0.1042,-0.219,-0.7531,1.0,0.0471,-0.1369,0.1399,0.1789,0.1869,-0.0192,-0.023],
+     [0.1984,-0.1831,0.1783,-0.1168,-0.2941,-0.1222,-0.1107,0.1422,0.2565,0.478,0.4965,0.1422,0.2565,0.4261,0.4369,-0.2941,0.3407,-0.0908,-0.3548,-0.1452,-0.123,0.0471,1.0,0.5007,0.3561,0.308,0.133,0.3387,0.338],
+     [-0.1002,0.1365,0.151,0.276,0.1202,0.323,0.2753,0.3326,0.1565,0.0547,0.0144,0.3326,0.1565,0.0076,0.0351,0.1202,0.0241,0.1683,-0.2822,0.2485,0.1272,-0.1369,0.5007,1.0,-0.0255,-0.0407,-0.2568,0.1518,0.1542],
+     [0.6412,-0.1648,0.3139,-0.4247,-0.5073,-0.3849,-0.4042,-0.0947,0.3173,0.5848,0.7453,-0.0947,0.3173,0.5503,0.4992,-0.5073,0.5883,-0.1084,-0.3073,-0.4117,-0.2379,0.1399,0.3561,-0.0255,1.0,0.8623,0.5864,0.6903,0.6873],
+     [0.7023,0.1184,0.5758,-0.1964,-0.247,-0.2332,-0.1773,0.1219,0.5238,0.4867,0.6579,0.1219,0.5238,0.3582,0.3397,-0.247,0.7386,0.1778,-0.3397,-0.161,-0.2037,0.1789,0.308,-0.0407,0.8623,1.0,0.3224,0.7331,0.7303],
+     [0.3351,-0.5362,-0.2238,-0.707,-0.6607,-0.6599,-0.6788,-0.5654,-0.1577,0.3909,0.4905,-0.5654,-0.1577,0.4995,0.4578,-0.6607,0.2033,-0.4758,0.0999,-0.6798,-0.329,0.1869,0.133,-0.2568,0.5864,0.3224,1.0,0.0896,0.0847],
+     [0.5284,0.2273,0.7024,0.0247,-0.1298,0.0404,-0.0059,0.4201,0.6778,0.4563,0.5047,0.4201,0.6778,0.3941,0.2786,-0.1298,0.5473,0.2341,-0.4706,0.0213,0.0107,-0.0192,0.3387,0.1518,0.6903,0.7331,0.0896,1.0,0.9997],
+     [0.5209,0.2295,0.702,0.0329,-0.1261,0.0491,0.0019,0.4274,0.677,0.4551,0.5028,0.4274,0.677,0.3923,0.2785,-0.1261,0.5451,0.2391,-0.4791,0.0288,0.0144,-0.023,0.338,0.1542,0.6873,0.7303,0.0847,0.9997,1.0]
+    ]
+   },
+   "horizontal": {
+    "n": 500,
+    "rho": [
+     [1.0,0.8537,0.9128,-0.0228,0.1936,-0.3099,0.2144,0.5091,0.3654,-0.4665,0.1159,0.5091,0.3654,0.0925,-0.8476,0.1936,0.6973,0.535,-0.2586,0.3618,0.1203,-0.0758,0.0521,0.1465,0.4978,0.7505,-0.0462,0.7733,0.7741],
+     [0.8537,1.0,0.9267,0.4368,0.6258,0.0525,0.599,0.5421,0.6261,-0.3854,0.0932,0.5421,0.6261,-0.2705,-0.852,0.6258,0.7929,0.8165,0.1191,0.7273,0.1387,-0.0891,-0.0019,0.1552,0.322,0.6833,-0.2494,0.5434,0.5429],
+     [0.9128,0.9267,1.0,0.2457,0.4485,-0.1501,0.4485,0.6946,0.603,-0.3845,0.1058,0.6946,0.603,-0.0778,-0.9204,0.4485,0.809,0.7244,-0.0834,0.6041,0.0769,0.0156,0.0729,0.0439,0.2782,0.6432,-0.2096,0.6224,0.6235],
+     [-0.0228,0.4368,0.2457,1.0,0.9301,0.6485,0.8353,0.1422,0.5662,-0.0082,-0.0404,0.1422,0.5662,-0.7846,-0.1718,0.9301,0.3178,0.6384,0.6846,0.789,-0.0484,0.1109,-0.0622,0.0288,-0.2672,0.0486,-0.369,-0.3102,-0.312],
+     [0.1936,0.6258,0.4485,0.9301,1.0,0.5634,0.8319,0.2548,0.7057,-0.1939,-0.0282,0.2548,0.7057,-0.801,-0.4186,1.0,0.5215,0.8166,0.6148,0.8865,-0.1119,0.156,-0.0532,0.0307,-0.1351,0.2305,-0.2847,-0.1448,-0.1457],
+     [-0.3099,0.0525,-0.1501,0.6485,0.5634,1.0,0.4333,-0.2366,0.2957,0.1113,-0.0808,-0.2366,0.2957,-0.5751,0.1776,0.5634,-0.1628,0.1907,0.9755,0.3386,-0.0211,0.0464,-0.1613,0.1891,-0.0021,-0.1279,-0.1368,-0.3106,-0.3133],
+     [0.2144,0.599,0.4485,0.8353,0.8319,0.4333,1.0,0.3205,0.6528,-0.071,0.008,0.3205,0.6528,-0.5509,-0.3611,0.8319,0.5882,0.7806,0.4727,0.8755,0.05,0.0028,-0.0184,0.133,-0.1179,0.2111,-0.3819,-0.0715,-0.0749],
+     [0.5091,0.5421,0.6946,0.1422,0.2548,-0.2366,0.3205,1.0,0.6141,-0.123,0.112,1.0,0.6141,0.2008,-0.7242,0.2548,0.6249,0.4856,-0.156,0.4524,0.1007,0.0211,0.1274,-0.125,-0.1116,0.2794,-0.3164,0.2491,0.2514],
+     [0.3654,0.6261,0.603,0.5662,0.7057,0.2957,0.6528,0.6141,1.0,-0.2899,0.022,0.6141,1.0,-0.3037,-0.6405,0.7057,0.6613,0.7638,0.3607,0.7544,-0.0962,0.1936,-0.0117,0.0114,0.0099,0.306,-0.2115,0.1088,0.1094],
+     [-0.4665,-0.3854,-0.3845,-0.0082,-0.1939,0.1113,-0.071,-0.123,-0.2899,1.0,0.0925,-0.123,-0.2899,0.1679,0.4338,-0.1939,-0.364,-0.3484,0.0838,-0.2039,0.2323,-0.2093,0.0473,-0.0706,-0.2929,-0.3924,-0.1977,-0.265,-0.2692],
+     [0.1159,0.0932,0.1058,-0.0404,-0.0282,-0.0808,0.008,0.112,0.022,0.0925,1.0,0.112,0.022,0.0739,-0.1109,-0.0282,0.0868,0.0174,-0.0775,0.0047,0.0283,-0.0253,0.0243,0.1165,0.0526,0.0706,-0.0516,0.105,0.1053],
+     [0.5091,0.5421,0.6946,0.1422,0.2548,-0.2366,0.3205,1.0,0.6141,-0.123,0.112,1.0,0.6141,0.2008,-0.7242,0.2548,0.6249,0.4856,-0.156,0.4524,0.1007,0.0211,0.1274,-0.125,-0.1116,0.2794,-0.3164,0.2491,0.2514],
+     [0.3654,0.6261,0.603,0.5662,0.7057,0.2957,0.6528,0.6141,1.0,-0.2899,0.022,0.6141,1.0,-0.3037,-0.6405,0.7057,0.6613,0.7638,0.3607,0.7544,-0.0962,0.1936,-0.0117,0.0114,0.0099,0.306,-0.2115,0.1088,0.1094],
+     [0.0925,-0.2705,-0.0778,-0.7846,-0.801,-0.5751,-0.5509,0.2008,-0.3037,0.1679,0.0739,0.2008,-0.3037,1.0,0.0479,-0.801,-0.1745,-0.5055,-0.5805,-0.5691,0.3184,-0.2963,0.1053,-0.0015,0.1961,-0.0306,0.0367,0.3927,0.3923],
+     [-0.8476,-0.852,-0.9204,-0.1718,-0.4186,0.1776,-0.3611,-0.7242,-0.6405,0.4338,-0.1109,-0.7242,-0.6405,0.0479,1.0,-0.4186,-0.8186,-0.709,0.0997,-0.5709,-0.0231,-0.0485,-0.0699,-0.0116,-0.2636,-0.6457,0.16,-0.5352,-0.5377],
+     [0.1936,0.6258,0.4485,0.9301,1.0,0.5634,0.8319,0.2548,0.7057,-0.1939,-0.0282,0.2548,0.7057,-0.801,-0.4186,1.0,0.5215,0.8166,0.6148,0.8865,-0.1119,0.156,-0.0532,0.0307,-0.1351,0.2305,-0.2847,-0.1448,-0.1457],
+     [0.6973,0.7929,0.809,0.3178,0.5215,-0.1628,0.5882,0.6249,0.6613,-0.364,0.0868,0.6249,0.6613,-0.1745,-0.8186,0.5215,1.0,0.8803,-0.1123,0.7494,-0.0381,0.0666,0.0624,0.0646,0.1376,0.5496,-0.1782,0.3721,0.3713],
+     [0.535,0.8165,0.7244,0.6384,0.8166,0.1907,0.7806,0.4856,0.7638,-0.3484,0.0174,0.4856,0.7638,-0.5055,-0.709,0.8166,0.8803,1.0,0.2456,0.9315,-0.0593,0.0933,-0.004,0.0538,0.0599,0.4592,-0.2097,0.1937,0.1925],
+     [-0.2586,0.1191,-0.0834,0.6846,0.6148,0.9755,0.4727,-0.156,0.3607,0.0838,-0.0775,-0.156,0.3607,-0.5805,0.0997,0.6148,-0.1123,0.2456,1.0,0.3922,-0.005,0.0487,-0.1549,0.1744,-0.0094,-0.0804,-0.1717,-0.2943,-0.2969],
+     [0.3618,0.7273,0.6041,0.789,0.8865,0.3386,0.8755,0.4524,0.7544,-0.2039,0.0047,0.4524,0.7544,-0.5691,-0.5709,0.8865,0.7494,0.9315,0.3922,1.0,-0.0194,0.057,0.0098,0.0498,-0.0711,0.3228,-0.3214,0.0308,0.029],
+     [0.1203,0.1387,0.0769,-0.0484,-0.1119,-0.0211,0.05,0.1007,-0.0962,0.2323,0.0283,0.1007,-0.0962,0.3184,-0.0231,-0.1119,-0.0381,-0.0593,-0.005,-0.0194,1.0,-0.6988,-0.0432,0.0934,0.1103,0.1019,-0.2561,0.2499,0.248],
+     [-0.0758,-0.0891,0.0156,0.1109,0.156,0.0464,0.0028,0.0211,0.1936,-0.2093,-0.0253,0.0211,0.1936,-0.2963,-0.0485,0.156,0.0666,0.0933,0.0487,0.057,-0.6988,1.0,0.0679,-0.1361,-0.1314,-0.0723,0.1659,-0.1905,-0.1926],
+     [0.0521,-0.0019,0.0729,-0.0622,-0.0532,-0.1613,-0.0184,0.1274,-0.0117,0.0473,0.0243,0.1274,-0.0117,0.1053,-0.0699,-0.0532,0.0624,-0.004,-0.1549,0.0098,-0.0432,0.0679,1.0,0.3641,-0.0431,-0.0157,-0.0549,0.0881,0.0832],
+     [0.1465,0.1552,0.0439,0.0288,0.0307,0.1891,0.133,-0.125,0.0114,-0.0706,0.1165,-0.125,0.0114,-0.0015,-0.0116,0.0307,0.0646,0.0538,0.1744,0.0498,0.0934,-0.1361,0.3641,1.0,0.3801,0.2318,0.0207,0.2018,0.1949],
+     [0.4978,0.322,0.2782,-0.2672,-0.1351,-0.0021,-0.1179,-0.1116,0.0099,-0.2929,0.0526,-0.1116,0.0099,0.1961,-0.2636,-0.1351,0.1376,0.0599,-0.0094,-0.0711,0.1103,-0.1314,-0.0431,0.3801,1.0,0.6614,0.4383,0.6949,0.6916],
+     [0.7505,0.6833,0.6432,0.0486,0.2305,-0.1279,0.2111,0.2794,0.306,-0.3924,0.0706,0.2794,0.306,-0.0306,-0.6457,0.2305,0.5496,0.4592,-0.0804,0.3228,0.1019,-0.0723,-0.0157,0.2318,0.6614,1.0,0.1166,0.5823,0.5803],
+     [-0.0462,-0.2494,-0.2096,-0.369,-0.2847,-0.1368,-0.3819,-0.3164,-0.2115,-0.1977,-0.0516,-0.3164,-0.2115,0.0367,0.16,-0.2847,-0.1782,-0.2097,-0.1717,-0.3214,-0.2561,0.1659,-0.0549,0.0207,0.4383,0.1166,1.0,0.1055,0.106],
+     [0.7733,0.5434,0.6224,-0.3102,-0.1448,-0.3106,-0.0715,0.2491,0.1088,-0.265,0.105,0.2491,0.1088,0.3927,-0.5352,-0.1448,0.3721,0.1937,-0.2943,0.0308,0.2499,-0.1905,0.0881,0.2018,0.6949,0.5823,0.1055,1.0,0.9989],
+     [0.7741,0.5429,0.6235,-0.312,-0.1457,-0.3133,-0.0749,0.2514,0.1094,-0.2692,0.1053,0.2514,0.1094,0.3923,-0.5377,-0.1457,0.3713,0.1925,-0.2969,0.029,0.248,-0.1926,0.0832,0.1949,0.6916,0.5803,0.106,0.9989,1.0]
+    ]
+   },
+   "vertical": {
+    "n": 481,
+    "rho": [
+     [1.0,0.7301,0.7046,0.2552,0.5493,0.11,0.3117,0.0921,0.2984,-0.6922,0.2187,0.0921,0.2984,-0.6748,-0.6806,0.5493,0.6881,0.6422,0.4336,0.4877,-0.4296,0.4813,0.0406,-0.0464,0.5838,0.6262,-0.0649,0.592,0.5916],
+     [0.7301,1.0,0.9722,0.7619,0.9587,0.5179,0.7905,0.5278,0.7743,-0.5922,0.1388,0.5278,0.7743,-0.9314,-0.6261,0.9587,0.7272,0.9423,0.3463,0.9064,-0.2173,0.2912,0.1124,-0.0774,0.3924,0.6684,-0.3916,0.7289,0.7243],
+     [0.7046,0.9722,1.0,0.7875,0.9365,0.5305,0.8126,0.5251,0.8035,-0.5231,0.171,0.5251,0.8035,-0.8695,-0.5098,0.9365,0.7347,0.931,0.3201,0.9053,-0.2012,0.2832,0.1355,-0.0493,0.3103,0.6015,-0.3826,0.6841,0.6791],
+     [0.2552,0.7619,0.7875,1.0,0.8608,0.7647,0.9093,0.6577,0.8722,-0.1485,0.0583,0.6577,0.8722,-0.7267,-0.1721,0.8608,0.4746,0.7586,0.1268,0.8641,-0.0005,0.1104,0.1136,-0.067,0.0935,0.4427,-0.5476,0.5457,0.5389],
+     [0.5493,0.9587,0.9365,0.8608,1.0,0.6002,0.8766,0.6142,0.8583,-0.4499,0.1001,0.6142,0.8583,-0.9068,-0.499,1.0,0.6841,0.9385,0.2665,0.9559,-0.1712,0.2504,0.1203,-0.0805,0.2446,0.5787,-0.4837,0.6526,0.6465],
+     [0.11,0.5179,0.5305,0.7647,0.6002,1.0,0.5575,0.5893,0.5931,0.0012,-0.0207,0.5893,0.5931,-0.5452,-0.0661,0.6002,0.1772,0.4638,0.1022,0.545,0.0559,-0.0024,0.1314,-0.0503,0.1777,0.4007,-0.3799,0.5272,0.5238],
+     [0.3117,0.7905,0.8126,0.9093,0.8766,0.5575,1.0,0.6176,0.9017,-0.2925,0.0765,0.6176,0.9017,-0.6976,-0.2957,0.8766,0.5997,0.828,0.1392,0.9328,-0.0258,0.1416,0.0958,-0.0603,0.0542,0.3806,-0.5043,0.4858,0.4789],
+     [0.0921,0.5278,0.5251,0.6577,0.6142,0.5893,0.6176,1.0,0.7093,-0.1638,-0.0205,1.0,0.7093,-0.4821,-0.2213,0.6142,0.2707,0.519,0.1267,0.6182,0.1333,-0.0574,0.1305,-0.0371,0.0836,0.31,-0.369,0.4868,0.4839],
+     [0.2984,0.7743,0.8035,0.8722,0.8583,0.5931,0.9017,0.7093,1.0,-0.2549,0.0575,0.7093,1.0,-0.6918,-0.2901,0.8583,0.5372,0.7872,0.1472,0.9022,-0.0075,0.1007,0.1184,-0.0288,0.0301,0.3741,-0.4894,0.508,0.5017],
+     [-0.6922,-0.5922,-0.5231,-0.1485,-0.4499,0.0012,-0.2925,-0.1638,-0.2549,1.0,-0.1233,-0.1638,-0.2549,0.496,0.8858,-0.4499,-0.4545,-0.4977,-0.323,-0.4105,0.058,-0.0575,-0.1495,-0.0072,-0.5213,-0.4445,0.0051,-0.4957,-0.498],
+     [0.2187,0.1388,0.171,0.0583,0.1001,-0.0207,0.0765,-0.0205,0.0575,-0.1233,1.0,-0.0205,0.0575,-0.0832,-0.0973,0.1001,0.1322,0.1115,0.1113,0.0907,-0.0631,0.1315,0.011,0.0248,0.0596,0.0899,-0.0476,0.0491,0.0466],
+     [0.0921,0.5278,0.5251,0.6577,0.6142,0.5893,0.6176,1.0,0.7093,-0.1638,-0.0205,1.0,0.7093,-0.4821,-0.2213,0.6142,0.2707,0.519,0.1267,0.6182,0.1333,-0.0574,0.1305,-0.0371,0.0836,0.31,-0.369,0.4868,0.4839],
+     [0.2984,0.7743,0.8035,0.8722,0.8583,0.5931,0.9017,0.7093,1.0,-0.2549,0.0575,0.7093,1.0,-0.6918,-0.2901,0.8583,0.5372,0.7872,0.1472,0.9022,-0.0075,0.1007,0.1184,-0.0288,0.0301,0.3741,-0.4894,0.508,0.5017],
+     [-0.6748,-0.9314,-0.8695,-0.7267,-0.9068,-0.5452,-0.6976,-0.4821,-0.6918,0.496,-0.0832,-0.4821,-0.6918,1.0,0.5584,-0.9068,-0.6638,-0.8781,-0.2952,-0.8148,0.2667,-0.3321,-0.0671,0.0959,-0.3972,-0.6784,0.436,-0.7031,-0.6987],
+     [-0.6806,-0.6261,-0.5098,-0.1721,-0.499,-0.0661,-0.2957,-0.2213,-0.2901,0.8858,-0.0973,-0.2213,-0.2901,0.5584,1.0,-0.499,-0.4301,-0.5249,-0.3567,-0.4531,0.0726,-0.0792,-0.08,0.0816,-0.5927,-0.5665,0.021,-0.5434,-0.5449],
+     [0.5493,0.9587,0.9365,0.8608,1.0,0.6002,0.8766,0.6142,0.8583,-0.4499,0.1001,0.6142,0.8583,-0.9068,-0.499,1.0,0.6841,0.9385,0.2665,0.9559,-0.1712,0.2504,0.1203,-0.0805,0.2446,0.5787,-0.4837,0.6526,0.6465],
+     [0.6881,0.7272,0.7347,0.4746,0.6841,0.1772,0.5997,0.2707,0.5372,-0.4545,0.1322,0.2707,0.5372,-0.6638,-0.4301,0.6841,1.0,0.8644,0.2939,0.7035,-0.3361,0.4325,0.0589,-0.0189,0.2607,0.4442,-0.2685,0.4557,0.4518],
+     [0.6422,0.9423,0.931,0.7586,0.9385,0.4638,0.828,0.519,0.7872,-0.4977,0.1115,0.519,0.7872,-0.8781,-0.5249,0.9385,0.8644,1.0,0.3064,0.9239,-0.235,0.3195,0.0908,-0.0684,0.2736,0.5792,-0.4279,0.63,0.6245],
+     [0.4336,0.3463,0.3201,0.1268,0.2665,0.1022,0.1392,0.1267,0.1472,-0.323,0.1113,0.1267,0.1472,-0.2952,-0.3567,0.2665,0.2939,0.3064,1.0,0.2538,-0.1747,0.2489,0.0076,-0.0554,0.2494,0.3064,-0.0557,0.2965,0.2978],
+     [0.4877,0.9064,0.9053,0.8641,0.9559,0.545,0.9328,0.6182,0.9022,-0.4105,0.0907,0.6182,0.9022,-0.8148,-0.4531,0.9559,0.7035,0.9239,0.2538,1.0,-0.1329,0.2246,0.1104,-0.0776,0.1768,0.4988,-0.4743,0.5954,0.5887],
+     [-0.4296,-0.2173,-0.2012,-0.0005,-0.1712,0.0559,-0.0258,0.1333,-0.0075,0.058,-0.0631,0.1333,-0.0075,0.2667,0.0726,-0.1712,-0.3361,-0.235,-0.1747,-0.1329,1.0,-0.7562,0.1109,-0.0241,-0.0777,-0.1612,0.0994,-0.063,-0.0609],
+     [0.4813,0.2912,0.2832,0.1104,0.2504,-0.0024,0.1416,-0.0574,0.1007,-0.0575,0.1315,-0.0574,0.1007,-0.3321,-0.0792,0.2504,0.4325,0.3195,0.2489,0.2246,-0.7562,1.0,-0.1342,-0.0205,0.053,0.1929,-0.1894,0.0951,0.0908],
+     [0.0406,0.1124,0.1355,0.1136,0.1203,0.1314,0.0958,0.1305,0.1184,-0.1495,0.011,0.1305,0.1184,-0.0671,-0.08,0.1203,0.0589,0.0908,0.0076,0.1104,0.1109,-0.1342,1.0,0.5896,0.0801,0.0024,-0.024,0.1194,0.1208],
+     [-0.0464,-0.0774,-0.0493,-0.067,-0.0805,-0.0503,-0.0603,-0.0371,-0.0288,-0.0072,0.0248,-0.0371,-0.0288,0.0959,0.0816,-0.0805,-0.0189,-0.0684,-0.0554,-0.0776,-0.0241,-0.0205,0.5896,1.0,-0.1109,-0.2208,-0.0424,-0.0703,-0.07],
+     [0.5838,0.3924,0.3103,0.0935,0.2446,0.1777,0.0542,0.0836,0.0301,-0.5213,0.0596,0.0836,0.0301,-0.3972,-0.5927,0.2446,0.2607,0.2736,0.2494,0.1768,-0.0777,0.053,0.0801,-0.1109,1.0,0.7624,0.209,0.6509,0.6547],
+     [0.6262,0.6684,0.6015,0.4427,0.5787,0.4007,0.3806,0.31,0.3741,-0.4445,0.0899,0.31,0.3741,-0.6784,-0.5665,0.5787,0.4442,0.5792,0.3064,0.4988,-0.1612,0.1929,0.0024,-0.2208,0.7624,1.0,-0.1876,0.7292,0.7282],
+     [-0.0649,-0.3916,-0.3826,-0.5476,-0.4837,-0.3799,-0.5043,-0.369,-0.4894,0.0051,-0.0476,-0.369,-0.4894,0.436,0.021,-0.4837,-0.2685,-0.4279,-0.0557,-0.4743,0.0994,-0.1894,-0.024,-0.0424,0.209,-0.1876,1.0,-0.2361,-0.2306],
+     [0.592,0.7289,0.6841,0.5457,0.6526,0.5272,0.4858,0.4868,0.508,-0.4957,0.0491,0.4868,0.508,-0.7031,-0.5434,0.6526,0.4557,0.63,0.2965,0.5954,-0.063,0.0951,0.1194,-0.0703,0.6509,0.7292,-0.2361,1.0,0.9997],
+     [0.5916,0.7243,0.6791,0.5389,0.6465,0.5238,0.4789,0.4839,0.5017,-0.498,0.0466,0.4839,0.5017,-0.6987,-0.5449,0.6465,0.4518,0.6245,0.2978,0.5887,-0.0609,0.0908,0.1208,-0.07,0.6547,0.7282,-0.2306,0.9997,1.0]
+    ]
+   },
+   "full_mesh": {
+    "n": 500,
+    "rho": [
+     [1.0,0.9502,0.9053,-0.1315,0.4745,-0.1467,-0.2189,0.663,0.7381,-0.0924,0.0912,0.663,0.7381,0.1625,-0.9053,0.4745,0.6962,0.5622,0.0993,0.1488,0.5155,-0.2946,-0.1044,-0.0552,0.5788,0.832,-0.3252,0.7094,0.7086],
+     [0.9502,1.0,0.8694,0.091,0.6793,0.0528,-0.005,0.5692,0.7049,-0.1533,0.0803,0.5692,0.7049,-0.0166,-0.9189,0.6793,0.7387,0.7291,0.187,0.3619,0.5027,-0.2452,-0.0918,-0.0289,0.5726,0.8323,-0.3695,0.6781,0.6775],
+     [0.9053,0.8694,1.0,0.0779,0.4103,0.0926,-0.1917,0.8285,0.8931,0.1698,0.0772,0.8285,0.8931,0.3503,-0.7979,0.4103,0.5942,0.4975,0.2452,0.2102,0.4157,-0.2592,0.0411,0.0942,0.4731,0.7212,-0.4395,0.789,0.7881],
+     [-0.1315,0.091,0.0779,1.0,0.52,0.9041,0.6903,-0.0853,0.0553,0.0482,-0.0506,-0.0853,0.0553,-0.321,0.1514,0.52,0.0,0.3842,0.4252,0.7327,-0.0199,0.0473,0.0806,0.0996,0.0857,0.0622,-0.1639,0.167,0.1678],
+     [0.4745,0.6793,0.4103,0.52,1.0,0.4286,0.498,0.0271,0.2514,-0.5234,0.0309,0.0271,0.2514,-0.6215,-0.5639,1.0,0.636,0.9266,0.2999,0.7198,0.4793,-0.2315,-0.0797,0.0193,0.4212,0.5396,-0.1936,0.3472,0.3479],
+     [-0.1467,0.0528,0.0926,0.9041,0.4286,1.0,0.5025,-0.054,0.0833,0.1942,-0.0504,-0.054,0.0833,-0.1651,0.1713,0.4286,-0.0576,0.3026,0.4042,0.697,-0.0358,0.0244,0.1148,0.1551,0.1026,0.0471,-0.152,0.2213,0.222],
+     [-0.2189,-0.005,-0.1917,0.6903,0.498,0.5025,1.0,-0.36,-0.2038,-0.2126,-0.0885,-0.36,-0.2038,-0.5456,0.1538,0.498,0.0334,0.3869,0.2995,0.6102,0.0045,0.0639,0.0459,0.0491,0.0116,-0.0224,-0.0066,-0.1561,-0.155],
+     [0.663,0.5692,0.8285,-0.0853,0.0271,-0.054,-0.36,1.0,0.9018,0.3979,0.0378,1.0,0.9018,0.6083,-0.5947,0.0271,0.3765,0.1551,0.1868,-0.0503,0.1751,-0.1227,0.201,0.2176,0.1471,0.3921,-0.4592,0.5747,0.5736],
+     [0.7381,0.7049,0.8931,0.0553,0.2514,0.0833,-0.2038,0.9018,1.0,0.3361,0.0276,0.9018,1.0,0.4895,-0.719,0.2514,0.4784,0.3513,0.2672,0.149,0.2509,-0.1429,0.1662,0.2134,0.2282,0.4893,-0.4808,0.6261,0.6251],
+     [-0.0924,-0.1533,0.1698,0.0482,-0.5234,0.1942,-0.2126,0.3979,0.3361,1.0,-0.0373,0.3979,0.3361,0.8364,0.1719,-0.5234,-0.391,-0.4754,0.0906,-0.1542,-0.4175,0.2213,0.2218,0.1792,-0.1551,-0.1612,-0.2092,0.1425,0.1411],
+     [0.0912,0.0803,0.0772,-0.0506,0.0309,-0.0504,-0.0885,0.0378,0.0276,-0.0373,1.0,0.0378,0.0276,0.0004,-0.0741,0.0309,0.0583,0.0368,-0.0812,-0.059,0.0627,-0.0605,-0.0231,0.0027,0.0619,0.0787,-0.0294,0.0701,0.0701],
+     [0.663,0.5692,0.8285,-0.0853,0.0271,-0.054,-0.36,1.0,0.9018,0.3979,0.0378,1.0,0.9018,0.6083,-0.5947,0.0271,0.3765,0.1551,0.1868,-0.0503,0.1751,-0.1227,0.201,0.2176,0.1471,0.3921,-0.4592,0.5747,0.5736],
+     [0.7381,0.7049,0.8931,0.0553,0.2514,0.0833,-0.2038,0.9018,1.0,0.3361,0.0276,0.9018,1.0,0.4895,-0.719,0.2514,0.4784,0.3513,0.2672,0.149,0.2509,-0.1429,0.1662,0.2134,0.2282,0.4893,-0.4808,0.6261,0.6251],
+     [0.1625,-0.0166,0.3503,-0.321,-0.6215,-0.1651,-0.5456,0.6083,0.4895,0.8364,0.0004,0.6083,0.4895,1.0,-0.0282,-0.6215,-0.2176,-0.4986,-0.0235,-0.4182,-0.2223,0.0589,0.1688,0.1182,-0.0424,-0.0002,-0.1783,0.2775,0.276],
+     [-0.9053,-0.9189,-0.7979,0.1514,-0.5639,0.1713,0.1538,-0.5947,-0.719,0.1719,-0.0741,-0.5947,-0.719,-0.0282,1.0,-0.5639,-0.7608,-0.6598,-0.087,-0.2086,-0.4821,0.2275,0.0582,-0.0304,-0.4102,-0.69,0.3553,-0.5239,-0.5231],
+     [0.4745,0.6793,0.4103,0.52,1.0,0.4286,0.498,0.0271,0.2514,-0.5234,0.0309,0.0271,0.2514,-0.6215,-0.5639,1.0,0.636,0.9266,0.2999,0.7198,0.4793,-0.2315,-0.0797,0.0193,0.4212,0.5396,-0.1936,0.3472,0.3479],
+     [0.6962,0.7387,0.5942,0.0,0.636,-0.0576,0.0334,0.3765,0.4784,-0.391,0.0583,0.3765,0.4784,-0.2176,-0.7608,0.636,1.0,0.8454,0.0416,0.3443,0.5226,-0.3034,-0.0246,0.0336,0.367,0.5796,-0.249,0.4095,0.41],
+     [0.5622,0.7291,0.4975,0.3842,0.9266,0.3026,0.3869,0.1551,0.3513,-0.4754,0.0368,0.1551,0.3513,-0.4986,-0.6598,0.9266,0.8454,1.0,0.22,0.6707,0.496,-0.2565,-0.0343,0.0524,0.4092,0.5667,-0.2463,0.3888,0.3895],
+     [0.0993,0.187,0.2452,0.4252,0.2999,0.4042,0.2995,0.1868,0.2672,0.0906,-0.0812,0.1868,0.2672,-0.0235,-0.087,0.2999,0.0416,0.22,1.0,0.2722,0.0872,-0.0276,0.1564,0.2313,0.0419,0.1153,-0.186,0.1894,0.1897],
+     [0.1488,0.3619,0.2102,0.7327,0.7198,0.697,0.6102,-0.0503,0.149,-0.1542,-0.059,-0.0503,0.149,-0.4182,-0.2086,0.7198,0.3443,0.6707,0.2722,1.0,0.1575,-0.0621,0.0657,0.1038,0.2761,0.2858,-0.1539,0.2329,0.2336],
+     [0.5155,0.5027,0.4157,-0.0199,0.4793,-0.0358,0.0045,0.1751,0.2509,-0.4175,0.0627,0.1751,0.2509,-0.2223,-0.4821,0.4793,0.5226,0.496,0.0872,0.1575,1.0,-0.7077,-0.0803,0.0099,0.4105,0.5047,-0.0376,0.3737,0.3742],
+     [-0.2946,-0.2452,-0.2592,0.0473,-0.2315,0.0244,0.0639,-0.1227,-0.1429,0.2213,-0.0605,-0.1227,-0.1429,0.0589,0.2275,-0.2315,-0.3034,-0.2565,-0.0276,-0.0621,-0.7077,1.0,0.0094,-0.0055,-0.3284,-0.334,-0.032,-0.2864,-0.287],
+     [-0.1044,-0.0918,0.0411,0.0806,-0.0797,0.1148,0.0459,0.201,0.1662,0.2218,-0.0231,0.201,0.1662,0.1688,0.0582,-0.0797,-0.0246,-0.0343,0.1564,0.0657,-0.0803,0.0094,1.0,0.6801,-0.2056,-0.1925,-0.1798,-0.0105,-0.0111],
+     [-0.0552,-0.0289,0.0942,0.0996,0.0193,0.1551,0.0491,0.2176,0.2134,0.1792,0.0027,0.2176,0.2134,0.1182,-0.0304,0.0193,0.0336,0.0524,0.2313,0.1038,0.0099,-0.0055,0.6801,1.0,-0.2327,-0.1767,-0.2421,-0.0119,-0.0119],
+     [0.5788,0.5726,0.4731,0.0857,0.4212,0.1026,0.0116,0.1471,0.2282,-0.1551,0.0619,0.1471,0.2282,-0.0424,-0.4102,0.4212,0.367,0.4092,0.0419,0.2761,0.4105,-0.3284,-0.2056,-0.2327,1.0,0.854,0.2148,0.7354,0.7357],
+     [0.832,0.8323,0.7212,0.0622,0.5396,0.0471,-0.0224,0.3921,0.4893,-0.1612,0.0787,0.3921,0.4893,-0.0002,-0.69,0.5396,0.5796,0.5667,0.1153,0.2858,0.5047,-0.334,-0.1925,-0.1767,0.854,1.0,-0.0841,0.7522,0.752],
+     [-0.3252,-0.3695,-0.4395,-0.1639,-0.1936,-0.152,-0.0066,-0.4592,-0.4808,-0.2092,-0.0294,-0.4592,-0.4808,-0.1783,0.3553,-0.1936,-0.249,-0.2463,-0.186,-0.1539,-0.0376,-0.032,-0.1798,-0.2421,0.2148,-0.0841,1.0,-0.2506,-0.2503],
+     [0.7094,0.6781,0.789,0.167,0.3472,0.2213,-0.1561,0.5747,0.6261,0.1425,0.0701,0.5747,0.6261,0.2775,-0.5239,0.3472,0.4095,0.3888,0.1894,0.2329,0.3737,-0.2864,-0.0105,-0.0119,0.7354,0.7522,-0.2506,1.0,0.9999],
+     [0.7086,0.6775,0.7881,0.1678,0.3479,0.222,-0.155,0.5736,0.6251,0.1411,0.0701,0.5736,0.6251,0.276,-0.5231,0.3479,0.41,0.3895,0.1897,0.2336,0.3742,-0.287,-0.0111,-0.0119,0.7357,0.752,-0.2503,0.9999,1.0]
+    ]
+   }
+  },
+  "selected": [
+   {
+    "relationship": "Prompt-token throughput vs LLM TCP byte rate",
+    "x": "prompt_tokens_per_s_mean",
+    "y": "tcp_bytes_llm_mean_Bps",
+    "rho": 0.550346,
+    "n": 1481
+   },
+   {
+    "relationship": "Completion-token throughput vs LLM TCP byte rate",
+    "x": "completion_tokens_per_s_mean",
+    "y": "tcp_bytes_llm_mean_Bps",
+    "rho": 0.499178,
+    "n": 1481
+   },
+   {
+    "relationship": "Mean in-flight LLM requests vs LLM TCP byte rate",
+    "x": "llm_inflight_mean",
+    "y": "tcp_bytes_llm_mean_Bps",
+    "rho": 0.584786,
+    "n": 1481
+   },
+   {
+    "relationship": "Discussion request count vs LLM TCP byte rate",
+    "x": "disc_n_requests",
+    "y": "tcp_bytes_llm_mean_Bps",
+    "rho": 0.641175,
+    "n": 1481
+   },
+   {
+    "relationship": "Discussion mean IAT vs LLM TCP byte rate",
+    "x": "disc_mean_iat_s",
+    "y": "tcp_bytes_llm_mean_Bps",
+    "rho": -0.507284,
+    "n": 1481
+   }
+  ],
+  "paper_heatmap": [
+   {
+    "label": "Mean IAT",
+    "key": "disc_mean_iat_s"
+   },
+   {
+    "label": "Calls",
+    "key": "disc_n_requests"
+   },
+   {
+    "label": "Tokens",
+    "key": "disc_total_tokens"
+   },
+   {
+    "label": "Call latency",
+    "key": "disc_mean_latency_s"
+   },
+   {
+    "label": "In-flight",
+    "key": "llm_inflight_mean"
+   },
+   {
+    "label": "Token rate",
+    "key": "prompt_tokens_per_s_mean"
+   },
+   {
+    "label": "TCP bytes",
+    "key": "tcp_bytes_llm_mean_Bps"
+   },
+   {
+    "label": "TTFT p95",
+    "key": "llm_ttft_p95_mean_s"
+   }
+  ]
+ },
+ "aggregates": {
+  "stats": ["median","p25","p75","mean","n"],
+  "by_topology": {
+   "horizontal": {
+    "disc_n_requests": {
+     "median": 13,
+     "p25": 9,
+     "p75": 13,
+     "mean": 14.026,
+     "n": 500
+    },
+    "disc_duration_s": {
+     "median": 53.9477,
+     "p25": 42.8427,
+     "p75": 100.467,
+     "mean": 81.0984,
+     "n": 500
+    },
+    "disc_total_tokens": {
+     "median": 20981.5,
+     "p25": 15801.8,
+     "p75": 28640.5,
+     "mean": 25516.4,
+     "n": 500
+    },
+    "disc_mean_latency_s": {
+     "median": 5.12644,
+     "p25": 4.52885,
+     "p75": 6.11272,
+     "mean": 5.68092,
+     "n": 500
+    },
+    "disc_mean_iat_s": {
+     "median": 5.095,
+     "p25": 4.47581,
+     "p75": 6.37196,
+     "mean": 5.87684,
+     "n": 500
+    },
+    "llm_latency_p50_mean_s": {
+     "median": 4.76,
+     "p25": 4.15,
+     "p75": 5.43,
+     "mean": 4.88889,
+     "n": 500
+    },
+    "llm_latency_p95_mean_s": {
+     "median": 6.868,
+     "p25": 6.0735,
+     "p75": 9.098,
+     "mean": 10.3549,
+     "n": 500
+    },
+    "llm_ttft_p50_mean_s": {
+     "median": 0.123025,
+     "p25": 0.1186,
+     "p75": 0.143662,
+     "mean": 0.124758,
+     "n": 500
+    },
+    "llm_ttft_p95_mean_s": {
+     "median": 0.24279,
+     "p25": 0.21021,
+     "p75": 0.294696,
+     "mean": 0.264799,
+     "n": 500
+    },
+    "llm_inflight_mean": {
+     "median": 0.9999,
+     "p25": 0.999725,
+     "p75": 1.00002,
+     "mean": 0.969618,
+     "n": 500
+    },
+    "llm_inflight_peak": {
+     "median": 2,
+     "p25": 2,
+     "p75": 2,
+     "mean": 1.992,
+     "n": 500
+    },
+    "llm_queue_wait_p50_mean_s": {
+     "median": 0.123025,
+     "p25": 0.1186,
+     "p75": 0.143662,
+     "mean": 0.124758,
+     "n": 500
+    },
+    "llm_queue_wait_p95_mean_s": {
+     "median": 0.24279,
+     "p25": 0.21021,
+     "p75": 0.294696,
+     "mean": 0.264799,
+     "n": 500
+    },
+    "prompt_tokens_per_s_mean": {
+     "median": 225.625,
+     "p25": 198.051,
+     "p75": 269.514,
+     "mean": 236.533,
+     "n": 500
+    },
+    "completion_tokens_per_s_mean": {
+     "median": 112.409,
+     "p25": 105.773,
+     "p75": 117.176,
+     "mean": 110.12,
+     "n": 500
+    },
+    "iat_mean_s": {
+     "median": 5.095,
+     "p25": 4.47581,
+     "p75": 6.37196,
+     "mean": 5.87684,
+     "n": 500
+    },
+    "burstiness_mean": {
+     "median": 1.46202,
+     "p25": 1.27778,
+     "p75": 2.8549,
+     "mean": 2.45877,
+     "n": 500
+    },
+    "burstiness_max": {
+     "median": 7.25125,
+     "p25": 5.90441,
+     "p75": 15.384,
+     "mean": 17.0608,
+     "n": 500
+    },
+    "iat_jitter_p50_mean_s": {
+     "median": 4.7015,
+     "p25": 4.12035,
+     "p75": 5.32627,
+     "mean": 4.8965,
+     "n": 500
+    },
+    "iat_jitter_p95_mean_s": {
+     "median": 6.51098,
+     "p25": 5.62836,
+     "p75": 9.90872,
+     "mean": 11.2363,
+     "n": 500
+    },
+    "tcp_rtt_p50_mean_s": {
+     "median": 0.00025,
+     "p25": 0.00025,
+     "p75": 0.00025,
+     "mean": 0.00025,
+     "n": 500
+    },
+    "tcp_rtt_p95_mean_s": {
+     "median": 0.000475,
+     "p25": 0.000475,
+     "p75": 0.000475,
+     "mean": 0.000475,
+     "n": 500
+    },
+    "tcp_flow_dur_p50_mean_s": {
+     "median": 20.5685,
+     "p25": 18.4486,
+     "p75": 22.1387,
+     "mean": 20.1354,
+     "n": 500
+    },
+    "tcp_flow_dur_p95_mean_s": {
+     "median": 171.898,
+     "p25": 62.6119,
+     "p75": 236.383,
+     "mean": 155.393,
+     "n": 500
+    },
+    "tcp_bytes_llm_mean_Bps": {
+     "median": 609.662,
+     "p25": 568.889,
+     "p75": 657.773,
+     "mean": 616.66,
+     "n": 500
+    },
+    "tcp_bytes_llm_peak_Bps": {
+     "median": 827.709,
+     "p25": 723.405,
+     "p75": 893.191,
+     "mean": 840.602,
+     "n": 500
+    },
+    "tcp_bytes_a_to_llm_mean_Bps": {
+     "median": 281.206,
+     "p25": 191.762,
+     "p75": 365.531,
+     "mean": 277.396,
+     "n": 500
+    },
+    "tcp_bytes_b_to_llm_mean_Bps": {
+     "median": 491.319,
+     "p25": 316.514,
+     "p75": 553.949,
+     "mean": 460.777,
+     "n": 500
+    },
+    "tcp_bytes_a_to_b_mean_Bps": {
+     "median": 489.131,
+     "p25": 316.638,
+     "p75": 550.529,
+     "mean": 459.353,
+     "n": 500
+    }
+   },
+   "vertical": {
+    "disc_n_requests": {
+     "median": 12,
+     "p25": 12,
+     "p75": 24,
+     "mean": 16.2911,
+     "n": 481
+    },
+    "disc_duration_s": {
+     "median": 55.5379,
+     "p25": 47.3106,
+     "p75": 130.495,
+     "mean": 105.219,
+     "n": 481
+    },
+    "disc_total_tokens": {
+     "median": 29409,
+     "p25": 26217,
+     "p75": 57174,
+     "mean": 43681.1,
+     "n": 481
+    },
+    "disc_mean_latency_s": {
+     "median": 8.5175,
+     "p25": 7.69833,
+     "p75": 9.70056,
+     "mean": 11.5666,
+     "n": 481
+    },
+    "disc_mean_iat_s": {
+     "median": 4.96333,
+     "p25": 4.29349,
+     "p75": 6.82761,
+     "mean": 6.28357,
+     "n": 481
+    },
+    "llm_latency_p50_mean_s": {
+     "median": 7.38,
+     "p25": 6.78,
+     "p75": 8.04,
+     "mean": 8.78247,
+     "n": 481
+    },
+    "llm_latency_p95_mean_s": {
+     "median": 14.642,
+     "p25": 12.105,
+     "p75": 17.9475,
+     "mean": 24.0198,
+     "n": 481
+    },
+    "llm_ttft_p50_mean_s": {
+     "median": 0.2225,
+     "p25": 0.18685,
+     "p75": 0.25235,
+     "mean": 0.227981,
+     "n": 481
+    },
+    "llm_ttft_p95_mean_s": {
+     "median": 0.375585,
+     "p25": 0.326125,
+     "p75": 0.463445,
+     "mean": 0.489336,
+     "n": 481
+    },
+    "llm_inflight_mean": {
+     "median": 1.65448,
+     "p25": 1.50261,
+     "p75": 1.72298,
+     "mean": 1.61642,
+     "n": 481
+    },
+    "llm_inflight_peak": {
+     "median": 4,
+     "p25": 4,
+     "p75": 4,
+     "mean": 3.80042,
+     "n": 481
+    },
+    "llm_queue_wait_p50_mean_s": {
+     "median": 0.2225,
+     "p25": 0.18685,
+     "p75": 0.25235,
+     "mean": 0.227981,
+     "n": 481
+    },
+    "llm_queue_wait_p95_mean_s": {
+     "median": 0.375585,
+     "p25": 0.326125,
+     "p75": 0.463445,
+     "mean": 0.489336,
+     "n": 481
+    },
+    "prompt_tokens_per_s_mean": {
+     "median": 357.676,
+     "p25": 270.207,
+     "p75": 367.874,
+     "mean": 317.621,
+     "n": 481
+    },
+    "completion_tokens_per_s_mean": {
+     "median": 178.987,
+     "p25": 148.507,
+     "p75": 193.232,
+     "mean": 177.255,
+     "n": 481
+    },
+    "iat_mean_s": {
+     "median": 4.96333,
+     "p25": 4.29349,
+     "p75": 6.82761,
+     "mean": 6.28357,
+     "n": 481
+    },
+    "burstiness_mean": {
+     "median": 3.47173,
+     "p25": 3.12466,
+     "p75": 5.32282,
+     "mean": 4.57394,
+     "n": 481
+    },
+    "burstiness_max": {
+     "median": 17.0823,
+     "p25": 13.7509,
+     "p75": 36.1597,
+     "mean": 33.5061,
+     "n": 481
+    },
+    "iat_jitter_p50_mean_s": {
+     "median": 0.000402927,
+     "p25": 0.000391006,
+     "p75": 0.000417948,
+     "mean": 0.000465029,
+     "n": 481
+    },
+    "iat_jitter_p95_mean_s": {
+     "median": 14.9339,
+     "p25": 12.2286,
+     "p75": 19.973,
+     "mean": 20.6846,
+     "n": 481
+    },
+    "tcp_rtt_p50_mean_s": {
+     "median": 0.00025,
+     "p25": 0.00025,
+     "p75": 0.00025,
+     "mean": 0.00025,
+     "n": 481
+    },
+    "tcp_rtt_p95_mean_s": {
+     "median": 0.000475,
+     "p25": 0.000475,
+     "p75": 0.000475,
+     "mean": 0.000475,
+     "n": 481
+    },
+    "tcp_flow_dur_p50_mean_s": {
+     "median": 23.8559,
+     "p25": 20.6784,
+     "p75": 26.6667,
+     "mean": 24.3585,
+     "n": 481
+    },
+    "tcp_flow_dur_p95_mean_s": {
+     "median": 247.524,
+     "p25": 210.995,
+     "p75": 259.863,
+     "mean": 220.308,
+     "n": 481
+    },
+    "tcp_bytes_llm_mean_Bps": {
+     "median": 702.383,
+     "p25": 654.438,
+     "p75": 866.303,
+     "mean": 770.263,
+     "n": 481
+    },
+    "tcp_bytes_llm_peak_Bps": {
+     "median": 974.291,
+     "p25": 887.309,
+     "p75": 1358.29,
+     "mean": 1212.81,
+     "n": 481
+    },
+    "tcp_bytes_a_to_llm_mean_Bps": {
+     "median": 219.244,
+     "p25": 140.129,
+     "p75": 280.721,
+     "mean": 216.44,
+     "n": 481
+    },
+    "tcp_bytes_b_to_llm_mean_Bps": {
+     "median": 825.403,
+     "p25": 720.723,
+     "p75": 1010.99,
+     "mean": 896.562,
+     "n": 481
+    },
+    "tcp_bytes_a_to_b_mean_Bps": {
+     "median": 834.857,
+     "p25": 734.982,
+     "p75": 1016.92,
+     "mean": 906.929,
+     "n": 481
+    }
+   },
+   "full_mesh": {
+    "disc_n_requests": {
+     "median": 25,
+     "p25": 13,
+     "p75": 37,
+     "mean": 29.986,
+     "n": 500
+    },
+    "disc_duration_s": {
+     "median": 16.5427,
+     "p25": 9.8702,
+     "p75": 32.9618,
+     "mean": 31.6334,
+     "n": 500
+    },
+    "disc_total_tokens": {
+     "median": 28616.5,
+     "p25": 11296,
+     "p75": 45232.5,
+     "mean": 35162.1,
+     "n": 500
+    },
+    "disc_mean_latency_s": {
+     "median": 2.9337,
+     "p25": 2.70208,
+     "p75": 3.3763,
+     "mean": 3.10552,
+     "n": 500
+    },
+    "disc_mean_iat_s": {
+     "median": 0.734153,
+     "p25": 0.630271,
+     "p75": 0.922507,
+     "mean": 0.920526,
+     "n": 500
+    },
+    "llm_latency_p50_mean_s": {
+     "median": 2.7175,
+     "p25": 2.5,
+     "p75": 3.03,
+     "mean": 2.7815,
+     "n": 500
+    },
+    "llm_latency_p95_mean_s": {
+     "median": 4.47575,
+     "p25": 3.8795,
+     "p75": 5.254,
+     "mean": 5.09975,
+     "n": 500
+    },
+    "llm_ttft_p50_mean_s": {
+     "median": 0.1195,
+     "p25": 0.0433,
+     "p75": 0.13845,
+     "mean": 0.0990512,
+     "n": 500
+    },
+    "llm_ttft_p95_mean_s": {
+     "median": 0.49866,
+     "p25": 0.20929,
+     "p75": 0.56515,
+     "mean": 0.426549,
+     "n": 500
+    },
+    "llm_inflight_mean": {
+     "median": 2.99629,
+     "p25": 2.67625,
+     "p75": 3.46905,
+     "mean": 2.93864,
+     "n": 500
+    },
+    "llm_inflight_peak": {
+     "median": 6,
+     "p25": 6,
+     "p75": 6,
+     "mean": 6.032,
+     "n": 500
+    },
+    "llm_queue_wait_p50_mean_s": {
+     "median": 0.1195,
+     "p25": 0.0433,
+     "p75": 0.13845,
+     "mean": 0.0990512,
+     "n": 500
+    },
+    "llm_queue_wait_p95_mean_s": {
+     "median": 0.49866,
+     "p25": 0.20929,
+     "p75": 0.56515,
+     "mean": 0.426549,
+     "n": 500
+    },
+    "prompt_tokens_per_s_mean": {
+     "median": 884.932,
+     "p25": 687.941,
+     "p75": 1439.16,
+     "mean": 1052.33,
+     "n": 500
+    },
+    "completion_tokens_per_s_mean": {
+     "median": 389.355,
+     "p25": 260.528,
+     "p75": 459.564,
+     "mean": 363.478,
+     "n": 500
+    },
+    "iat_mean_s": {
+     "median": 0.734153,
+     "p25": 0.630271,
+     "p75": 0.922507,
+     "mean": 0.920526,
+     "n": 500
+    },
+    "burstiness_mean": {
+     "median": 4.45534,
+     "p25": 4.09217,
+     "p75": 13.2294,
+     "mean": 8.70182,
+     "n": 500
+    },
+    "burstiness_max": {
+     "median": 3.21511,
+     "p25": 2.68981,
+     "p75": 13.8694,
+     "mean": 11.2899,
+     "n": 500
+    },
+    "iat_jitter_p50_mean_s": {
+     "median": 0.229983,
+     "p25": 0.166097,
+     "p75": 0.291194,
+     "mean": 0.235182,
+     "n": 500
+    },
+    "iat_jitter_p95_mean_s": {
+     "median": 2.61824,
+     "p25": 2.35858,
+     "p75": 2.97812,
+     "mean": 2.81734,
+     "n": 500
+    },
+    "tcp_rtt_p50_mean_s": {
+     "median": 0.00025,
+     "p25": 0.00025,
+     "p75": 0.00025,
+     "mean": 0.00025,
+     "n": 500
+    },
+    "tcp_rtt_p95_mean_s": {
+     "median": 0.000475,
+     "p25": 0.000475,
+     "p75": 0.000475,
+     "mean": 0.000475,
+     "n": 500
+    },
+    "tcp_flow_dur_p50_mean_s": {
+     "median": 24.5833,
+     "p25": 22.2219,
+     "p75": 26.9641,
+     "mean": 26.3216,
+     "n": 500
+    },
+    "tcp_flow_dur_p95_mean_s": {
+     "median": 177.691,
+     "p25": 56.1365,
+     "p75": 237.333,
+     "mean": 154.096,
+     "n": 500
+    },
+    "tcp_bytes_llm_mean_Bps": {
+     "median": 1040.27,
+     "p25": 892.341,
+     "p75": 1203.61,
+     "mean": 1091.4,
+     "n": 500
+    },
+    "tcp_bytes_llm_peak_Bps": {
+     "median": 1329.35,
+     "p25": 1110.11,
+     "p75": 1679.49,
+     "mean": 1481.67,
+     "n": 500
+    },
+    "tcp_bytes_a_to_llm_mean_Bps": {
+     "median": 686.491,
+     "p25": 512.858,
+     "p75": 794.548,
+     "mean": 635.385,
+     "n": 500
+    },
+    "tcp_bytes_b_to_llm_mean_Bps": {
+     "median": 951.905,
+     "p25": 530.89,
+     "p75": 1527.61,
+     "mean": 1107.56,
+     "n": 500
+    },
+    "tcp_bytes_a_to_b_mean_Bps": {
+     "median": 948.258,
+     "p25": 528.636,
+     "p75": 1522.51,
+     "mean": 1102.92,
+     "n": 500
+    }
+   }
+  },
+  "by_topology_task": {
+   "horizontal": {
+    "math": {
+     "disc_n_requests": {
+      "median": 13,
+      "p25": 13,
+      "p75": 26,
+      "mean": 18.04,
+      "n": 125
+     },
+     "disc_duration_s": {
+      "median": 71.3407,
+      "p25": 47.9421,
+      "p75": 159.512,
+      "mean": 121.013,
+      "n": 125
+     },
+     "disc_total_tokens": {
+      "median": 27940,
+      "p25": 23508,
+      "p75": 47327,
+      "mean": 37675,
+      "n": 125
+     },
+     "disc_mean_latency_s": {
+      "median": 4.44846,
+      "p25": 3.88154,
+      "p75": 8.19308,
+      "mean": 6.24923,
+      "n": 125
+     },
+     "disc_mean_iat_s": {
+      "median": 4.85256,
+      "p25": 4.00446,
+      "p75": 8.76294,
+      "mean": 6.71892,
+      "n": 125
+     },
+     "llm_latency_p50_mean_s": {
+      "median": 3.86,
+      "p25": 3.61,
+      "p75": 4.22,
+      "mean": 3.955,
+      "n": 125
+     },
+     "llm_latency_p95_mean_s": {
+      "median": 6.776,
+      "p25": 5.3275,
+      "p75": 27.73,
+      "mean": 17.1125,
+      "n": 125
+     },
+     "llm_ttft_p50_mean_s": {
+      "median": 0.1509,
+      "p25": 0.1458,
+      "p75": 0.1563,
+      "mean": 0.154295,
+      "n": 125
+     },
+     "llm_ttft_p95_mean_s": {
+      "median": 0.2568,
+      "p25": 0.23666,
+      "p75": 0.292975,
+      "mean": 0.283465,
+      "n": 125
+     },
+     "llm_inflight_mean": {
+      "median": 0.99988,
+      "p25": 0.931957,
+      "p75": 0.999989,
+      "mean": 0.954789,
+      "n": 125
+     },
+     "llm_inflight_peak": {
+      "median": 2,
+      "p25": 2,
+      "p75": 2,
+      "mean": 2,
+      "n": 125
+     },
+     "llm_queue_wait_p50_mean_s": {
+      "median": 0.1509,
+      "p25": 0.1458,
+      "p75": 0.1563,
+      "mean": 0.154295,
+      "n": 125
+     },
+     "llm_queue_wait_p95_mean_s": {
+      "median": 0.2568,
+      "p25": 0.23666,
+      "p75": 0.292975,
+      "mean": 0.283465,
+      "n": 125
+     },
+     "prompt_tokens_per_s_mean": {
+      "median": 310.464,
+      "p25": 192.053,
+      "p75": 371.581,
+      "mean": 285.065,
+      "n": 125
+     },
+     "completion_tokens_per_s_mean": {
+      "median": 105.555,
+      "p25": 95.4713,
+      "p75": 107.971,
+      "mean": 100.768,
+      "n": 125
+     },
+     "iat_mean_s": {
+      "median": 4.85256,
+      "p25": 4.00446,
+      "p75": 8.76294,
+      "mean": 6.71892,
+      "n": 125
+     },
+     "burstiness_mean": {
+      "median": 2.6363,
+      "p25": 1.49754,
+      "p75": 6.47116,
+      "mean": 3.93518,
+      "n": 125
+     },
+     "burstiness_max": {
+      "median": 14.7662,
+      "p25": 6.07935,
+      "p75": 62.8122,
+      "mean": 31.0827,
+      "n": 125
+     },
+     "iat_jitter_p50_mean_s": {
+      "median": 3.91395,
+      "p25": 3.66697,
+      "p75": 4.34673,
+      "mean": 4.01836,
+      "n": 125
+     },
+     "iat_jitter_p95_mean_s": {
+      "median": 8.40463,
+      "p25": 5.49294,
+      "p75": 31.0949,
+      "mean": 19.6149,
+      "n": 125
+     },
+     "tcp_rtt_p50_mean_s": {
+      "median": 0.00025,
+      "p25": 0.00025,
+      "p75": 0.00025,
+      "mean": 0.00025,
+      "n": 125
+     },
+     "tcp_rtt_p95_mean_s": {
+      "median": 0.000475,
+      "p25": 0.000475,
+      "p75": 0.000475,
+      "mean": 0.000475,
+      "n": 125
+     },
+     "tcp_flow_dur_p50_mean_s": {
+      "median": 21.4473,
+      "p25": 20.1069,
+      "p75": 22.3451,
+      "mean": 21.0731,
+      "n": 125
+     },
+     "tcp_flow_dur_p95_mean_s": {
+      "median": 60.7268,
+      "p25": 53.9512,
+      "p75": 96.0799,
+      "mean": 83.4923,
+      "n": 125
+     },
+     "tcp_bytes_llm_mean_Bps": {
+      "median": 569.873,
+      "p25": 518.257,
+      "p75": 618.845,
+      "mean": 568.489,
+      "n": 125
+     },
+     "tcp_bytes_llm_peak_Bps": {
+      "median": 816.655,
+      "p25": 720.782,
+      "p75": 983.436,
+      "mean": 879.648,
+      "n": 125
+     },
+     "tcp_bytes_a_to_llm_mean_Bps": {
+      "median": 244.29,
+      "p25": 151.384,
+      "p75": 326.027,
+      "mean": 241.145,
+      "n": 125
+     },
+     "tcp_bytes_b_to_llm_mean_Bps": {
+      "median": 510.45,
+      "p25": 425.221,
+      "p75": 585.775,
+      "mean": 525.036,
+      "n": 125
+     },
+     "tcp_bytes_a_to_b_mean_Bps": {
+      "median": 512.105,
+      "p25": 419.007,
+      "p75": 583.578,
+      "mean": 523.906,
+      "n": 125
+     }
+    },
+    "research": {
+     "disc_n_requests": {
+      "median": 9,
+      "p25": 5,
+      "p75": 9,
+      "mean": 8.816,
+      "n": 125
+     },
+     "disc_duration_s": {
+      "median": 39.3809,
+      "p25": 22.3815,
+      "p75": 45.5789,
+      "mean": 40.3206,
+      "n": 125
+     },
+     "disc_total_tokens": {
+      "median": 13532,
+      "p25": 6221,
+      "p75": 14474,
+      "mean": 13196.9,
+      "n": 125
+     },
+     "disc_mean_latency_s": {
+      "median": 5.24,
+      "p25": 5.02556,
+      "p75": 5.508,
+      "mean": 5.26522,
+      "n": 125
+     },
+     "disc_mean_iat_s": {
+      "median": 5.05019,
+      "p25": 4.81912,
+      "p75": 5.28418,
+      "mean": 5.13372,
+      "n": 125
+     },
+     "llm_latency_p50_mean_s": {
+      "median": 5.12,
+      "p25": 4.87,
+      "p75": 5.44,
+      "mean": 5.13976,
+      "n": 125
+     },
+     "llm_latency_p95_mean_s": {
+      "median": 6.6,
+      "p25": 6.072,
+      "p75": 7.038,
+      "mean": 6.62719,
+      "n": 125
+     },
+     "llm_ttft_p50_mean_s": {
+      "median": 0.1115,
+      "p25": 0.0236,
+      "p75": 0.1182,
+      "mean": 0.0891476,
+      "n": 125
+     },
+     "llm_ttft_p95_mean_s": {
+      "median": 0.22584,
+      "p25": 0.1988,
+      "p75": 0.24046,
+      "mean": 0.219541,
+      "n": 125
+     },
+     "llm_inflight_mean": {
+      "median": 0.999922,
+      "p25": 0.999822,
+      "p75": 1.00005,
+      "mean": 0.995509,
+      "n": 125
+     },
+     "llm_inflight_peak": {
+      "median": 2,
+      "p25": 2,
+      "p75": 2,
+      "mean": 1.968,
+      "n": 125
+     },
+     "llm_queue_wait_p50_mean_s": {
+      "median": 0.1115,
+      "p25": 0.0236,
+      "p75": 0.1182,
+      "mean": 0.0891476,
+      "n": 125
+     },
+     "llm_queue_wait_p95_mean_s": {
+      "median": 0.22584,
+      "p25": 0.1988,
+      "p75": 0.24046,
+      "mean": 0.219541,
+      "n": 125
+     },
+     "prompt_tokens_per_s_mean": {
+      "median": 218.947,
+      "p25": 151.333,
+      "p75": 228.958,
+      "mean": 201.49,
+      "n": 125
+     },
+     "completion_tokens_per_s_mean": {
+      "median": 120.346,
+      "p25": 116.595,
+      "p75": 131.767,
+      "mean": 122.876,
+      "n": 125
+     },
+     "iat_mean_s": {
+      "median": 5.05019,
+      "p25": 4.81912,
+      "p75": 5.28418,
+      "mean": 5.13372,
+      "n": 125
+     },
+     "burstiness_mean": {
+      "median": 1.22327,
+      "p25": 1.15975,
+      "p75": 1.31299,
+      "mean": 1.28768,
+      "n": 125
+     },
+     "burstiness_max": {
+      "median": 6.09679,
+      "p25": 5.73439,
+      "p75": 6.83596,
+      "mean": 6.91261,
+      "n": 125
+     },
+     "iat_jitter_p50_mean_s": {
+      "median": 4.97804,
+      "p25": 4.74062,
+      "p75": 5.18521,
+      "mean": 4.99481,
+      "n": 125
+     },
+     "iat_jitter_p95_mean_s": {
+      "median": 5.96837,
+      "p25": 5.63092,
+      "p75": 6.47885,
+      "mean": 6.45833,
+      "n": 125
+     },
+     "tcp_rtt_p50_mean_s": {
+      "median": 0.00025,
+      "p25": 0.00025,
+      "p75": 0.00025,
+      "mean": 0.00025,
+      "n": 125
+     },
+     "tcp_rtt_p95_mean_s": {
+      "median": 0.000475,
+      "p25": 0.000475,
+      "p75": 0.000475,
+      "mean": 0.000475,
+      "n": 125
+     },
+     "tcp_flow_dur_p50_mean_s": {
+      "median": 20.1524,
+      "p25": 18.4804,
+      "p75": 21.5169,
+      "mean": 19.9707,
+      "n": 125
+     },
+     "tcp_flow_dur_p95_mean_s": {
+      "median": 125.667,
+      "p25": 52.7143,
+      "p75": 182.667,
+      "mean": 120.727,
+      "n": 125
+     },
+     "tcp_bytes_llm_mean_Bps": {
+      "median": 586.509,
+      "p25": 556.042,
+      "p75": 622.145,
+      "mean": 583.64,
+      "n": 125
+     },
+     "tcp_bytes_llm_peak_Bps": {
+      "median": 684.055,
+      "p25": 634.182,
+      "p75": 833.182,
+      "mean": 715.954,
+      "n": 125
+     },
+     "tcp_bytes_a_to_llm_mean_Bps": {
+      "median": 313.391,
+      "p25": 229.221,
+      "p75": 392.978,
+      "mean": 315.636,
+      "n": 125
+     },
+     "tcp_bytes_b_to_llm_mean_Bps": {
+      "median": 330.862,
+      "p25": 242.775,
+      "p75": 417.434,
+      "mean": 334.743,
+      "n": 125
+     },
+     "tcp_bytes_a_to_b_mean_Bps": {
+      "median": 329.96,
+      "p25": 240.535,
+      "p75": 415.996,
+      "mean": 334.421,
+      "n": 125
+     }
+    },
+    "consulting": {
+     "disc_n_requests": {
+      "median": 13,
+      "p25": 13,
+      "p75": 13,
+      "mean": 15.776,
+      "n": 125
+     },
+     "disc_duration_s": {
+      "median": 53.5686,
+      "p25": 50.4478,
+      "p75": 62.4759,
+      "mean": 71.4007,
+      "n": 125
+     },
+     "disc_total_tokens": {
+      "median": 20408,
+      "p25": 19848,
+      "p75": 21743,
+      "mean": 24788.6,
+      "n": 125
+     },
+     "disc_mean_latency_s": {
+      "median": 4.57385,
+      "p25": 4.41462,
+      "p75": 4.77692,
+      "mean": 4.68485,
+      "n": 125
+     },
+     "disc_mean_iat_s": {
+      "median": 4.46876,
+      "p25": 4.2098,
+      "p75": 5.04493,
+      "mean": 4.68241,
+      "n": 125
+     },
+     "llm_latency_p50_mean_s": {
+      "median": 4.35,
+      "p25": 4.12,
+      "p75": 4.63,
+      "mean": 4.4112,
+      "n": 125
+     },
+     "llm_latency_p95_mean_s": {
+      "median": 6.428,
+      "p25": 6.04,
+      "p75": 6.9,
+      "mean": 6.90191,
+      "n": 125
+     },
+     "llm_ttft_p50_mean_s": {
+      "median": 0.1208,
+      "p25": 0.1196,
+      "p75": 0.1218,
+      "mean": 0.120386,
+      "n": 125
+     },
+     "llm_ttft_p95_mean_s": {
+      "median": 0.20958,
+      "p25": 0.20302,
+      "p75": 0.23586,
+      "mean": 0.228243,
+      "n": 125
+     },
+     "llm_inflight_mean": {
+      "median": 0.999891,
+      "p25": 0.999699,
+      "p75": 1.00003,
+      "mean": 0.969932,
+      "n": 125
+     },
+     "llm_inflight_peak": {
+      "median": 2,
+      "p25": 2,
+      "p75": 2,
+      "mean": 2,
+      "n": 125
+     },
+     "llm_queue_wait_p50_mean_s": {
+      "median": 0.1208,
+      "p25": 0.1196,
+      "p75": 0.1218,
+      "mean": 0.120386,
+      "n": 125
+     },
+     "llm_queue_wait_p95_mean_s": {
+      "median": 0.20958,
+      "p25": 0.20302,
+      "p75": 0.23586,
+      "mean": 0.228243,
+      "n": 125
+     },
+     "prompt_tokens_per_s_mean": {
+      "median": 264.657,
+      "p25": 231.596,
+      "p75": 277.481,
+      "mean": 255.688,
+      "n": 125
+     },
+     "completion_tokens_per_s_mean": {
+      "median": 114.476,
+      "p25": 112.101,
+      "p75": 116.541,
+      "mean": 110.427,
+      "n": 125
+     },
+     "iat_mean_s": {
+      "median": 4.46876,
+      "p25": 4.2098,
+      "p75": 5.04493,
+      "mean": 4.68241,
+      "n": 125
+     },
+     "burstiness_mean": {
+      "median": 1.406,
+      "p25": 1.29574,
+      "p75": 1.73079,
+      "mean": 2.18574,
+      "n": 125
+     },
+     "burstiness_max": {
+      "median": 6.1856,
+      "p25": 5.58944,
+      "p75": 7.79349,
+      "mean": 11.146,
+      "n": 125
+     },
+     "iat_jitter_p50_mean_s": {
+      "median": 4.27515,
+      "p25": 4.06607,
+      "p75": 4.53418,
+      "mean": 4.33215,
+      "n": 125
+     },
+     "iat_jitter_p95_mean_s": {
+      "median": 5.90494,
+      "p25": 5.37869,
+      "p75": 6.4615,
+      "mean": 6.66579,
+      "n": 125
+     },
+     "tcp_rtt_p50_mean_s": {
+      "median": 0.00025,
+      "p25": 0.00025,
+      "p75": 0.00025,
+      "mean": 0.00025,
+      "n": 125
+     },
+     "tcp_rtt_p95_mean_s": {
+      "median": 0.000475,
+      "p25": 0.000475,
+      "p75": 0.000475,
+      "mean": 0.000475,
+      "n": 125
+     },
+     "tcp_flow_dur_p50_mean_s": {
+      "median": 19.8642,
+      "p25": 17.2517,
+      "p75": 22.6804,
+      "mean": 19.6802,
+      "n": 125
+     },
+     "tcp_flow_dur_p95_mean_s": {
+      "median": 239.508,
+      "p25": 209.846,
+      "p75": 259.069,
+      "mean": 212.381,
+      "n": 125
+     },
+     "tcp_bytes_llm_mean_Bps": {
+      "median": 657.652,
+      "p25": 623.105,
+      "p75": 685.065,
+      "mean": 685.043,
+      "n": 125
+     },
+     "tcp_bytes_llm_peak_Bps": {
+      "median": 845.327,
+      "p25": 824.982,
+      "p75": 883.582,
+      "mean": 896.007,
+      "n": 125
+     },
+     "tcp_bytes_a_to_llm_mean_Bps": {
+      "median": 319.995,
+      "p25": 263.194,
+      "p75": 398.547,
+      "mean": 320.496,
+      "n": 125
+     },
+     "tcp_bytes_b_to_llm_mean_Bps": {
+      "median": 535.222,
+      "p25": 502.25,
+      "p75": 611.297,
+      "mean": 572.421,
+      "n": 125
+     },
+     "tcp_bytes_a_to_b_mean_Bps": {
+      "median": 534.426,
+      "p25": 500.435,
+      "p75": 607.871,
+      "mean": 570.249,
+      "n": 125
+     }
+    },
+    "coding": {
+     "disc_n_requests": {
+      "median": 13,
+      "p25": 9,
+      "p75": 13,
+      "mean": 13.472,
+      "n": 125
+     },
+     "disc_duration_s": {
+      "median": 75.5916,
+      "p25": 50.9717,
+      "p75": 121.411,
+      "mean": 91.6594,
+      "n": 125
+     },
+     "disc_total_tokens": {
+      "median": 24940,
+      "p25": 16996,
+      "p75": 30976,
+      "mean": 26405.2,
+      "n": 125
+     },
+     "disc_mean_latency_s": {
+      "median": 6.41667,
+      "p25": 5.73833,
+      "p75": 6.99154,
+      "mean": 6.52438,
+      "n": 125
+     },
+     "disc_mean_iat_s": {
+      "median": 6.68214,
+      "p25": 5.86406,
+      "p75": 7.79183,
+      "mean": 6.9723,
+      "n": 125
+     },
+     "llm_latency_p50_mean_s": {
+      "median": 5.87,
+      "p25": 5.26,
+      "p75": 6.68,
+      "mean": 6.0496,
+      "n": 125
+     },
+     "llm_latency_p95_mean_s": {
+      "median": 9.62,
+      "p25": 8.476,
+      "p75": 11.39,
+      "mean": 10.778,
+      "n": 125
+     },
+     "llm_ttft_p50_mean_s": {
+      "median": 0.1425,
+      "p25": 0.1414,
+      "p75": 0.1432,
+      "mean": 0.135202,
+      "n": 125
+     },
+     "llm_ttft_p95_mean_s": {
+      "median": 0.31782,
+      "p25": 0.28412,
+      "p75": 0.35979,
+      "mean": 0.327947,
+      "n": 125
+     },
+     "llm_inflight_mean": {
+      "median": 0.999903,
+      "p25": 0.999673,
+      "p75": 0.999994,
+      "mean": 0.958242,
+      "n": 125
+     },
+     "llm_inflight_peak": {
+      "median": 2,
+      "p25": 2,
+      "p75": 2,
+      "mean": 2,
+      "n": 125
+     },
+     "llm_queue_wait_p50_mean_s": {
+      "median": 0.1425,
+      "p25": 0.1414,
+      "p75": 0.1432,
+      "mean": 0.135202,
+      "n": 125
+     },
+     "llm_queue_wait_p95_mean_s": {
+      "median": 0.31782,
+      "p25": 0.28412,
+      "p75": 0.35979,
+      "mean": 0.327947,
+      "n": 125
+     },
+     "prompt_tokens_per_s_mean": {
+      "median": 208.638,
+      "p25": 178.074,
+      "p75": 230.224,
+      "mean": 203.891,
+      "n": 125
+     },
+     "completion_tokens_per_s_mean": {
+      "median": 109.274,
+      "p25": 104.926,
+      "p75": 113.115,
+      "mean": 106.408,
+      "n": 125
+     },
+     "iat_mean_s": {
+      "median": 6.68214,
+      "p25": 5.86406,
+      "p75": 7.79183,
+      "mean": 6.9723,
+      "n": 125
+     },
+     "burstiness_mean": {
+      "median": 1.64978,
+      "p25": 1.45816,
+      "p75": 3.15171,
+      "mean": 2.42646,
+      "n": 125
+     },
+     "burstiness_max": {
+      "median": 10.6993,
+      "p25": 9.02163,
+      "p75": 23.3633,
+      "mean": 19.1018,
+      "n": 125
+     },
+     "iat_jitter_p50_mean_s": {
+      "median": 6.25537,
+      "p25": 5.35645,
+      "p75": 7.13427,
+      "mean": 6.24067,
+      "n": 125
+     },
+     "iat_jitter_p95_mean_s": {
+      "median": 10.0852,
+      "p25": 8.62429,
+      "p75": 12.6438,
+      "mean": 12.2061,
+      "n": 125
+     },
+     "tcp_rtt_p50_mean_s": {
+      "median": 0.00025,
+      "p25": 0.00025,
+      "p75": 0.00025,
+      "mean": 0.00025,
+      "n": 125
+     },
+     "tcp_rtt_p95_mean_s": {
+      "median": 0.000475,
+      "p25": 0.000475,
+      "p75": 0.000475,
+      "mean": 0.000475,
+      "n": 125
+     },
+     "tcp_flow_dur_p50_mean_s": {
+      "median": 19.906,
+      "p25": 17.9298,
+      "p75": 21.7026,
+      "mean": 19.8176,
+      "n": 125
+     },
+     "tcp_flow_dur_p95_mean_s": {
+      "median": 226.462,
+      "p25": 195.479,
+      "p75": 244.28,
+      "mean": 204.973,
+      "n": 125
+     },
+     "tcp_bytes_llm_mean_Bps": {
+      "median": 617.241,
+      "p25": 592.018,
+      "p75": 656.471,
+      "mean": 629.468,
+      "n": 125
+     },
+     "tcp_bytes_llm_peak_Bps": {
+      "median": 834.255,
+      "p25": 792.218,
+      "p75": 896.236,
+      "mean": 870.798,
+      "n": 125
+     },
+     "tcp_bytes_a_to_llm_mean_Bps": {
+      "median": 231.194,
+      "p25": 134.939,
+      "p75": 320.963,
+      "mean": 232.307,
+      "n": 125
+     },
+     "tcp_bytes_b_to_llm_mean_Bps": {
+      "median": 453.996,
+      "p25": 287.19,
+      "p75": 520.135,
+      "mean": 410.91,
+      "n": 125
+     },
+     "tcp_bytes_a_to_b_mean_Bps": {
+      "median": 452.682,
+      "p25": 285.756,
+      "p75": 516.842,
+      "mean": 408.837,
+      "n": 125
+     }
+    }
+   },
+   "vertical": {
+    "math": {
+     "disc_n_requests": {
+      "median": 12,
+      "p25": 12,
+      "p75": 12,
+      "mean": 15.292,
+      "n": 113
+     },
+     "disc_duration_s": {
+      "median": 43.6228,
+      "p25": 37.1726,
+      "p75": 109.331,
+      "mean": 104.761,
+      "n": 113
+     },
+     "disc_total_tokens": {
+      "median": 25106,
+      "p25": 22322,
+      "p75": 51830,
+      "mean": 40892.7,
+      "n": 113
+     },
+     "disc_mean_latency_s": {
+      "median": 7.30875,
+      "p25": 6.61583,
+      "p75": 9.22583,
+      "mean": 13.004,
+      "n": 113
+     },
+     "disc_mean_iat_s": {
+      "median": 3.96571,
+      "p25": 3.37933,
+      "p75": 6.27068,
+      "mean": 6.52895,
+      "n": 113
+     },
+     "llm_latency_p50_mean_s": {
+      "median": 6.36,
+      "p25": 5.94,
+      "p75": 7.045,
+      "mean": 9.82562,
+      "n": 113
+     },
+     "llm_latency_p95_mean_s": {
+      "median": 12.2065,
+      "p25": 10.1685,
+      "p75": 18.4945,
+      "mean": 27.1947,
+      "n": 113
+     },
+     "llm_ttft_p50_mean_s": {
+      "median": 0.17935,
+      "p25": 0.1601,
+      "p75": 0.2062,
+      "mean": 0.199924,
+      "n": 113
+     },
+     "llm_ttft_p95_mean_s": {
+      "median": 0.30077,
+      "p25": 0.26823,
+      "p75": 0.481225,
+      "mean": 0.510443,
+      "n": 113
+     },
+     "llm_inflight_mean": {
+      "median": 1.71145,
+      "p25": 1.56287,
+      "p75": 1.83078,
+      "mean": 1.67808,
+      "n": 113
+     },
+     "llm_inflight_peak": {
+      "median": 4,
+      "p25": 4,
+      "p75": 4,
+      "mean": 3.82301,
+      "n": 113
+     },
+     "llm_queue_wait_p50_mean_s": {
+      "median": 0.17935,
+      "p25": 0.1601,
+      "p75": 0.2062,
+      "mean": 0.199924,
+      "n": 113
+     },
+     "llm_queue_wait_p95_mean_s": {
+      "median": 0.30077,
+      "p25": 0.26823,
+      "p75": 0.481225,
+      "mean": 0.510443,
+      "n": 113
+     },
+     "prompt_tokens_per_s_mean": {
+      "median": 372.165,
+      "p25": 276.755,
+      "p75": 390.177,
+      "mean": 322.631,
+      "n": 113
+     },
+     "completion_tokens_per_s_mean": {
+      "median": 196.138,
+      "p25": 163.956,
+      "p75": 216.414,
+      "mean": 193.237,
+      "n": 113
+     },
+     "iat_mean_s": {
+      "median": 3.96571,
+      "p25": 3.37933,
+      "p75": 6.27068,
+      "mean": 6.52895,
+      "n": 113
+     },
+     "burstiness_mean": {
+      "median": 3.47957,
+      "p25": 3.14061,
+      "p75": 5.0984,
+      "mean": 4.83115,
+      "n": 113
+     },
+     "burstiness_max": {
+      "median": 13.8635,
+      "p25": 10.8621,
+      "p75": 42.1075,
+      "mean": 38.6043,
+      "n": 113
+     },
+     "iat_jitter_p50_mean_s": {
+      "median": 0.000402927,
+      "p25": 0.000387907,
+      "p75": 0.000411987,
+      "mean": 0.000455858,
+      "n": 113
+     },
+     "iat_jitter_p95_mean_s": {
+      "median": 11.998,
+      "p25": 9.75388,
+      "p75": 18.6553,
+      "mean": 22.6865,
+      "n": 113
+     },
+     "tcp_rtt_p50_mean_s": {
+      "median": 0.00025,
+      "p25": 0.00025,
+      "p75": 0.00025,
+      "mean": 0.00025,
+      "n": 113
+     },
+     "tcp_rtt_p95_mean_s": {
+      "median": 0.000475,
+      "p25": 0.000475,
+      "p75": 0.000475,
+      "mean": 0.000475,
+      "n": 113
+     },
+     "tcp_flow_dur_p50_mean_s": {
+      "median": 21.1524,
+      "p25": 18.6869,
+      "p75": 22.787,
+      "mean": 20.5472,
+      "n": 113
+     },
+     "tcp_flow_dur_p95_mean_s": {
+      "median": 244.455,
+      "p25": 224.24,
+      "p75": 258.964,
+      "mean": 229.99,
+      "n": 113
+     },
+     "tcp_bytes_llm_mean_Bps": {
+      "median": 653.477,
+      "p25": 614.539,
+      "p75": 698.052,
+      "mean": 667.472,
+      "n": 113
+     },
+     "tcp_bytes_llm_peak_Bps": {
+      "median": 830.255,
+      "p25": 788.691,
+      "p75": 1150.18,
+      "mean": 1057.27,
+      "n": 113
+     },
+     "tcp_bytes_a_to_llm_mean_Bps": {
+      "median": 222.364,
+      "p25": 103.269,
+      "p75": 306.966,
+      "mean": 215.539,
+      "n": 113
+     },
+     "tcp_bytes_b_to_llm_mean_Bps": {
+      "median": 624.899,
+      "p25": 559.591,
+      "p75": 741.589,
+      "mean": 677.252,
+      "n": 113
+     },
+     "tcp_bytes_a_to_b_mean_Bps": {
+      "median": 633.695,
+      "p25": 565.482,
+      "p75": 752.002,
+      "mean": 685.911,
+      "n": 113
+     }
+    },
+    "research": {
+     "disc_n_requests": {
+      "median": 12,
+      "p25": 12,
+      "p75": 12,
+      "mean": 14.208,
+      "n": 125
+     },
+     "disc_duration_s": {
+      "median": 51.2506,
+      "p25": 46.8138,
+      "p75": 63.3877,
+      "mean": 71.3606,
+      "n": 125
+     },
+     "disc_total_tokens": {
+      "median": 27719,
+      "p25": 25807,
+      "p75": 30142,
+      "mean": 33081.8,
+      "n": 125
+     },
+     "disc_mean_latency_s": {
+      "median": 8.34375,
+      "p25": 7.7825,
+      "p75": 8.90083,
+      "mean": 8.83431,
+      "n": 125
+     },
+     "disc_mean_iat_s": {
+      "median": 4.65915,
+      "p25": 4.2558,
+      "p75": 5.56676,
+      "mean": 5.10332,
+      "n": 125
+     },
+     "llm_latency_p50_mean_s": {
+      "median": 7.56,
+      "p25": 7.2,
+      "p75": 7.97,
+      "mean": 7.62748,
+      "n": 125
+     },
+     "llm_latency_p95_mean_s": {
+      "median": 12.929,
+      "p25": 11.468,
+      "p75": 14.8595,
+      "mean": 14.9333,
+      "n": 125
+     },
+     "llm_ttft_p50_mean_s": {
+      "median": 0.22345,
+      "p25": 0.2068,
+      "p75": 0.24625,
+      "mean": 0.223774,
+      "n": 125
+     },
+     "llm_ttft_p95_mean_s": {
+      "median": 0.35217,
+      "p25": 0.32632,
+      "p75": 0.388865,
+      "mean": 0.390662,
+      "n": 125
+     },
+     "llm_inflight_mean": {
+      "median": 1.68148,
+      "p25": 1.61949,
+      "p75": 1.72464,
+      "mean": 1.6333,
+      "n": 125
+     },
+     "llm_inflight_peak": {
+      "median": 4,
+      "p25": 3,
+      "p75": 4,
+      "mean": 3.744,
+      "n": 125
+     },
+     "llm_queue_wait_p50_mean_s": {
+      "median": 0.22345,
+      "p25": 0.2068,
+      "p75": 0.24625,
+      "mean": 0.223774,
+      "n": 125
+     },
+     "llm_queue_wait_p95_mean_s": {
+      "median": 0.35217,
+      "p25": 0.32632,
+      "p75": 0.388865,
+      "mean": 0.390662,
+      "n": 125
+     },
+     "prompt_tokens_per_s_mean": {
+      "median": 359.76,
+      "p25": 314.389,
+      "p75": 366.138,
+      "mean": 334.38,
+      "n": 125
+     },
+     "completion_tokens_per_s_mean": {
+      "median": 182.104,
+      "p25": 162.774,
+      "p75": 189.196,
+      "mean": 174.08,
+      "n": 125
+     },
+     "iat_mean_s": {
+      "median": 4.65915,
+      "p25": 4.2558,
+      "p75": 5.56676,
+      "mean": 5.10332,
+      "n": 125
+     },
+     "burstiness_mean": {
+      "median": 3.31283,
+      "p25": 2.98212,
+      "p75": 3.75506,
+      "mean": 3.96692,
+      "n": 125
+     },
+     "burstiness_max": {
+      "median": 15.2497,
+      "p25": 13.2317,
+      "p75": 22.0542,
+      "mean": 22.43,
+      "n": 125
+     },
+     "iat_jitter_p50_mean_s": {
+      "median": 0.000401974,
+      "p25": 0.000391006,
+      "p75": 0.000416994,
+      "mean": 0.000446949,
+      "n": 125
+     },
+     "iat_jitter_p95_mean_s": {
+      "median": 13.3765,
+      "p25": 11.6984,
+      "p75": 15.6678,
+      "mean": 14.7651,
+      "n": 125
+     },
+     "tcp_rtt_p50_mean_s": {
+      "median": 0.00025,
+      "p25": 0.00025,
+      "p75": 0.00025,
+      "mean": 0.00025,
+      "n": 125
+     },
+     "tcp_rtt_p95_mean_s": {
+      "median": 0.000475,
+      "p25": 0.000475,
+      "p75": 0.000475,
+      "mean": 0.000475,
+      "n": 125
+     },
+     "tcp_flow_dur_p50_mean_s": {
+      "median": 23.4722,
+      "p25": 20.6517,
+      "p75": 25.4924,
+      "mean": 24.2681,
+      "n": 125
+     },
+     "tcp_flow_dur_p95_mean_s": {
+      "median": 248.727,
+      "p25": 173.025,
+      "p75": 260.545,
+      "mean": 209.732,
+      "n": 125
+     },
+     "tcp_bytes_llm_mean_Bps": {
+      "median": 729.988,
+      "p25": 687.458,
+      "p75": 902.833,
+      "mean": 816.421,
+      "n": 125
+     },
+     "tcp_bytes_llm_peak_Bps": {
+      "median": 1019.05,
+      "p25": 961.127,
+      "p75": 1430.69,
+      "mean": 1215.94,
+      "n": 125
+     },
+     "tcp_bytes_a_to_llm_mean_Bps": {
+      "median": 222.088,
+      "p25": 161.748,
+      "p75": 273.939,
+      "mean": 221.291,
+      "n": 125
+     },
+     "tcp_bytes_b_to_llm_mean_Bps": {
+      "median": 910.597,
+      "p25": 810.856,
+      "p75": 1013.96,
+      "mean": 1002.92,
+      "n": 125
+     },
+     "tcp_bytes_a_to_b_mean_Bps": {
+      "median": 924.8,
+      "p25": 822.167,
+      "p75": 1023.15,
+      "mean": 1014.38,
+      "n": 125
+     }
+    },
+    "consulting": {
+     "disc_n_requests": {
+      "median": 12,
+      "p25": 12,
+      "p75": 12,
+      "mean": 14.112,
+      "n": 125
+     },
+     "disc_duration_s": {
+      "median": 53.978,
+      "p25": 49.6401,
+      "p75": 99.2025,
+      "mean": 87.7345,
+      "n": 125
+     },
+     "disc_total_tokens": {
+      "median": 29083,
+      "p25": 27122,
+      "p75": 55749,
+      "mean": 40280.9,
+      "n": 125
+     },
+     "disc_mean_latency_s": {
+      "median": 8.34833,
+      "p25": 7.95417,
+      "p75": 9.99833,
+      "mean": 12.9759,
+      "n": 125
+     },
+     "disc_mean_iat_s": {
+      "median": 4.90709,
+      "p25": 4.51274,
+      "p75": 6.18651,
+      "mean": 6.40629,
+      "n": 125
+     },
+     "llm_latency_p50_mean_s": {
+      "median": 7.225,
+      "p25": 6.98,
+      "p75": 7.85,
+      "mean": 9.35528,
+      "n": 125
+     },
+     "llm_latency_p95_mean_s": {
+      "median": 15.1585,
+      "p25": 13.5135,
+      "p75": 17.894,
+      "mean": 28.3679,
+      "n": 125
+     },
+     "llm_ttft_p50_mean_s": {
+      "median": 0.2363,
+      "p25": 0.1981,
+      "p75": 0.262,
+      "mean": 0.239132,
+      "n": 125
+     },
+     "llm_ttft_p95_mean_s": {
+      "median": 0.382895,
+      "p25": 0.35073,
+      "p75": 0.478265,
+      "mean": 0.558899,
+      "n": 125
+     },
+     "llm_inflight_mean": {
+      "median": 1.67105,
+      "p25": 1.61962,
+      "p75": 1.70186,
+      "mean": 1.66988,
+      "n": 125
+     },
+     "llm_inflight_peak": {
+      "median": 4,
+      "p25": 3,
+      "p75": 4,
+      "mean": 3.744,
+      "n": 125
+     },
+     "llm_queue_wait_p50_mean_s": {
+      "median": 0.2363,
+      "p25": 0.1981,
+      "p75": 0.262,
+      "mean": 0.239132,
+      "n": 125
+     },
+     "llm_queue_wait_p95_mean_s": {
+      "median": 0.382895,
+      "p25": 0.35073,
+      "p75": 0.478265,
+      "mean": 0.558899,
+      "n": 125
+     },
+     "prompt_tokens_per_s_mean": {
+      "median": 363.2,
+      "p25": 283.332,
+      "p75": 368.353,
+      "mean": 327.207,
+      "n": 125
+     },
+     "completion_tokens_per_s_mean": {
+      "median": 179.302,
+      "p25": 170.035,
+      "p75": 186.673,
+      "mean": 184.508,
+      "n": 125
+     },
+     "iat_mean_s": {
+      "median": 4.90709,
+      "p25": 4.51274,
+      "p75": 6.18651,
+      "mean": 6.40629,
+      "n": 125
+     },
+     "burstiness_mean": {
+      "median": 3.46952,
+      "p25": 3.19629,
+      "p75": 4.85513,
+      "mean": 4.40978,
+      "n": 125
+     },
+     "burstiness_max": {
+      "median": 16.6319,
+      "p25": 14.8501,
+      "p75": 33.9432,
+      "mean": 32.1178,
+      "n": 125
+     },
+     "iat_jitter_p50_mean_s": {
+      "median": 0.000403166,
+      "p25": 0.000391006,
+      "p75": 0.000414133,
+      "mean": 0.000452883,
+      "n": 125
+     },
+     "iat_jitter_p95_mean_s": {
+      "median": 15.3448,
+      "p25": 13.6706,
+      "p75": 19.8143,
+      "mean": 22.1423,
+      "n": 125
+     },
+     "tcp_rtt_p50_mean_s": {
+      "median": 0.00025,
+      "p25": 0.00025,
+      "p75": 0.00025,
+      "mean": 0.00025,
+      "n": 125
+     },
+     "tcp_rtt_p95_mean_s": {
+      "median": 0.000475,
+      "p25": 0.000475,
+      "p75": 0.000475,
+      "mean": 0.000475,
+      "n": 125
+     },
+     "tcp_flow_dur_p50_mean_s": {
+      "median": 24.673,
+      "p25": 20.995,
+      "p75": 29.7863,
+      "mean": 26.3852,
+      "n": 125
+     },
+     "tcp_flow_dur_p95_mean_s": {
+      "median": 244.615,
+      "p25": 195.636,
+      "p75": 258.743,
+      "mean": 216.708,
+      "n": 125
+     },
+     "tcp_bytes_llm_mean_Bps": {
+      "median": 686.313,
+      "p25": 654.438,
+      "p75": 749.786,
+      "mean": 769.035,
+      "n": 125
+     },
+     "tcp_bytes_llm_peak_Bps": {
+      "median": 938.582,
+      "p25": 888.418,
+      "p75": 1286.02,
+      "mean": 1222.07,
+      "n": 125
+     },
+     "tcp_bytes_a_to_llm_mean_Bps": {
+      "median": 248.136,
+      "p25": 140.129,
+      "p75": 309.948,
+      "mean": 245,
+      "n": 125
+     },
+     "tcp_bytes_b_to_llm_mean_Bps": {
+      "median": 806.194,
+      "p25": 728.305,
+      "p75": 917.324,
+      "mean": 872.8,
+      "n": 125
+     },
+     "tcp_bytes_a_to_b_mean_Bps": {
+      "median": 815.61,
+      "p25": 737.38,
+      "p75": 930.222,
+      "mean": 883.072,
+      "n": 125
+     }
+    },
+    "coding": {
+     "disc_n_requests": {
+      "median": 18,
+      "p25": 12,
+      "p75": 36,
+      "mean": 21.7627,
+      "n": 118
+     },
+     "disc_duration_s": {
+      "median": 132.862,
+      "p25": 58.272,
+      "p75": 251.481,
+      "mean": 160.046,
+      "n": 118
+     },
+     "disc_total_tokens": {
+      "median": 56473,
+      "p25": 31076.2,
+      "p75": 91208.5,
+      "mean": 61181.5,
+      "n": 118
+     },
+     "disc_mean_latency_s": {
+      "median": 9.52528,
+      "p25": 8.80007,
+      "p75": 10.8794,
+      "mean": 11.5913,
+      "n": 118
+     },
+     "disc_mean_iat_s": {
+      "median": 6.56668,
+      "p25": 5.29746,
+      "p75": 7.83871,
+      "mean": 7.16885,
+      "n": 118
+     },
+     "llm_latency_p50_mean_s": {
+      "median": 7.9125,
+      "p25": 7.22375,
+      "p75": 8.845,
+      "mean": 8.40025,
+      "n": 118
+     },
+     "llm_latency_p95_mean_s": {
+      "median": 16.8717,
+      "p25": 15.273,
+      "p75": 20.3301,
+      "mean": 25.9987,
+      "n": 118
+     },
+     "llm_ttft_p50_mean_s": {
+      "median": 0.2406,
+      "p25": 0.2157,
+      "p75": 0.27815,
+      "mean": 0.247493,
+      "n": 118
+     },
+     "llm_ttft_p95_mean_s": {
+      "median": 0.431495,
+      "p25": 0.385089,
+      "p75": 0.495559,
+      "mean": 0.499962,
+      "n": 118
+     },
+     "llm_inflight_mean": {
+      "median": 1.50551,
+      "p25": 1.32514,
+      "p75": 1.62358,
+      "mean": 1.48287,
+      "n": 118
+     },
+     "llm_inflight_peak": {
+      "median": 4,
+      "p25": 4,
+      "p75": 4,
+      "mean": 3.89831,
+      "n": 118
+     },
+     "llm_queue_wait_p50_mean_s": {
+      "median": 0.2406,
+      "p25": 0.2157,
+      "p75": 0.27815,
+      "mean": 0.247493,
+      "n": 118
+     },
+     "llm_queue_wait_p95_mean_s": {
+      "median": 0.431495,
+      "p25": 0.385089,
+      "p75": 0.495559,
+      "mean": 0.499962,
+      "n": 118
+     },
+     "prompt_tokens_per_s_mean": {
+      "median": 269.609,
+      "p25": 243.379,
+      "p75": 351.154,
+      "mean": 284.915,
+      "n": 118
+     },
+     "completion_tokens_per_s_mean": {
+      "median": 160.824,
+      "p25": 129.211,
+      "p75": 178.496,
+      "mean": 157.631,
+      "n": 118
+     },
+     "iat_mean_s": {
+      "median": 6.56668,
+      "p25": 5.29746,
+      "p75": 7.83871,
+      "mean": 7.16885,
+      "n": 118
+     },
+     "burstiness_mean": {
+      "median": 4.8136,
+      "p25": 3.26663,
+      "p75": 6.203,
+      "mean": 5.14456,
+      "n": 118
+     },
+     "burstiness_max": {
+      "median": 30.1397,
+      "p25": 17.4326,
+      "p75": 48.1177,
+      "mean": 41.8277,
+      "n": 118
+     },
+     "iat_jitter_p50_mean_s": {
+      "median": 0.000404596,
+      "p25": 0.000393152,
+      "p75": 0.000655591,
+      "mean": 0.000505829,
+      "n": 118
+     },
+     "iat_jitter_p95_mean_s": {
+      "median": 19.1008,
+      "p25": 15.6158,
+      "p75": 25.0733,
+      "mean": 23.494,
+      "n": 118
+     },
+     "tcp_rtt_p50_mean_s": {
+      "median": 0.00025,
+      "p25": 0.00025,
+      "p75": 0.00025,
+      "mean": 0.00025,
+      "n": 118
+     },
+     "tcp_rtt_p95_mean_s": {
+      "median": 0.000475,
+      "p25": 0.000475,
+      "p75": 0.000475,
+      "mean": 0.000475,
+      "n": 118
+     },
+     "tcp_flow_dur_p50_mean_s": {
+      "median": 26.2638,
+      "p25": 23.8395,
+      "p75": 27.8305,
+      "mean": 25.957,
+      "n": 118
+     },
+     "tcp_flow_dur_p95_mean_s": {
+      "median": 251.092,
+      "p25": 214.988,
+      "p75": 258.656,
+      "mean": 226.052,
+      "n": 118
+     },
+     "tcp_bytes_llm_mean_Bps": {
+      "median": 799.001,
+      "p25": 682.785,
+      "p75": 941.165,
+      "mean": 821.104,
+      "n": 118
+     },
+     "tcp_bytes_llm_peak_Bps": {
+      "median": 1256.59,
+      "p25": 934.182,
+      "p75": 1429.65,
+      "mean": 1348.63,
+      "n": 118
+     },
+     "tcp_bytes_a_to_llm_mean_Bps": {
+      "median": 187.636,
+      "p25": 143.099,
+      "p75": 231.88,
+      "mean": 181.91,
+      "n": 118
+     },
+     "tcp_bytes_b_to_llm_mean_Bps": {
+      "median": 993.632,
+      "p25": 819.448,
+      "p75": 1210.98,
+      "mean": 1019.09,
+      "n": 118
+     },
+     "tcp_bytes_a_to_b_mean_Bps": {
+      "median": 1001.56,
+      "p25": 832.517,
+      "p75": 1225.66,
+      "mean": 1030.03,
+      "n": 118
+     }
+    }
+   },
+   "full_mesh": {
+    "math": {
+     "disc_n_requests": {
+      "median": 37,
+      "p25": 25,
+      "p75": 51,
+      "mean": 42.296,
+      "n": 125
+     },
+     "disc_duration_s": {
+      "median": 23.502,
+      "p25": 15.4241,
+      "p75": 80.2966,
+      "mean": 57.0425,
+      "n": 125
+     },
+     "disc_total_tokens": {
+      "median": 52138,
+      "p25": 32674,
+      "p75": 85719,
+      "mean": 60001.3,
+      "n": 125
+     },
+     "disc_mean_latency_s": {
+      "median": 2.8432,
+      "p25": 2.6764,
+      "p75": 3.0568,
+      "mean": 3.20044,
+      "n": 125
+     },
+     "disc_mean_iat_s": {
+      "median": 0.726541,
+      "p25": 0.623174,
+      "p75": 1.12648,
+      "mean": 1.14387,
+      "n": 125
+     },
+     "llm_latency_p50_mean_s": {
+      "median": 2.695,
+      "p25": 2.57,
+      "p75": 2.81,
+      "mean": 2.70764,
+      "n": 125
+     },
+     "llm_latency_p95_mean_s": {
+      "median": 4.132,
+      "p25": 3.79,
+      "p75": 4.6245,
+      "mean": 6.20362,
+      "n": 125
+     },
+     "llm_ttft_p50_mean_s": {
+      "median": 0.1517,
+      "p25": 0.1484,
+      "p75": 0.16085,
+      "mean": 0.146271,
+      "n": 125
+     },
+     "llm_ttft_p95_mean_s": {
+      "median": 0.65038,
+      "p25": 0.62026,
+      "p75": 0.66744,
+      "mean": 0.623994,
+      "n": 125
+     },
+     "llm_inflight_mean": {
+      "median": 3.3995,
+      "p25": 2.56418,
+      "p75": 3.70347,
+      "mean": 3.02254,
+      "n": 125
+     },
+     "llm_inflight_peak": {
+      "median": 6,
+      "p25": 6,
+      "p75": 6,
+      "mean": 6.024,
+      "n": 125
+     },
+     "llm_queue_wait_p50_mean_s": {
+      "median": 0.1517,
+      "p25": 0.1484,
+      "p75": 0.16085,
+      "mean": 0.146271,
+      "n": 125
+     },
+     "llm_queue_wait_p95_mean_s": {
+      "median": 0.65038,
+      "p25": 0.62026,
+      "p75": 0.66744,
+      "mean": 0.623994,
+      "n": 125
+     },
+     "prompt_tokens_per_s_mean": {
+      "median": 1516.96,
+      "p25": 776.207,
+      "p75": 1793.93,
+      "mean": 1341.49,
+      "n": 125
+     },
+     "completion_tokens_per_s_mean": {
+      "median": 330.915,
+      "p25": 220.861,
+      "p75": 370.179,
+      "mean": 289.32,
+      "n": 125
+     },
+     "iat_mean_s": {
+      "median": 0.726541,
+      "p25": 0.623174,
+      "p75": 1.12648,
+      "mean": 1.14387,
+      "n": 125
+     },
+     "burstiness_mean": {
+      "median": 5.77201,
+      "p25": 4.47529,
+      "p75": 20.4452,
+      "mean": 13.2649,
+      "n": 125
+     },
+     "burstiness_max": {
+      "median": 3.89707,
+      "p25": 2.78033,
+      "p75": 23.3698,
+      "mean": 21.9184,
+      "n": 125
+     },
+     "iat_jitter_p50_mean_s": {
+      "median": 0.268849,
+      "p25": 0.222105,
+      "p75": 0.306969,
+      "mean": 0.268157,
+      "n": 125
+     },
+     "iat_jitter_p95_mean_s": {
+      "median": 2.66401,
+      "p25": 2.39516,
+      "p75": 2.96186,
+      "mean": 2.87213,
+      "n": 125
+     },
+     "tcp_rtt_p50_mean_s": {
+      "median": 0.00025,
+      "p25": 0.00025,
+      "p75": 0.00025,
+      "mean": 0.00025,
+      "n": 125
+     },
+     "tcp_rtt_p95_mean_s": {
+      "median": 0.000475,
+      "p25": 0.000475,
+      "p75": 0.000475,
+      "mean": 0.000475,
+      "n": 125
+     },
+     "tcp_flow_dur_p50_mean_s": {
+      "median": 27.326,
+      "p25": 24.8773,
+      "p75": 32,
+      "mean": 32.979,
+      "n": 125
+     },
+     "tcp_flow_dur_p95_mean_s": {
+      "median": 247.832,
+      "p25": 226.154,
+      "p75": 263,
+      "mean": 222.531,
+      "n": 125
+     },
+     "tcp_bytes_llm_mean_Bps": {
+      "median": 923.614,
+      "p25": 823.373,
+      "p75": 1168.23,
+      "mean": 1059.4,
+      "n": 125
+     },
+     "tcp_bytes_llm_peak_Bps": {
+      "median": 1354.51,
+      "p25": 1081.95,
+      "p75": 2145.49,
+      "mean": 1598.53,
+      "n": 125
+     },
+     "tcp_bytes_a_to_llm_mean_Bps": {
+      "median": 475.745,
+      "p25": 289.415,
+      "p75": 641.337,
+      "mean": 480.271,
+      "n": 125
+     },
+     "tcp_bytes_b_to_llm_mean_Bps": {
+      "median": 1119.99,
+      "p25": 793.345,
+      "p75": 1695.38,
+      "mean": 1343.31,
+      "n": 125
+     },
+     "tcp_bytes_a_to_b_mean_Bps": {
+      "median": 1114.23,
+      "p25": 786.855,
+      "p75": 1706.42,
+      "mean": 1336.85,
+      "n": 125
+     }
+    },
+    "research": {
+     "disc_n_requests": {
+      "median": 13,
+      "p25": 13,
+      "p75": 25,
+      "mean": 17.744,
+      "n": 125
+     },
+     "disc_duration_s": {
+      "median": 10.2727,
+      "p25": 9.63535,
+      "p75": 18.0972,
+      "mean": 15.1893,
+      "n": 125
+     },
+     "disc_total_tokens": {
+      "median": 11590,
+      "p25": 11132,
+      "p75": 28581,
+      "mean": 17962.4,
+      "n": 125
+     },
+     "disc_mean_latency_s": {
+      "median": 3.59885,
+      "p25": 3.4124,
+      "p75": 3.71692,
+      "mean": 3.61116,
+      "n": 125
+     },
+     "disc_mean_iat_s": {
+      "median": 0.803958,
+      "p25": 0.761034,
+      "p75": 0.837644,
+      "mean": 0.865236,
+      "n": 125
+     },
+     "llm_latency_p50_mean_s": {
+      "median": 3.3,
+      "p25": 3.16,
+      "p75": 3.48,
+      "mean": 3.34784,
+      "n": 125
+     },
+     "llm_latency_p95_mean_s": {
+      "median": 5.352,
+      "p25": 4.918,
+      "p75": 5.698,
+      "mean": 5.3308,
+      "n": 125
+     },
+     "llm_ttft_p50_mean_s": {
+      "median": 0.043,
+      "p25": 0.0419,
+      "p75": 0.1111,
+      "mean": 0.0670772,
+      "n": 125
+     },
+     "llm_ttft_p95_mean_s": {
+      "median": 0.21746,
+      "p25": 0.20656,
+      "p75": 0.47862,
+      "mean": 0.326012,
+      "n": 125
+     },
+     "llm_inflight_mean": {
+      "median": 2.99875,
+      "p25": 2.90749,
+      "p75": 3.34032,
+      "mean": 3.05659,
+      "n": 125
+     },
+     "llm_inflight_peak": {
+      "median": 6,
+      "p25": 6,
+      "p75": 6,
+      "mean": 6.016,
+      "n": 125
+     },
+     "llm_queue_wait_p50_mean_s": {
+      "median": 0.043,
+      "p25": 0.0419,
+      "p75": 0.1111,
+      "mean": 0.0670772,
+      "n": 125
+     },
+     "llm_queue_wait_p95_mean_s": {
+      "median": 0.21746,
+      "p25": 0.20656,
+      "p75": 0.47862,
+      "mean": 0.326012,
+      "n": 125
+     },
+     "prompt_tokens_per_s_mean": {
+      "median": 691.827,
+      "p25": 667.87,
+      "p75": 1114.94,
+      "mean": 822.505,
+      "n": 125
+     },
+     "completion_tokens_per_s_mean": {
+      "median": 454.93,
+      "p25": 409.193,
+      "p75": 475.419,
+      "mean": 437.493,
+      "n": 125
+     },
+     "iat_mean_s": {
+      "median": 0.803958,
+      "p25": 0.761034,
+      "p75": 0.837644,
+      "mean": 0.865236,
+      "n": 125
+     },
+     "burstiness_mean": {
+      "median": 4.25599,
+      "p25": 3.99941,
+      "p75": 4.65361,
+      "mean": 4.7818,
+      "n": 125
+     },
+     "burstiness_max": {
+      "median": 3.38922,
+      "p25": 3.17736,
+      "p75": 3.90895,
+      "mean": 4.99826,
+      "n": 125
+     },
+     "iat_jitter_p50_mean_s": {
+      "median": 0.270622,
+      "p25": 0.202515,
+      "p75": 0.358786,
+      "mean": 0.28358,
+      "n": 125
+     },
+     "iat_jitter_p95_mean_s": {
+      "median": 3.0365,
+      "p25": 2.87915,
+      "p75": 3.31569,
+      "mean": 3.12623,
+      "n": 125
+     },
+     "tcp_rtt_p50_mean_s": {
+      "median": 0.00025,
+      "p25": 0.00025,
+      "p75": 0.00025,
+      "mean": 0.00025,
+      "n": 125
+     },
+     "tcp_rtt_p95_mean_s": {
+      "median": 0.000475,
+      "p25": 0.000475,
+      "p75": 0.000475,
+      "mean": 0.000475,
+      "n": 125
+     },
+     "tcp_flow_dur_p50_mean_s": {
+      "median": 25.5357,
+      "p25": 23.0556,
+      "p75": 27.9377,
+      "mean": 25.6817,
+      "n": 125
+     },
+     "tcp_flow_dur_p95_mean_s": {
+      "median": 220,
+      "p25": 59.1562,
+      "p75": 240.8,
+      "mean": 175.648,
+      "n": 125
+     },
+     "tcp_bytes_llm_mean_Bps": {
+      "median": 1057.2,
+      "p25": 938.895,
+      "p75": 1180.61,
+      "mean": 1052.05,
+      "n": 125
+     },
+     "tcp_bytes_llm_peak_Bps": {
+      "median": 1217.89,
+      "p25": 1086.96,
+      "p75": 1402.71,
+      "mean": 1278.56,
+      "n": 125
+     },
+     "tcp_bytes_a_to_llm_mean_Bps": {
+      "median": 685.321,
+      "p25": 585.975,
+      "p75": 775.321,
+      "mean": 659.817,
+      "n": 125
+     },
+     "tcp_bytes_b_to_llm_mean_Bps": {
+      "median": 1020.94,
+      "p25": 587.591,
+      "p75": 1276.16,
+      "mean": 961.669,
+      "n": 125
+     },
+     "tcp_bytes_a_to_b_mean_Bps": {
+      "median": 1018.03,
+      "p25": 586.582,
+      "p75": 1277.5,
+      "mean": 958.296,
+      "n": 125
+     }
+    },
+    "consulting": {
+     "disc_n_requests": {
+      "median": 37,
+      "p25": 25,
+      "p75": 37,
+      "mean": 37.576,
+      "n": 125
+     },
+     "disc_duration_s": {
+      "median": 22.41,
+      "p25": 15.6099,
+      "p75": 26.2743,
+      "mean": 30.5582,
+      "n": 125
+     },
+     "disc_total_tokens": {
+      "median": 44563,
+      "p25": 27829,
+      "p75": 46566,
+      "mean": 43568.1,
+      "n": 125
+     },
+     "disc_mean_latency_s": {
+      "median": 2.89532,
+      "p25": 2.8044,
+      "p75": 2.9984,
+      "mean": 2.91165,
+      "n": 125
+     },
+     "disc_mean_iat_s": {
+      "median": 0.658172,
+      "p25": 0.631904,
+      "p75": 0.732821,
+      "mean": 0.758155,
+      "n": 125
+     },
+     "llm_latency_p50_mean_s": {
+      "median": 2.7,
+      "p25": 2.61,
+      "p75": 2.77,
+      "mean": 2.70656,
+      "n": 125
+     },
+     "llm_latency_p95_mean_s": {
+      "median": 3.976,
+      "p25": 3.704,
+      "p75": 4.364,
+      "mean": 4.09938,
+      "n": 125
+     },
+     "llm_ttft_p50_mean_s": {
+      "median": 0.1313,
+      "p25": 0.1197,
+      "p75": 0.1335,
+      "mean": 0.119328,
+      "n": 125
+     },
+     "llm_ttft_p95_mean_s": {
+      "median": 0.51108,
+      "p25": 0.49862,
+      "p75": 0.52262,
+      "mean": 0.477773,
+      "n": 125
+     },
+     "llm_inflight_mean": {
+      "median": 3.31757,
+      "p25": 2.77365,
+      "p75": 3.52119,
+      "mean": 3.1509,
+      "n": 125
+     },
+     "llm_inflight_peak": {
+      "median": 6,
+      "p25": 6,
+      "p75": 6,
+      "mean": 6.064,
+      "n": 125
+     },
+     "llm_queue_wait_p50_mean_s": {
+      "median": 0.1313,
+      "p25": 0.1197,
+      "p75": 0.1335,
+      "mean": 0.119328,
+      "n": 125
+     },
+     "llm_queue_wait_p95_mean_s": {
+      "median": 0.51108,
+      "p25": 0.49862,
+      "p75": 0.52262,
+      "mean": 0.477773,
+      "n": 125
+     },
+     "prompt_tokens_per_s_mean": {
+      "median": 1362.48,
+      "p25": 893.059,
+      "p75": 1525.81,
+      "mean": 1248.73,
+      "n": 125
+     },
+     "completion_tokens_per_s_mean": {
+      "median": 381.932,
+      "p25": 343.024,
+      "p75": 402.428,
+      "mean": 359.542,
+      "n": 125
+     },
+     "iat_mean_s": {
+      "median": 0.658172,
+      "p25": 0.631904,
+      "p75": 0.732821,
+      "mean": 0.758155,
+      "n": 125
+     },
+     "burstiness_mean": {
+      "median": 4.34469,
+      "p25": 4.13823,
+      "p75": 5.03587,
+      "mean": 8.82392,
+      "n": 125
+     },
+     "burstiness_max": {
+      "median": 2.81563,
+      "p25": 2.64738,
+      "p75": 3.46623,
+      "mean": 8.15391,
+      "n": 125
+     },
+     "iat_jitter_p50_mean_s": {
+      "median": 0.214188,
+      "p25": 0.176908,
+      "p75": 0.2492,
+      "mean": 0.21163,
+      "n": 125
+     },
+     "iat_jitter_p95_mean_s": {
+      "median": 2.51542,
+      "p25": 2.40868,
+      "p75": 2.61973,
+      "mean": 2.53471,
+      "n": 125
+     },
+     "tcp_rtt_p50_mean_s": {
+      "median": 0.00025,
+      "p25": 0.00025,
+      "p75": 0.00025,
+      "mean": 0.00025,
+      "n": 125
+     },
+     "tcp_rtt_p95_mean_s": {
+      "median": 0.000475,
+      "p25": 0.000475,
+      "p75": 0.000475,
+      "mean": 0.000475,
+      "n": 125
+     },
+     "tcp_flow_dur_p50_mean_s": {
+      "median": 22.7165,
+      "p25": 21.3623,
+      "p75": 24.4849,
+      "mean": 22.7179,
+      "n": 125
+     },
+     "tcp_flow_dur_p95_mean_s": {
+      "median": 56.14,
+      "p25": 54.4739,
+      "p75": 117.542,
+      "mean": 87.3564,
+      "n": 125
+     },
+     "tcp_bytes_llm_mean_Bps": {
+      "median": 1179.58,
+      "p25": 1040.6,
+      "p75": 1391.44,
+      "mean": 1251.3,
+      "n": 125
+     },
+     "tcp_bytes_llm_peak_Bps": {
+      "median": 1644.69,
+      "p25": 1307.8,
+      "p75": 2105.91,
+      "mean": 1744.55,
+      "n": 125
+     },
+     "tcp_bytes_a_to_llm_mean_Bps": {
+      "median": 703.631,
+      "p25": 612.221,
+      "p75": 792.633,
+      "mean": 694.565,
+      "n": 125
+     },
+     "tcp_bytes_b_to_llm_mean_Bps": {
+      "median": 1581.2,
+      "p25": 944.536,
+      "p75": 1930.54,
+      "mean": 1542.29,
+      "n": 125
+     },
+     "tcp_bytes_a_to_b_mean_Bps": {
+      "median": 1570.93,
+      "p25": 936.518,
+      "p75": 1919.3,
+      "mean": 1535.52,
+      "n": 125
+     }
+    },
+    "coding": {
+     "disc_n_requests": {
+      "median": 25,
+      "p25": 13,
+      "p75": 26,
+      "mean": 22.328,
+      "n": 125
+     },
+     "disc_duration_s": {
+      "median": 13.3673,
+      "p25": 6.4129,
+      "p75": 37.0611,
+      "mean": 23.7436,
+      "n": 125
+     },
+     "disc_total_tokens": {
+      "median": 16001,
+      "p25": 8262,
+      "p75": 27827,
+      "mean": 19116.7,
+      "n": 125
+     },
+     "disc_mean_latency_s": {
+      "median": 2.61154,
+      "p25": 2.46885,
+      "p75": 2.83538,
+      "mean": 2.69884,
+      "n": 125
+     },
+     "disc_mean_iat_s": {
+      "median": 0.621139,
+      "p25": 0.534409,
+      "p75": 1.39808,
+      "mean": 0.914844,
+      "n": 125
+     },
+     "llm_latency_p50_mean_s": {
+      "median": 2.32,
+      "p25": 2.205,
+      "p75": 2.45,
+      "mean": 2.36396,
+      "n": 125
+     },
+     "llm_latency_p95_mean_s": {
+      "median": 4.5775,
+      "p25": 3.866,
+      "p75": 5.388,
+      "mean": 4.76521,
+      "n": 125
+     },
+     "llm_ttft_p50_mean_s": {
+      "median": 0.0441,
+      "p25": 0.0421,
+      "p75": 0.055,
+      "mean": 0.0635288,
+      "n": 125
+     },
+     "llm_ttft_p95_mean_s": {
+      "median": 0.20055,
+      "p25": 0.14852,
+      "p75": 0.49908,
+      "mean": 0.278416,
+      "n": 125
+     },
+     "llm_inflight_mean": {
+      "median": 2.68817,
+      "p25": 1.73287,
+      "p75": 2.90295,
+      "mean": 2.52456,
+      "n": 125
+     },
+     "llm_inflight_peak": {
+      "median": 6,
+      "p25": 6,
+      "p75": 6,
+      "mean": 6.024,
+      "n": 125
+     },
+     "llm_queue_wait_p50_mean_s": {
+      "median": 0.0441,
+      "p25": 0.0421,
+      "p75": 0.055,
+      "mean": 0.0635288,
+      "n": 125
+     },
+     "llm_queue_wait_p95_mean_s": {
+      "median": 0.20055,
+      "p25": 0.14852,
+      "p75": 0.49908,
+      "mean": 0.278416,
+      "n": 125
+     },
+     "prompt_tokens_per_s_mean": {
+      "median": 790.905,
+      "p25": 516.598,
+      "p75": 847.058,
+      "mean": 796.593,
+      "n": 125
+     },
+     "completion_tokens_per_s_mean": {
+      "median": 417.889,
+      "p25": 192.188,
+      "p75": 484.701,
+      "mean": 367.558,
+      "n": 125
+     },
+     "iat_mean_s": {
+      "median": 0.621139,
+      "p25": 0.534409,
+      "p75": 1.39808,
+      "mean": 0.914844,
+      "n": 125
+     },
+     "burstiness_mean": {
+      "median": 4.40968,
+      "p25": 4.0155,
+      "p75": 14.4721,
+      "mean": 7.93667,
+      "n": 125
+     },
+     "burstiness_max": {
+      "median": 2.76741,
+      "p25": 2.15167,
+      "p75": 22.8777,
+      "mean": 10.0891,
+      "n": 125
+     },
+     "iat_jitter_p50_mean_s": {
+      "median": 0.162423,
+      "p25": 0.117446,
+      "p75": 0.224757,
+      "mean": 0.177362,
+      "n": 125
+     },
+     "iat_jitter_p95_mean_s": {
+      "median": 2.23303,
+      "p25": 2.03511,
+      "p75": 2.65777,
+      "mean": 2.73629,
+      "n": 125
+     },
+     "tcp_rtt_p50_mean_s": {
+      "median": 0.00025,
+      "p25": 0.00025,
+      "p75": 0.00025,
+      "mean": 0.00025,
+      "n": 125
+     },
+     "tcp_rtt_p95_mean_s": {
+      "median": 0.000475,
+      "p25": 0.000475,
+      "p75": 0.000475,
+      "mean": 0.000475,
+      "n": 125
+     },
+     "tcp_flow_dur_p50_mean_s": {
+      "median": 23.8499,
+      "p25": 21.8581,
+      "p75": 26.1538,
+      "mean": 23.9076,
+      "n": 125
+     },
+     "tcp_flow_dur_p95_mean_s": {
+      "median": 117.328,
+      "p25": 56.0833,
+      "p75": 206,
+      "mean": 130.849,
+      "n": 125
+     },
+     "tcp_bytes_llm_mean_Bps": {
+      "median": 977.309,
+      "p25": 873.659,
+      "p75": 1084.15,
+      "mean": 1002.85,
+      "n": 125
+     },
+     "tcp_bytes_llm_peak_Bps": {
+      "median": 1202.98,
+      "p25": 997.964,
+      "p75": 1549.76,
+      "mean": 1305.05,
+      "n": 125
+     },
+     "tcp_bytes_a_to_llm_mean_Bps": {
+      "median": 765.891,
+      "p25": 643.959,
+      "p75": 849.873,
+      "mean": 706.888,
+      "n": 125
+     },
+     "tcp_bytes_b_to_llm_mean_Bps": {
+      "median": 474.527,
+      "p25": 279.609,
+      "p75": 722.706,
+      "mean": 582.954,
+      "n": 125
+     },
+     "tcp_bytes_a_to_b_mean_Bps": {
+      "median": 477.291,
+      "p25": 280.355,
+      "p75": 720.278,
+      "mean": 581.012,
+      "n": 125
+     }
+    }
+   }
+  }
+ },
+ "quantile_grid": [0,1,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,99,100],
+ "quantiles": {
+  "horizontal": {
+   "disc_n_requests": [5,5,5,9,9,9,9,9,13,13,13,13,13,13,13,13,13,13,22,26,26,39,39],
+   "disc_duration_s": [16.6436,18.5179,20.6254,34.5304,38.4132,40.3935,42.8427,46.5337,48.6322,50.5422,52.2085,53.9477,56.5355,60.5215,67.0922,79.2964,100.467,114.34,130.706,168.538,221,352.489,489.533],
+   "disc_total_tokens": [4831,5404.59,5924.25,13027.7,13530.6,13939,15801.8,18703.1,19770,20149.8,20575,20981.5,21860,23255,24538.7,25966.8,28640.5,34161.2,40910.8,47172.2,54257.7,82932.4,99428],
+   "disc_mean_latency_s": [2.82308,3.36334,3.81435,4.13777,4.34308,4.44695,4.52885,4.63346,4.7525,4.88501,5.02236,5.12644,5.27272,5.38853,5.58262,5.76809,6.11272,6.45338,6.81594,7.83126,9.05292,14.4731,26.1508],
+   "disc_mean_iat_s": [2.76544,3.34364,3.87262,4.0826,4.25085,4.35292,4.47581,4.60101,4.73585,4.86128,5.0136,5.095,5.22644,5.3747,5.60781,5.87584,6.37196,6.79149,7.60366,8.85426,10.4857,15.049,28.0253],
+   "llm_latency_p50_mean_s": [2.71,3.21475,3.48475,3.74,3.93,4.07,4.15,4.277,4.42,4.516,4.62,4.76,4.89,5.03,5.14,5.233,5.43,5.61,5.82,6.141,6.9035,8.1257,8.46],
+   "llm_latency_p95_mean_s": [3.666,4.47138,5.154,5.4988,5.7999,5.972,6.0735,6.2416,6.3732,6.5508,6.6933,6.868,7.0236,7.194,7.6045,8.34995,9.098,10.016,11.3543,13.4587,30.5209,62.7782,62.998],
+   "llm_ttft_p50_mean_s": [0.0222,0.0224,0.023,0.1108,0.11197,0.118,0.1186,0.119435,0.12,0.1214,0.1218,0.123025,0.141,0.1419,0.1426,0.1431,0.143662,0.14528,0.1503,0.1522,0.157005,0.180305,0.1873],
+   "llm_ttft_p95_mean_s": [0.15274,0.168018,0.187399,0.196486,0.202854,0.206044,0.21021,0.217886,0.225777,0.2313,0.23661,0.24279,0.248172,0.256268,0.26844,0.283546,0.294696,0.305749,0.327642,0.354556,0.417799,0.522807,0.809775],
+   "llm_inflight_mean": [0.44771,0.676421,0.822735,0.86946,0.900159,0.999616,0.999725,0.99978,0.999824,0.999853,0.999879,0.9999,0.999922,0.999935,0.999956,0.999986,1.00002,1.00006,1.00009,1.00014,1.0002,1.00032,1.00039],
+   "llm_inflight_peak": [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2],
+   "llm_queue_wait_p50_mean_s": [0.0222,0.0224,0.023,0.1108,0.11197,0.118,0.1186,0.119435,0.12,0.1214,0.1218,0.123025,0.141,0.1419,0.1426,0.1431,0.143662,0.14528,0.1503,0.1522,0.157005,0.180305,0.1873],
+   "llm_queue_wait_p95_mean_s": [0.15274,0.168018,0.187399,0.196486,0.202854,0.206044,0.21021,0.217886,0.225777,0.2313,0.23661,0.24279,0.248172,0.256268,0.26844,0.283546,0.294696,0.305749,0.327642,0.354556,0.417799,0.522807,0.809775],
+   "prompt_tokens_per_s_mean": [52.6286,109.015,145.601,149.375,157.001,179.472,198.051,206.584,214.603,218.479,221.172,225.625,231.48,239.018,252.121,263.56,269.514,279.326,293.055,336.137,384.367,422.268,472.98],
+   "completion_tokens_per_s_mean": [49.3976,70.3293,86.1409,92.2301,94.1624,101.414,105.773,107.298,108.378,109.177,111.018,112.409,113.359,114.015,114.864,116.316,117.176,118.683,120.1,122.927,134.707,141.049,144.488],
+   "iat_mean_s": [2.76544,3.34364,3.87262,4.0826,4.25085,4.35292,4.47581,4.60101,4.73585,4.86128,5.0136,5.095,5.22644,5.3747,5.60781,5.87584,6.37196,6.79149,7.60366,8.85426,10.4857,15.049,28.0253],
+   "burstiness_mean": [1.04739,1.08526,1.14004,1.17496,1.20469,1.24129,1.27778,1.31375,1.3475,1.38091,1.41826,1.46202,1.51094,1.58732,1.69531,1.90551,2.8549,3.88233,4.58676,5.56777,7.03535,9.75434,10.9067],
+   "burstiness_max": [3.6903,4.523,4.99676,5.39031,5.5768,5.72402,5.90441,6.03034,6.17646,6.41401,6.82064,7.25125,7.8194,9.03957,10.0722,11.5757,15.384,25.2697,28.6692,62.4899,62.9754,76.1662,108.029],
+   "iat_jitter_p50_mean_s": [2.62493,3.17571,3.53028,3.7588,3.91265,4.04947,4.12035,4.22616,4.37512,4.47555,4.55778,4.7015,4.82552,4.92047,5.03368,5.13211,5.32627,5.55203,5.88786,6.42247,7.35489,8.3932,9.19282],
+   "iat_jitter_p95_mean_s": [3.66949,4.45534,4.83186,5.19967,5.40396,5.49428,5.62836,5.78813,5.93539,6.08292,6.26162,6.51098,6.83299,7.32764,8.4211,9.17249,9.90872,11.606,14.1578,22.5986,34.2986,62.8273,63.0086],
+   "tcp_rtt_p50_mean_s": [0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025],
+   "tcp_rtt_p95_mean_s": [0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475],
+   "tcp_flow_dur_p50_mean_s": [0.0007375,12.1545,15.2111,16.5121,17.2908,17.901,18.4486,18.9103,19.4897,19.7429,20.1336,20.5685,20.8417,21.1117,21.4368,21.7489,22.1387,22.5537,22.9527,23.3488,23.7131,25.4763,36.6667],
+   "tcp_flow_dur_p95_mean_s": [23.7084,28.5577,42.9977,51.7148,53.8223,55.5445,62.6119,73.5496,89.5188,126.467,152.398,171.898,186.124,204.233,218.036,227.009,236.383,242.407,247.323,255.937,261.125,264.314,267.107],
+   "tcp_bytes_llm_mean_Bps": [359.131,391.973,453.187,512.693,543.731,559.845,568.889,579.634,587.253,594.815,601.594,609.662,616.982,626,637.69,646.915,657.773,667.043,683.924,726.869,812.671,869.458,947.765],
+   "tcp_bytes_llm_peak_Bps": [510.345,576.711,621.423,653.507,684.657,701.262,723.405,749.876,777.814,801.655,814.115,827.709,837.299,845.251,851.737,870.156,893.191,953.371,1014.65,1092.42,1149.61,1311.15,1573.53],
+   "tcp_bytes_a_to_llm_mean_Bps": [16.0462,30.3165,60.1198,92.3486,124.316,164.224,191.762,215.809,232.768,247.52,261.94,281.206,297.7,312.638,328.472,342.96,365.531,391.976,411.22,439.479,483.671,551.782,735.818],
+   "tcp_bytes_b_to_llm_mean_Bps": [32.0291,46.0602,190.146,237.653,263.523,292.776,316.514,347.661,388.919,432.24,468.769,491.319,505.295,517.445,528.761,540.593,553.949,571.444,595.194,671.445,817.929,924.811,952.875],
+   "tcp_bytes_a_to_b_mean_Bps": [31.2145,44.873,189.231,237.17,262.465,290.39,316.638,347.971,388.19,429.091,467.443,489.131,504.331,515.642,526.027,539.269,550.529,569.077,592.611,669.649,816.953,923.553,952.219]
+  },
+  "vertical": {
+   "disc_n_requests": [12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,24,24,24,24,36,36,36],
+   "disc_duration_s": [29.9651,32.5229,36.6355,41.9464,44.2073,46.1014,47.3106,48.9567,50.1139,51.3755,52.9816,55.5379,58.2677,63.3314,75.1037,100.984,130.495,157.957,208.56,253.893,310.757,466.916,560.276],
+   "disc_total_tokens": [18679,19643,22010,23462,24909,25496,26217,26782,27213,27988,28617,29409,30518,31895,36647,51893,57174,60534,79665,90252,99393,128098,138635],
+   "disc_mean_latency_s": [5.16,5.74417,6.49917,7.085,7.33167,7.46,7.69833,7.87917,7.99917,8.14083,8.31167,8.5175,8.69833,8.92167,9.05833,9.38417,9.70056,10.5456,13.085,19.9288,32.2908,56.4498,81.47],
+   "disc_mean_iat_s": [2.7241,2.95663,3.3305,3.81331,4.01885,4.18576,4.29349,4.42841,4.54424,4.65915,4.75794,4.96333,5.18001,5.41318,5.83594,6.20153,6.82761,7.30331,8.30899,9.12351,14.3111,21.2403,33.4542],
+   "llm_latency_p50_mean_s": [4.505,5.217,5.85,6.215,6.39,6.585,6.78,6.94,7.045,7.14,7.245,7.38,7.46,7.6,7.725,7.87,8.04,8.175,8.405,8.955,10.575,76.575,87.075],
+   "llm_latency_p95_mean_s": [7.109,8.255,9.5355,10.4505,11.2335,11.789,12.105,12.615,13.226,13.539,14.0025,14.642,15.1035,15.57,15.99,16.7845,17.9475,19.291,28.4485,86.7975,87.0505,87.1993,94.666],
+   "llm_ttft_p50_mean_s": [0.1064,0.13227,0.1565,0.1618,0.16905,0.177,0.18685,0.19935,0.2059,0.21085,0.2162,0.2225,0.2286,0.23365,0.23945,0.2452,0.25235,0.26295,0.27085,0.28375,0.30705,0.5153,0.7571],
+   "llm_ttft_p95_mean_s": [0.21519,0.231332,0.26089,0.28299,0.299225,0.31161,0.326125,0.33636,0.347545,0.353555,0.360855,0.375585,0.386825,0.39907,0.416335,0.43674,0.463445,0.50142,0.58727,1.13717,1.40968,1.45496,1.46492],
+   "llm_inflight_mean": [0.972733,1.03746,1.24183,1.31701,1.36298,1.41122,1.50261,1.56798,1.59967,1.62403,1.63892,1.65448,1.66732,1.67896,1.68828,1.70453,1.72298,1.74724,1.79423,1.84743,2.01469,2.12512,2.46273],
+   "llm_inflight_peak": [3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4],
+   "llm_queue_wait_p50_mean_s": [0.1064,0.13227,0.1565,0.1618,0.16905,0.177,0.18685,0.19935,0.2059,0.21085,0.2162,0.2225,0.2286,0.23365,0.23945,0.2452,0.25235,0.26295,0.27085,0.28375,0.30705,0.5153,0.7571],
+   "llm_queue_wait_p95_mean_s": [0.21519,0.231332,0.26089,0.28299,0.299225,0.31161,0.326125,0.33636,0.347545,0.353555,0.360855,0.375585,0.386825,0.39907,0.416335,0.43674,0.463445,0.50142,0.58727,1.13717,1.40968,1.45496,1.46492],
+   "prompt_tokens_per_s_mean": [112.027,126.316,172.156,199.052,243.298,253.674,270.207,281.985,297.981,336.207,351.853,357.676,360.259,362.815,364.685,366.442,367.874,370.811,373.146,378.132,392.559,403.992,420.702],
+   "completion_tokens_per_s_mean": [95.0612,99.3333,112.991,123.031,131.088,138.157,148.507,162.774,169.797,173.96,176.711,178.987,180.929,183.373,185.951,188.492,193.232,198.974,206.801,218.732,241.358,313.706,565.197],
+   "iat_mean_s": [2.7241,2.95663,3.3305,3.81331,4.01885,4.18576,4.29349,4.42841,4.54424,4.65915,4.75794,4.96333,5.18001,5.41318,5.83594,6.20153,6.82761,7.30331,8.30899,9.12351,14.3111,21.2403,33.4542],
+   "burstiness_mean": [2.45247,2.58705,2.76039,2.88397,2.98051,3.04704,3.12466,3.1923,3.26874,3.32515,3.39531,3.47173,3.59958,3.76391,4.15654,4.81842,5.32282,5.82461,6.86077,7.62327,9.81562,12.8739,16.4092],
+   "burstiness_max": [7.23249,8.36158,10.3461,11.5652,12.2511,13.1709,13.7509,14.358,14.885,15.4324,15.9641,17.0823,18.2006,20.7944,24.8478,29.1262,36.1597,46.2128,64.4467,77.6679,88.4918,183.063,185.833],
+   "iat_jitter_p50_mean_s": [0.000345945,0.000354815,0.000365973,0.000372171,0.000381947,0.000387907,0.000391006,0.000394106,0.000396967,0.000398874,0.00040102,0.000402927,0.000405073,0.000407934,0.000409126,0.000412941,0.000417948,0.000424862,0.000633001,0.000724077,0.000797033,0.00117006,0.00226998],
+   "iat_jitter_p95_mean_s": [7.02345,8.16859,9.388,10.2572,11.2283,11.8858,12.2286,12.8748,13.353,13.7165,14.2738,14.9339,15.5519,16.1964,17.2102,18.6661,19.973,23.3765,30.0264,38.2645,64.8408,85.0587,87.2319],
+   "tcp_rtt_p50_mean_s": [0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025],
+   "tcp_rtt_p95_mean_s": [0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475],
+   "tcp_flow_dur_p50_mean_s": [10.122,12.1972,17.3157,18.3096,19.457,20.0266,20.6784,21.3864,21.9264,22.5996,23.2031,23.8559,24.3489,24.7553,25.1984,25.9091,26.6667,27.5174,28.6482,30,30.9091,51.0727,116],
+   "tcp_flow_dur_p95_mean_s": [24.5153,28.75,52.9595,131.422,151.875,183.816,210.995,221.13,229.033,238.083,242.733,247.524,250.769,253.006,255.327,257.7,259.863,261.818,264.291,267.047,272.15,276.046,281.6],
+   "tcp_bytes_llm_mean_Bps": [369.878,425.209,523.006,610.124,632.122,642.44,654.438,664.675,672.681,683.168,692.959,702.383,712.938,729.983,741.742,774.203,866.303,922.547,958.705,1005.73,1134.2,1571.35,2381.53],
+   "tcp_bytes_llm_peak_Bps": [655.418,726.098,776.309,805.782,832.509,873.236,887.309,912.364,926.6,939.418,958.8,974.291,1012.64,1048,1146.36,1287.05,1358.29,1438.73,1514.29,1810.51,2702.67,3345.99,3756.27],
+   "tcp_bytes_a_to_llm_mean_Bps": [6.53231,21.7292,35.4667,59.7035,81.6794,104.527,140.129,155.817,175.918,188.933,203.198,219.244,230.912,239.609,253.689,267.121,280.721,296.659,315.846,350.009,405.184,607.44,820.957],
+   "tcp_bytes_b_to_llm_mean_Bps": [378.226,483.787,551.919,610.122,646.36,693.067,720.723,741.589,772.933,790.944,810.856,825.403,855.988,897.271,925.936,964.992,1010.99,1073.87,1180.86,1259.7,1383.2,1884.44,2163.19],
+   "tcp_bytes_a_to_b_mean_Bps": [383.369,491.939,560.755,619.503,654.683,703.797,734.982,752.105,781.723,801.076,820.831,834.857,869.991,906.846,936.491,975.112,1016.92,1086.13,1192.08,1272.53,1395.95,1891.61,2183.25]
+  },
+  "full_mesh": {
+   "disc_n_requests": [13,13,13,13,13,13,13,13,25,25,25,25,25,25,26,37,37,37,50,62,74,99,111],
+   "disc_duration_s": [5.5727,5.94298,6.32579,7.21835,8.44418,9.39785,9.8702,10.8192,14.2846,15.0866,15.7164,16.5427,17.9621,19.2987,22.2304,23.5032,32.9618,45.7844,60.5371,74.5069,108.288,212.383,362.953],
+   "disc_total_tokens": [7677,7886.7,8202.55,8759.9,10032.2,10998.6,11296,11826.7,18019.3,27340.6,28011.8,28616.5,29256.2,31637.6,32997.8,43151.9,45232.5,51028.8,56437.3,72439.7,94736.1,140006,202896],
+   "disc_mean_latency_s": [2.21459,2.32855,2.42204,2.49462,2.59068,2.65512,2.70208,2.75768,2.80438,2.83845,2.88641,2.9337,2.98612,3.03853,3.125,3.22288,3.3763,3.52923,3.62408,3.71573,3.87962,6.46258,11.4892],
+   "disc_mean_iat_s": [0.464392,0.495248,0.525792,0.560826,0.600591,0.615926,0.630271,0.646044,0.656735,0.676678,0.707411,0.734153,0.761064,0.795941,0.81747,0.843829,0.922507,1.02746,1.21447,1.63092,2.13144,3.01354,4.73646],
+   "llm_latency_p50_mean_s": [1.96,2.05485,2.17,2.26,2.34,2.418,2.5,2.567,2.6,2.646,2.68,2.7175,2.755,2.79,2.85,2.94,3.03,3.152,3.25575,3.36,3.55,3.8708,5.84],
+   "llm_latency_p95_mean_s": [2.92,3.29592,3.494,3.6394,3.716,3.8108,3.8795,3.97955,4.07395,4.176,4.31,4.47575,4.6218,4.7786,4.928,5.08265,5.254,5.4,5.60207,5.7642,6.0626,10.7624,84.814],
+   "llm_ttft_p50_mean_s": [0.0362,0.037299,0.040895,0.0417,0.0421425,0.0425,0.0433,0.0444,0.04553,0.05158,0.11252,0.1195,0.121645,0.1284,0.1325,0.13433,0.13845,0.14686,0.150415,0.1578,0.1624,0.172948,0.4819],
+   "llm_ttft_p95_mean_s": [0.13102,0.136995,0.145857,0.160348,0.180846,0.200622,0.20929,0.217442,0.245617,0.459592,0.48221,0.49866,0.505845,0.515052,0.521678,0.528955,0.56515,0.608848,0.639485,0.660641,0.672301,0.717079,2.7746],
+   "llm_inflight_mean": [0.969562,1.13517,1.44276,1.73151,2.40234,2.58358,2.67625,2.73628,2.81066,2.88303,2.94058,2.99629,3.06448,3.26225,3.33276,3.39887,3.46905,3.51668,3.587,3.66345,3.76226,3.9438,4.15688],
+   "llm_inflight_peak": [6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,7,7],
+   "llm_queue_wait_p50_mean_s": [0.0362,0.037299,0.040895,0.0417,0.0421425,0.0425,0.0433,0.0444,0.04553,0.05158,0.11252,0.1195,0.121645,0.1284,0.1325,0.13433,0.13845,0.14686,0.150415,0.1578,0.1624,0.172948,0.4819],
+   "llm_queue_wait_p95_mean_s": [0.13102,0.136995,0.145857,0.160348,0.180846,0.200622,0.20929,0.217442,0.245617,0.459592,0.48221,0.49866,0.505845,0.515052,0.521678,0.528955,0.56515,0.608848,0.639485,0.660641,0.672301,0.717079,2.7746],
+   "prompt_tokens_per_s_mean": [142.031,211.052,286.092,520.665,637.628,670.976,687.941,717.449,752.801,792.576,826.931,884.932,1100.09,1178.34,1272.79,1364.28,1439.16,1562.96,1619.96,1694.01,1851.1,2055.95,2458.84],
+   "completion_tokens_per_s_mean": [93.9022,102.447,135.863,173.095,216.435,236.763,260.528,348.012,366.222,375.537,382.211,389.355,395.79,404.722,413.436,444.46,459.564,468.223,478.783,486.911,498.03,523.052,543.362],
+   "iat_mean_s": [0.464392,0.495248,0.525792,0.560826,0.600591,0.615926,0.630271,0.646044,0.656735,0.676678,0.707411,0.734153,0.761064,0.795941,0.81747,0.843829,0.922507,1.02746,1.21447,1.63092,2.13144,3.01354,4.73646],
+   "burstiness_mean": [3.11257,3.47277,3.73306,3.88563,3.95694,4.02516,4.09217,4.15349,4.22862,4.27807,4.38597,4.45534,4.55833,4.73336,4.96295,5.30048,13.2294,15.5659,17.6064,22.4416,26.2557,34.944,45.1584],
+   "burstiness_max": [1.72725,1.89756,2.10926,2.30153,2.48812,2.58986,2.68981,2.76781,2.83707,2.98901,3.09886,3.21511,3.32662,3.46892,3.70247,4.14473,13.8694,21.1505,24.5717,27.5645,67.3736,77.6629,100.69],
+   "iat_jitter_p50_mean_s": [0.015383,0.0544725,0.085553,0.109913,0.133671,0.150645,0.166097,0.180642,0.196974,0.209078,0.218963,0.229983,0.240871,0.251393,0.262571,0.27504,0.291194,0.304688,0.327515,0.357254,0.415786,0.527317,0.635628],
+   "iat_jitter_p95_mean_s": [1.64105,1.81405,1.9631,2.09585,2.21267,2.28686,2.35858,2.42414,2.4706,2.52095,2.5637,2.61824,2.69844,2.75372,2.82025,2.91601,2.97812,3.09944,3.25083,3.40552,3.76196,6.79944,18.8271],
+   "tcp_rtt_p50_mean_s": [0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025,0.00025],
+   "tcp_rtt_p95_mean_s": [0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475,0.000475],
+   "tcp_flow_dur_p50_mean_s": [17.5,18.6838,20.0774,20.7571,21.2937,21.8082,22.2219,22.8011,23.1335,23.7321,24.1297,24.5833,24.9176,25.3873,25.8999,26.4948,26.9641,27.8374,28.5682,31.205,34.62,80,180],
+   "tcp_flow_dur_p95_mean_s": [41.8051,48.6148,52.4039,53.8719,54.5964,55.4667,56.1365,57.7449,59.1069,92.7403,145.49,177.691,196.484,208,220.175,231.2,237.333,246,251.373,257.033,266.05,278.67,288],
+   "tcp_bytes_llm_mean_Bps": [424.824,568.717,711.48,788.606,832.157,858.382,892.341,916.586,949.819,980.57,1002.01,1040.27,1068.98,1097.67,1133.59,1168.31,1203.61,1263.59,1315.35,1471.36,1751.21,2046.2,2776.15],
+   "tcp_bytes_llm_peak_Bps": [477.764,786.971,886.154,957.598,1019.29,1072.99,1110.11,1140.39,1183.17,1242.21,1286.14,1329.35,1386.63,1443.29,1522.63,1617.01,1679.49,1795.57,2106.37,2373.31,2653.11,3066.36,3266.6],
+   "tcp_bytes_a_to_llm_mean_Bps": [34.7455,41.8536,131.709,285.298,394.985,464.602,512.858,564.319,593.438,628.062,652.898,686.491,706.491,728.506,752.317,771.957,794.548,810.568,835.718,873.633,949.832,1053.64,1562.22],
+   "tcp_bytes_b_to_llm_mean_Bps": [61.1727,124.508,173.285,271.776,374.76,471.281,530.89,640.56,733.729,802.388,899.411,951.905,1026.33,1120.05,1226.22,1345.73,1527.61,1655.29,1820.79,2053.21,2690.93,3427.28,4151.97],
+   "tcp_bytes_a_to_b_mean_Bps": [59.6455,116.895,168.958,271.714,375.922,469.599,528.636,637.641,727.303,801.573,894.972,948.258,1020.57,1115.79,1222.3,1339.93,1522.51,1645.88,1810.99,2042.79,2677.81,3411.12,4150.26]
+  }
+ },
+ "scaling": {
+  "bins": "iat.bins_s",
+  "agents": [
+   {
+    "n_agents": 3,
+    "n_runs": 200,
+    "n_listed": 200,
+    "n": 2260,
+    "mean_s": 1.44156,
+    "median_s": 0.000668526,
+    "p95_s": 3.06348,
+    "burst_fraction": 0.653097,
+    "counts": [0,0,0,0,8,354,547,170,47,205,59,53,17,10,5,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,21,203,394,96,18,3,0,0,12,7,13,4,0,1,10,0,0,0,0,0,0],
+    "underflow": 0,
+    "overflow": 0,
+    "lognormal_reasoning": {
+     "n": 784,
+     "mu": 0.990569,
+     "sigma": 0.629095
+    },
+    "means": {
+     "disc_n_requests": 12.3,
+     "disc_total_tokens": 13139.3,
+     "llm_inflight_mean": 2.22976,
+     "prompt_tokens_per_s_mean": 807.451
+    }
+   },
+   {
+    "n_agents": 4,
+    "n_runs": 200,
+    "n_listed": 200,
+    "n": 5995,
+    "mean_s": 1.0944,
+    "median_s": 0.239416,
+    "p95_s": 2.84826,
+    "burst_fraction": 0.38015,
+    "counts": [0,0,0,1,13,509,667,276,69,274,71,62,30,10,8,12,13,3,75,7,37,24,73,45,106,67,76,112,230,327,368,343,306,206,198,198,341,523,199,34,3,3,0,8,10,30,8,1,9,9,1,0,0,0,0,0],
+    "underflow": 0,
+    "overflow": 0,
+    "lognormal_reasoning": {
+     "n": 3716,
+     "mu": -0.364594,
+     "sigma": 1.22345
+    },
+    "means": {
+     "disc_n_requests": 30.975,
+     "disc_total_tokens": 36452.8,
+     "llm_inflight_mean": 2.90764,
+     "prompt_tokens_per_s_mean": 1044.08
+    }
+   },
+   {
+    "n_agents": 5,
+    "n_runs": 200,
+    "n_listed": 200,
+    "n": 11265,
+    "mean_s": 0.946133,
+    "median_s": 0.306581,
+    "p95_s": 2.52513,
+    "burst_fraction": 0.275011,
+    "counts": [0,0,0,1,21,545,802,293,84,297,82,98,49,15,5,23,40,15,141,23,98,89,213,164,262,212,253,288,528,746,859,895,859,714,548,479,512,657,221,24,3,2,2,2,11,43,12,2,16,15,2,0,0,0,0,0],
+    "underflow": 0,
+    "overflow": 0,
+    "lognormal_reasoning": {
+     "n": 8167,
+     "mu": -0.617313,
+     "sigma": 1.1215
+    },
+    "means": {
+     "disc_n_requests": 57.325,
+     "disc_total_tokens": 68248.4,
+     "llm_inflight_mean": 3.34412,
+     "prompt_tokens_per_s_mean": 1190.43
+    }
+   }
+  ]
+ }
+}

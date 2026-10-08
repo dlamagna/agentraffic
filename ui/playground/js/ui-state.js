@@ -1,0 +1,297 @@
+/**
+ * UI State Management
+ */
+
+import { CONFIG } from './config.js';
+import { renderExperts, renderDiscussion, renderExecution, renderEvaluation, renderIterationHistory, renderLlmRequestsTable, renderTopologyDiagram } from './renderers.js';
+import { escapeHtml, truncate } from './utils.js';
+import { showRunAnalysis, resetRunAnalysis } from './run-analysis.js';
+
+export class UIState {
+  constructor(elements) {
+    this.elements = elements;
+    this.startTime = null;
+    this.timerInterval = null;
+    this.currentData = null;
+  }
+
+  /**
+   * Update the LLM request counter in the status bar
+   * using the current state's llm_requests array as the
+   * single source of truth.
+   */
+  updateLlmRequestCounter() {
+    if (!this.elements.llmRequestCount) return;
+
+    const requests =
+      (this.currentData && Array.isArray(this.currentData.llm_requests))
+        ? this.currentData.llm_requests
+        : [];
+
+    if (!requests.length) {
+      this.elements.llmRequestCount.textContent = '';
+      return;
+    }
+
+    const count = requests.length;
+    this.elements.llmRequestCount.textContent =
+      `${count} LLM request${count !== 1 ? 's' : ''}`;
+  }
+
+  /**
+   * Update timer display
+   */
+  updateTimer() {
+    if (!this.startTime) return;
+    // Demo replays run at N× speed: show the recorded run's time, not wall-clock time
+    const replayMs = typeof window.agentverseReplayClock === 'function' ? window.agentverseReplayClock() : null;
+    const elapsedMs = replayMs ?? (Date.now() - this.startTime);
+    this.elements.statusTime.textContent = `${(elapsedMs / 1000).toFixed(1)}s`;
+  }
+
+  /**
+   * Start timer
+   */
+  startTimer() {
+    this.startTime = Date.now();
+    this.elements.statusIndicator.className = 'status-indicator running';
+    this.elements.statusText.textContent = 'Running workflow...';
+    this.timerInterval = setInterval(() => this.updateTimer(), CONFIG.TIMER_UPDATE_INTERVAL_MS);
+  }
+
+  /**
+   * Stop timer
+   */
+  stopTimer(success = true) {
+    if (this.timerInterval) this.updateTimer(); // final reading, not the last 100 ms tick
+    if (this.timerInterval) clearInterval(this.timerInterval);
+    this.timerInterval = null;
+    this.elements.statusIndicator.className = success ? 'status-indicator complete' : 'status-indicator error';
+    this.elements.statusText.textContent = success ? 'Complete' : 'Error';
+    if (this.elements.statusDetail) this.elements.statusDetail.textContent = '';
+  }
+
+  /**
+   * Reset UI to initial state
+   */
+  resetUI() {
+    // Reset stages
+    for (let i = 1; i <= 4; i++) {
+      const stage = document.getElementById(`stage${i}`);
+      const badge = document.getElementById(`stage${i}Badge`);
+      const results = document.getElementById(`stage${i}Results`);
+      stage.classList.remove('active', 'completed', 'error');
+      badge.className = 'badge badge-pending';
+      badge.textContent = 'Pending';
+      results.innerHTML = '';
+    }
+    
+    // Reset progress
+    this.elements.progressFill.style.width = '0%';
+    
+    // Reset the run analysis (shown under the final output of a finished run)
+    resetRunAnalysis();
+
+    // Reset final output
+    this.elements.finalOutputContainer.style.display = 'none';
+    this.elements.finalOutput.textContent = '';
+    if (this.elements.finalOutputRaw) {
+      this.elements.finalOutputRaw.textContent = '';
+    }
+    
+    // Reset raw JSON
+    if (this.elements.rawJson) {
+      this.elements.rawJson.textContent = '';
+      this.elements.rawJson.classList.remove('visible');
+    }
+    const rawTog = document.getElementById('rawToggleText');
+    if (rawTog) rawTog.textContent = 'Show';
+    
+    // Reset detailed flow
+    const detailedSection = document.getElementById('detailedFlowSection');
+    detailedSection.style.display = 'none';
+    document.getElementById('llmRequestsTable').innerHTML = '';
+    
+    // Reset status
+    this.elements.statusIndicator.className = 'status-indicator';
+    this.elements.statusText.textContent = 'Ready';
+    if (this.elements.statusDetail) this.elements.statusDetail.textContent = '';
+    this.elements.statusTime.textContent = '';
+    this.elements.llmRequestCount.textContent = '';
+    
+    // Hide live badge
+    this.elements.liveBadge.style.display = 'none';
+    
+    // Clear cancelled state on workflow panel
+    if (this.elements.workflowPanel) this.elements.workflowPanel.classList.remove('workflow-panel--cancelled');
+  }
+
+  /**
+   * Update a specific stage
+   */
+  updateStage(stageNum, status, badgeText, content) {
+    const stage = document.getElementById(`stage${stageNum}`);
+    const badge = document.getElementById(`stage${stageNum}Badge`);
+    const results = document.getElementById(`stage${stageNum}Results`);
+    
+    // Stages 5+ (e.g. synthesis) may not exist in the UI - skip
+    if (!stage || !badge) return;
+    
+    // Remove previous states
+    stage.classList.remove('active', 'completed', 'error');
+    
+    // Add new state
+    if (status === 'running') {
+      stage.classList.add('active');
+      badge.className = 'badge badge-running';
+    } else if (status === 'completed') {
+      stage.classList.add('completed');
+      badge.className = 'badge badge-complete';
+    } else if (status === 'error') {
+      stage.classList.add('error');
+      badge.className = 'badge badge-error';
+    }
+    
+    badge.textContent = badgeText;
+    if (content !== undefined && results) {
+      results.innerHTML = content;
+    }
+  }
+
+  /**
+   * Update workflow UI with complete response data
+   */
+  updateWorkflowUI(data) {
+    this.currentData = data;
+    
+    // Update raw JSON and auto-show it
+    if (this.elements.rawJson) {
+      this.elements.rawJson.textContent = JSON.stringify(data, null, 2);
+      this.elements.rawJson.classList.add('visible');
+      const section = document.getElementById('rawJsonSection');
+      if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    const rawToggle = document.getElementById('rawToggleText');
+    if (rawToggle) rawToggle.textContent = 'Hide';
+
+    // Update task ID label in the status bar (if available)
+    const taskIdLabelEl = document.getElementById('taskIdLabel');
+    if (taskIdLabelEl) {
+      const taskId = data.task_id || '';
+      taskIdLabelEl.textContent = taskId ? `Task ID: ${taskId}` : '';
+    }
+    
+    // Update stages
+    const stages = data.stages || {};
+    
+    // Stage 1: Recruitment
+    if (stages.recruitment && stages.recruitment.experts) {
+      this.updateStage(1, 'completed', `${stages.recruitment.experts.length} Experts`, `
+        <p><strong>Structure:</strong> ${escapeHtml(stages.recruitment.communication_structure || 'horizontal')}</p>
+        <p><strong>Reasoning:</strong> ${escapeHtml(stages.recruitment.reasoning || 'N/A')}</p>
+        ${renderTopologyDiagram(stages.recruitment.experts, stages.recruitment.communication_structure || 'horizontal')}
+        ${renderExperts(stages.recruitment.experts)}
+      `);
+    }
+    
+    // Stage 2: Decision
+    if (stages.decision) {
+      const solverRole = stages.decision.solver_role || null;
+      const reviewerRoles = Array.isArray(stages.decision.reviewer_roles) ? stages.decision.reviewer_roles : [];
+      let roleSummaryHtml = '';
+      if (solverRole) {
+        roleSummaryHtml += `<p><strong>Solver:</strong> ${escapeHtml(solverRole)}</p>`;
+      } else if (stages.decision.structure_used === 'horizontal' && stages.recruitment && Array.isArray(stages.recruitment.experts)) {
+        const allRoles = stages.recruitment.experts.map(e => e.role).filter(Boolean);
+        if (allRoles.length > 0) {
+          roleSummaryHtml += `<p><strong>Contributors:</strong> ${allRoles.map(r => escapeHtml(r)).join(', ')}</p>`;
+        }
+      }
+      if (reviewerRoles.length > 0) {
+        roleSummaryHtml += `<p><strong>${stages.decision.structure_used === 'full_mesh' ? 'Participants' : 'Reviewers'}:</strong> ${reviewerRoles.map(r => escapeHtml(r)).join(', ')}</p>`;
+      }
+      this.updateStage(2, 'completed', stages.decision.consensus_reached ? 'Consensus' : 'Decided', 
+        roleSummaryHtml + renderDiscussion(
+          stages.decision.discussion_rounds,
+          stages.decision.structure_used
+        )
+      );
+    }
+    
+    // Stage 3: Execution
+    if (stages.execution) {
+      this.updateStage(3, 'completed', `${stages.execution.success_count}/${stages.execution.outputs?.length || 0}`,
+        renderExecution(
+          stages.execution.outputs,
+          stages.execution.success_count,
+          stages.execution.failure_count
+        )
+      );
+    }
+    
+    // Stage 4: Evaluation
+    if (stages.evaluation) {
+      this.updateStage(4, stages.evaluation.goal_achieved ? 'completed' : 'completed', 
+        `${stages.evaluation.score}/100`,
+        renderEvaluation(stages.evaluation)
+      );
+    }
+    
+    // Update progress
+    this.elements.progressFill.style.width = '100%';
+    
+    // Update final output (both formatted and raw views)
+    if (data.final_output) {
+      this.elements.finalOutputContainer.style.display = 'block';
+      this.elements.finalOutput.textContent = data.final_output;
+      if (this.elements.finalOutputRaw) {
+        this.elements.finalOutputRaw.textContent = data.final_output;
+      }
+    }
+    
+    // Update iteration history (ensure we have an array and container exists)
+    const iterationHistory = Array.isArray(data.iteration_history) ? data.iteration_history : [];
+    console.log('[AgentVerse] Rendering iteration history, count:', iterationHistory.length, 'container:', this.elements.iterationHistory);
+    if (this.elements.iterationHistory) {
+      try {
+        renderIterationHistory(iterationHistory, this.elements.iterationHistory);
+        console.log('[AgentVerse] Iteration history rendered successfully');
+      } catch (err) {
+        console.error('[AgentVerse] Failed to render iteration history:', err);
+      }
+    } else {
+      console.warn('[AgentVerse] Iteration history container not found');
+    }
+    
+    // Update detailed flow section
+    const detailedSection = document.getElementById('detailedFlowSection');
+    const llmTableEl = document.getElementById('llmRequestsTable');
+    const llmRequests = Array.isArray(data.llm_requests) ? data.llm_requests : [];
+    if (llmRequests.length > 0) {
+      detailedSection.style.display = 'block';
+      llmTableEl.innerHTML = renderLlmRequestsTable(llmRequests);
+    }
+
+    // Sync the top-of-page LLM request counter with the underlying state
+    this.updateLlmRequestCounter();
+    
+    // Expand stages with content
+    if (stages.recruitment) this.toggleStage('stage1');
+    if (data.final_output) {
+      document.getElementById('stage4Content').classList.add('expanded');
+    }
+
+    // Finished run: offer its analysis (collapsed). Cancelled runs never get here.
+    if (data.final_output) {
+      showRunAnalysis(data, { topology: window.agentverse?.currentRequest?.topology || '' });
+    }
+  }
+
+  /**
+   * Toggle stage expansion
+   */
+  toggleStage(stageId) {
+    const content = document.getElementById(stageId + 'Content');
+    content.classList.toggle('expanded');
+  }
+}

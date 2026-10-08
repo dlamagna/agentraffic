@@ -1,0 +1,27 @@
+/*
+ * ui/results/css/zoom.css
+ * Range selection and zoom controls (js/zoom.js loads this file itself, so any results page can use it).
+ */
+
+/* range selection and zoom (js/zoom.js) */
+.zoom-bar { margin: 0 0 10px; }
+.zoom-bar__row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.zoom-bar__range { color: var(--ink-2); font-size: 0.85rem; min-width: 0; flex: 1 1 220px; }
+.zoom-bar .btn[aria-pressed="true"] { background: var(--accent-tint-2); border-color: var(--accent); color: var(--accent-text); }
+:root[data-theme="dark"] .zoom-bar .btn[aria-pressed="true"] { color: var(--ink-1); }
+.zoom-bar .btn:disabled { opacity: 0.5; cursor: default; }
+.zoom-readout {
+  list-style: none; margin: 8px 0 0; padding: 0;
+  display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 0.82rem; color: var(--ink-2);
+}
+.zoom-readout:empty { display: none; }
+.zoom-readout li { min-width: 0; }
+.zoom-readout b { color: var(--ink-1); font-weight: 600; }
+.zoom-bar__note { color: var(--ink-3); font-size: 0.78rem; margin: 6px 0 0; max-width: 60em; }
+svg.viz.zoomable { cursor: crosshair; touch-action: pan-y; -webkit-user-select: none; user-select: none; }
+svg.viz.zoomable:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: 4px; }
+body.zoom-select svg.viz.zoomable { touch-action: none; }
+svg.viz .zoom-sel { fill: var(--accent); fill-opacity: 0.18; stroke: var(--accent); stroke-width: 1; pointer-events: none; }
+@media (max-width: 720px) {
+  .zoom-readout { flex-direction: column; }
+}

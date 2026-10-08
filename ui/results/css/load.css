@@ -1,0 +1,39 @@
+/*
+ * ui/results/css/load.css
+ * System page, at the model server and on the network (js/load.js): network flow diagram,
+ * concurrency and contention panels, topology comparison table. Uses the chart tokens of
+ * results.css, so both themes follow without a redraw (the comparison cells redraw on
+ * themechange because their colours are computed).
+ */
+
+/* Network flows */
+svg.viz .flow-node { fill: var(--surface-2); stroke: var(--border-strong); stroke-width: 1; }
+svg.viz .flow-node__t { fill: var(--chart-label); font-size: 12px; font-weight: 600; }
+svg.viz .flow-node__s { fill: var(--ink-3); font-size: 10.5px; }
+svg.viz .flow-value { fill: var(--chart-value); font-size: 11px; font-variant-numeric: tabular-nums; }
+svg.viz .flow-band { cursor: pointer; }
+svg.viz .flow-band:hover, svg.viz .flow-band:focus-visible { stroke: var(--hi-ring); stroke-width: 1.5; outline: none; }
+
+/* Concurrency */
+svg.viz .conc-mean { stroke: var(--ink-1); stroke-width: 1.5; shape-rendering: crispEdges; pointer-events: none; }
+.conc-peak { color: var(--ink-1); font-variant-numeric: tabular-nums; }
+
+/* Contention */
+.load-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+svg.viz .cont-line { fill: none; stroke-width: 1.5; stroke-opacity: 0.55; stroke-linejoin: round; pointer-events: none; }
+svg.viz .cont-iqr { stroke-width: 2; stroke-opacity: 0.45; stroke-linecap: round; pointer-events: none; }
+svg.viz .cont-dot { stroke: var(--mark-ring); stroke-width: 2; pointer-events: none; }
+#contTable .subhead { font-size: 0.95rem; }
+
+/* Comparisons */
+table.cmp-table thead th:first-child { width: 34%; }
+table.cmp-table thead th.num { text-align: right; white-space: normal; }
+table.cmp-table td.cmp-cell { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+@media (max-width: 900px) {
+  .load-grid-2 { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 720px) {
+  table.cmp-table thead th:first-child { width: 40%; }
+  table.cmp-table tbody th[scope="row"] { overflow-wrap: anywhere; }
+}
