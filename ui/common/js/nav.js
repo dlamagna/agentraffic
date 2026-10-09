@@ -30,7 +30,7 @@
  */
 
 import {
-  AGENTVERSE, AUTHORS, BIBTEX, DOI, DOI_URL, PAPER_URL, REPO_URL, SIGN_IN_URL, TITLE, VENUE, VENUE_SHORT, repoUrl,
+  AGENTVERSE, AUTHORS, BIBTEX, DOI, DOI_URL, PAPER_URL, PUBLIC_SITE_URL, REPO_URL, SIGN_IN_URL, TITLE, VENUE, VENUE_SHORT, repoUrl,
 } from './site.js';
 import { backendReachable, getCustomEndpoint, parseEndpoint, setCustomEndpoint } from './backend.js';
 import { getDataMode } from './data.js';
@@ -310,6 +310,27 @@ function connectGroup() {
   ]);
 }
 
+/** True on the login-protected copy itself (production or a preview URL), not on a local `make local`. */
+function onPrivateCopy() {
+  const host = new URL(SIGN_IN_URL).hostname;
+  return location.hostname === host || location.hostname.endsWith(`.${host}`);
+}
+
+/** Ends the Cloudflare Access session, then goes to the public site. */
+function signOutButton() {
+  const button = el('button', { type: 'button', class: 'portal-menu__signout', 'data-portal-link': 'signout', text: 'Sign out' });
+  button.addEventListener('click', async () => {
+    button.disabled = true;
+    try {
+      await fetch('/cdn-cgi/access/logout', { credentials: 'same-origin', cache: 'no-store' });
+      location.href = PUBLIC_SITE_URL;
+    } catch (_) {
+      location.href = '/cdn-cgi/access/logout'; // Cloudflare's own signed-out page
+    }
+  });
+  return button;
+}
+
 /** The real-data state and the Real / Synthetic switch, shown only when the real data is reachable. */
 function signInGroup(data) {
   if (!(data && data.privateAvailable)) {
@@ -332,6 +353,7 @@ function signInGroup(data) {
   ]);
   const sw = switchElement(data);
   if (sw) group.append(sw);
+  if (onPrivateCopy()) group.append(signOutButton());
   return group;
 }
 

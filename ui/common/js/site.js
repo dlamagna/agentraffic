@@ -29,6 +29,9 @@ export const REPO_URL = 'https://github.com/dlamagna/agentraffic';
 
 /** The login-protected copy of the site with the real per-run data (research group only). */
 export const SIGN_IN_URL = 'https://agentraffic-private.pages.dev';
+
+/** The public site, where Sign out leads back to. */
+export const PUBLIC_SITE_URL = 'https://dlamagna.github.io/agentraffic/';
 export const REPO_BRANCH = 'main';
 
 /** A file or directory in the code base on GitHub, e.g. repoUrl('scripts/experiment/'). */

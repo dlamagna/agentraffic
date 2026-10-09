@@ -350,4 +350,7 @@
 .portal-menu__label { display: block; margin: 10px 0 0; font: 600 0.78rem/1.3 var(--font-sans); color: var(--text-primary); }
 .portal-menu__group[data-portal-group="connect"] .portal-menu__field { margin: 4px 0 6px; }
 .portal-menu .portal-menu__panel a.portal-menu__readme { display: inline-block; margin: 2px 0 0; padding: 4px 0; font-size: 0.84rem; }
-@media (pointer: coarse) { .portal-menu .portal-menu__panel a.portal-menu__signin { min-height: 44px; } }
+.portal-menu .portal-menu__panel .portal-menu__signout { display: flex; justify-content: center; align-items: center; width: 100%; min-height: 36px; margin: 12px 0 0; padding: 7px 16px; border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-primary); font: 600 0.88rem var(--font-sans); cursor: pointer; }
+.portal-menu .portal-menu__panel .portal-menu__signout:hover { background: var(--bg-tertiary); }
+.portal-menu .portal-menu__panel .portal-menu__signout:disabled { opacity: 0.6; cursor: progress; }
+@media (pointer: coarse) { .portal-menu .portal-menu__panel a.portal-menu__signin, .portal-menu .portal-menu__panel .portal-menu__signout { min-height: 44px; } }

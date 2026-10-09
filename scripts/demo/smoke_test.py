@@ -3305,6 +3305,7 @@ PORTAL_JS = """() => {
     groups: [...p.querySelectorAll('[data-portal-group]')].map((g) => g.dataset.portalGroup),
     signed: /Signed in: real data/.test(p.textContent),
     signin: (p.querySelector('[data-portal-link="signin"]') || {}).href || null,
+    signout: !!p.querySelector('[data-portal-link="signout"]'),
     switchPressed: [...p.querySelectorAll('.mode-switch button[aria-pressed="true"]')].map((x) => x.dataset.mode),
     stored: (() => { try { return localStorage.getItem('agentraffic-endpoint'); } catch (e) { return null; } })(),
     status: (p.querySelector('.portal-menu__status') || {}).textContent,
@@ -3340,6 +3341,7 @@ def check_portal(env: Env, t: Case, mode: str):
                 t.eq(m["switchPressed"], [], f"{what}: switch on the public site")
             else:
                 t.check(m["signed"], f"{what}: 'Signed in: real data' missing")
+                t.check(not m["signout"], f"{what}: Sign out shown outside the private copy")
                 t.eq(m["switchPressed"], ["private"], f"{what}: switch state")
             page.keyboard.press("Escape")
             t.check(not page.evaluate(PORTAL_JS)["shown"], f"{what}: Esc did not close it")
