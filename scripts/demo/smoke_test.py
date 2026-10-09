@@ -3333,7 +3333,7 @@ def check_portal(env: Env, t: Case, mode: str):
                 m["left"] >= 0 and m["right"] <= m["vw"],
                 f"{what}: panel outside the viewport ({m['left']:.0f}-{m['right']:.0f} of {m['vw']})",
             )
-            t.eq(m["groups"], ["connect", "signin"], f"{what}: groups")
+            t.eq(m["groups"], ["signin", "connect"], f"{what}: groups")
             if mode == "public":
                 t.check(not m["signed"], f"{what}: 'Signed in' on the public site")
                 t.eq(m["signin"], "https://agentraffic-private.pages.dev/", f"{what}: Sign in link")

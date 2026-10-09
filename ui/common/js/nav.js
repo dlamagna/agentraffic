@@ -267,7 +267,7 @@ function dropdown(kind, label, entries, { dataKey = 'item', strong = false, cont
 function connectGroup() {
   const input = el('input', {
     type: 'url', id: 'portalEndpoint', name: 'endpoint', autocomplete: 'off', spellcheck: 'false',
-    placeholder: 'http://localhost:8101/agentverse', 'aria-label': 'Your backend endpoint (Agent A)',
+    placeholder: 'https://your-backend.example.com', 'aria-label': 'Your backend endpoint (Agent A)',
   });
   const status = el('p', { class: 'portal-menu__status', role: 'status' });
   const save = el('button', { type: 'submit', text: 'Save' });
@@ -277,13 +277,13 @@ function connectGroup() {
     const current = getCustomEndpoint();
     input.value = current;
     clear.hidden = !current;
-    status.textContent = current ? `Using your backend: ${current}` : 'No backend set: the demo replays synthetic runs.';
+    status.textContent = current ? `Using your backend: ${current}` : 'No backend set: the Playground uses the demo.';
   };
   form.addEventListener('submit', (ev) => {
     ev.preventDefault();
     const endpoint = parseEndpoint(input.value);
     if (!endpoint) {
-      status.textContent = 'Enter an http:// or https:// URL, e.g. http://localhost:8101/agentverse';
+      status.textContent = 'Enter an http:// or https:// URL, e.g. https://your-backend.example.com';
       return;
     }
     if (!setCustomEndpoint(endpoint)) {
@@ -300,20 +300,13 @@ function connectGroup() {
   });
   show();
   return el('fieldset', { class: 'portal-menu__group', 'data-portal-group': 'connect' }, [
-    el('legend', { text: 'Connect' }),
-    el('p', { class: 'portal-menu__text', text: 'Use your own backend. No login; the endpoint stays in this browser and the Playground and Chat use it.' }),
+    el('legend', { text: 'Connect your own LLM backend' }),
+    el('p', { class: 'portal-menu__text', text: 'Send the Playground and Chat to your own stack: enter the entry point of Agent A, the orchestrator every task goes to. Kept in this browser only.' }),
+    el('label', { class: 'portal-menu__label', for: 'portalEndpoint', text: 'Agent A entry point' }),
     form,
     clear,
     status,
-    el('details', {}, [
-      el('summary', { text: 'Run it locally' }),
-      el('p', { class: 'portal-menu__text' }, [
-        'Start the stack on your machine (', el('code', { text: 'scripts/deploy/deploy.sh' }), ', see the ',
-        el('a', { href: REPO_URL, target: '_blank', rel: 'noopener', text: 'README' }),
-        '), then enter ', el('code', { text: 'http://localhost:8101/agentverse' }),
-        '. The backend must allow this site (CORS); HTTPS pages can reach http://localhost only.',
-      ]),
-    ]),
+    el('a', { class: 'portal-menu__link portal-menu__readme', href: `${repoUrl('README.md')}#connect-the-website-to-your-stack`, target: '_blank', rel: 'noopener', text: 'Where to find the entry point (README) ↗' }),
   ]);
 }
 
@@ -321,14 +314,22 @@ function connectGroup() {
 function signInGroup(data) {
   if (!(data && data.privateAvailable)) {
     // public site: a way in to the copy with the real data
-    return el('fieldset', { class: 'portal-menu__group', 'data-portal-group': 'signin' }, [
-      el('legend', { text: 'Sign in' }),
-      el('p', { class: 'portal-menu__text', text: 'The real per-run data is available to the research group after sign-in.' }),
+    return el('section', { class: 'portal-menu__group portal-menu__card', 'data-portal-group': 'signin', 'aria-labelledby': 'portalSignInTitle' }, [
+      el('h3', { class: 'portal-menu__card-title', id: 'portalSignInTitle', text: 'Sign in to see the real runs' }),
+      el('p', { class: 'portal-menu__text', text: 'The research group can see the data behind the paper:' }),
+      el('ul', { class: 'portal-menu__benefits' }, [
+        el('li', { text: 'every recorded run in the Run explorer' }),
+        el('li', { text: 'replays of real runs, with their prompts and replies' }),
+        el('li', { text: 'the Beta analyses' }),
+      ]),
       el('a', { class: 'portal-menu__signin', href: SIGN_IN_URL, 'data-portal-link': 'signin', target: '_blank', rel: 'noopener', text: 'Sign in ↗' }),
+      el('p', { class: 'portal-menu__fine', text: 'This public site shows the real aggregates with synthetic runs.' }),
     ]);
   }
-  const group = el('fieldset', { class: 'portal-menu__group', 'data-portal-group': 'signin' }, [el('legend', { text: 'Real data' })]);
-  group.append(el('p', { class: 'portal-menu__text portal-menu__signed', text: 'Signed in: real data' }));
+  const group = el('section', { class: 'portal-menu__group portal-menu__card', 'data-portal-group': 'signin', 'aria-labelledby': 'portalSignInTitle' }, [
+    el('h3', { class: 'portal-menu__card-title', id: 'portalSignInTitle', text: 'Signed in: real data' }),
+    el('p', { class: 'portal-menu__text', text: 'You are seeing the recorded runs. Switch to the synthetic data to see what the public site shows.' }),
+  ]);
   const sw = switchElement(data);
   if (sw) group.append(sw);
   return group;
@@ -336,7 +337,7 @@ function signInGroup(data) {
 
 /** The Portal ▾ menu. The data mode is known a moment later: the real-data group is then redrawn. */
 function portalMenu() {
-  const content = el('div', { class: 'portal-menu__content' }, [connectGroup(), signInGroup(null)]);
+  const content = el('div', { class: 'portal-menu__content' }, [signInGroup(null), connectGroup()]);
   const menu = dropdown('portal', 'Portal', [], { content });
   getDataMode().then((data) => {
     content.querySelector('[data-portal-group="signin"]').replaceWith(signInGroup(data));

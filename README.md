@@ -164,6 +164,17 @@ scripts/deploy/deploy.sh --monitoring
 
 The LLM backend takes a few minutes to download and load the model on first run.
 
+#### Connect the website to your stack
+
+- **The one URL the site needs** is Agent A's entry point: `http://localhost:8101/agentverse`. Agent A is
+  the orchestrator that receives every task.
+- **What it serves:** `POST /agentverse` starts a run; `GET /agentverse/<task_id>` reads one back.
+- **Where to enter it:** on the site, open **Portal ▾ → Connect your own LLM backend**, paste the URL and
+  click Save. The Playground and Chat then send their tasks to your stack instead of playing the demo.
+- **Shortcut:** the host alone (`http://localhost:8101`) also works; `/agentverse` is added.
+- **Limits:** the backend must allow the site's origin (CORS), and a page served over HTTPS can only reach
+  `http://localhost`, not other plain-HTTP hosts.
+
 ### 3. Run an experiment
 
 ```bash
