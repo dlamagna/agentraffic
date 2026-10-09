@@ -321,12 +321,12 @@ function signOutButton() {
   const button = el('button', { type: 'button', class: 'portal-menu__signout', 'data-portal-link': 'signout', text: 'Sign out' });
   button.addEventListener('click', async () => {
     button.disabled = true;
+    // The logout answer clears the Access cookies, then redirects to the team login domain: that redirect is
+    // not followed (redirect: 'manual'), so the request cannot fail on it. Either way, go to the public site.
     try {
-      await fetch('/cdn-cgi/access/logout', { credentials: 'same-origin', cache: 'no-store' });
-      location.href = PUBLIC_SITE_URL;
-    } catch (_) {
-      location.href = '/cdn-cgi/access/logout'; // Cloudflare's own signed-out page
-    }
+      await fetch('/cdn-cgi/access/logout', { credentials: 'same-origin', cache: 'no-store', redirect: 'manual' });
+    } catch (_) { /* still signed out of this site, or nothing to sign out of */ }
+    location.href = PUBLIC_SITE_URL;
   });
   return button;
 }
