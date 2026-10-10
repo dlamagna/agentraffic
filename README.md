@@ -12,43 +12,8 @@ This is the open-source release accompanying the paper:
 > **Towards Traffic Modelling of Multi-Agent Systems: The Role of Coordination Topology**
 > Davide Lamagna, Albert Cabellos, Alberto Rodriguez-Natal, Gábor Rétvári, Berta Serracanta
 > *3rd ACM SIGCOMM Workshop on Networks for AI Computing (NAIC 2026)*
-> 📄 [Read the paper (ACM Digital Library)](https://dl.acm.org/doi/10.1145/3789240.3828749) · DOI [10.1145/3789240.3828749](https://doi.org/10.1145/3789240.3828749)
-
----
-
-## Live demo
-
-> **Live:** <https://dlamagna.github.io/agentraffic/>
-> (published from `main` by `.github/workflows/pages.yml`).
-
-![The Overview page of the public site](docs/img/results-public.png)
-
-A static website that replays AgentVerse runs under the three topologies and shows the paper's
-traffic findings. What is real and what is not:
-
-- **Only the summary-level data is real:** the aggregates behind the paper's results (inter-arrival
-  distributions, fits, correlations, system load), computed from the 1,481 recorded runs.
-- **Everything below that level is synthetic:** the individual runs, the replayed prompts and
-  responses, and the run explorer's dots were generated to match the real aggregates. They are
-  labelled as synthetic in the site, and `scripts/demo/check_public.py` stops any real run or text
-  from reaching the published build.
-- The real per-run data stays on the owner's machine and is not part of this repository.
-
-Read more: [the blog post](https://dlamagna.github.io/agentraffic/docs/blog/) (source:
-[`ui/docs/blog/`](ui/docs/blog/index.html)) and
-[the paper](https://dl.acm.org/doi/10.1145/3789240.3828749) (ACM Digital Library).
-
-### Run the website locally, with the real data
-
-```bash
-make data    # builds ui/data/private/ from the paper-branch data (sparse clone into data/att-paper)
-make local   # serves ui/ on http://localhost:8080/ in private mode (real data)
-```
-
-Without `ui/data/private/` the site falls back to the public data by itself. `make public` builds
-`dist/public/` exactly as the deployment does (no private data) and serves it on
-http://localhost:8081/. `make check` runs the publication guard. `ui/data/private/` is gitignored
-and must never be committed or published.
+> 📄 [Read the paper (ACM Digital Library)](https://dl.acm.org/doi/10.1145/3789240.3828749) · DOI [10.1145/3789240.3828749](https://doi.org/10.1145/3789240.3828749)  
+> 📝 [Blog post: an informal write-up of the paper](https://dlamagna.github.io/agentraffic/docs/blog/)
 
 ---
 
@@ -169,7 +134,7 @@ The LLM backend takes a few minutes to download and load the model on first run.
 - **The one URL the site needs** is Agent A's entry point: `http://localhost:8101/agentverse`. Agent A is
   the orchestrator that receives every task.
 - **What it serves:** `POST /agentverse` starts a run; `GET /agentverse/<task_id>` reads one back.
-- **Where to enter it:** on the site, open **Portal ▾ → Connect your own LLM backend**, paste the URL and
+- **Where to enter it:** on the [website](https://dlamagna.github.io/agentraffic/), open **Portal ▾ → Connect your own LLM backend**, paste the URL and
   click Save. The Playground and Chat then send their tasks to your stack instead of playing the demo.
 - **Shortcut:** the host alone (`http://localhost:8101`) also works; `/agentverse` is added.
 - **Limits:** the backend must allow the site's origin (CORS), and a page served over HTTPS can only reach
