@@ -3,8 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Same task, same model, different traffic · agentraffic</title>
-  <meta name="description" content="A short write-up of our NAIC 2026 paper: how the way LLM agents coordinate shapes the traffic they send to the model server.">
+  <title>Traffic modelling of agentic systems: same task, same model, different traffic</title>
+  <meta name="description" content="A short write-up of our NAIC 2026 paper on traffic modelling of multi-agent (agentic) LLM systems: the way agents coordinate shapes the traffic they send to the model server.">
+  <link rel="canonical" href="https://dlamagna.github.io/agentraffic/docs/blog/">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "Same task, same model, different traffic",
+    "url": "https://dlamagna.github.io/agentraffic/docs/blog/",
+    "datePublished": "2026-10-06",
+    "author": [
+      {"@type": "Person", "name": "Davide Lamagna"},
+      {"@type": "Person", "name": "Albert Cabellos"},
+      {"@type": "Person", "name": "Alberto Rodriguez-Natal"},
+      {"@type": "Person", "name": "Gábor Rétvári"},
+      {"@type": "Person", "name": "Berta Serracanta"}
+    ],
+    "about": {
+      "@type": "ScholarlyArticle",
+      "name": "Towards Traffic Modelling of Multi-Agent Systems: The Role of Coordination Topology",
+      "sameAs": "https://doi.org/10.1145/3789240.3828749",
+      "isPartOf": {"@type": "Event", "name": "3rd ACM SIGCOMM Workshop on Networks for AI Computing (NAIC)"},
+      "datePublished": "2026"
+    },
+    "isBasedOn": "https://doi.org/10.1145/3789240.3828749"
+  }
+  </script>
   <script>
     /* Theme before first paint: the saved choice, else light (see common/js/theme.js). */
     (function () {
@@ -37,7 +62,7 @@
   <header class="doc-hero post-hero" aria-labelledby="pageTitle">
     <p class="eyebrow">Blog · October 2026</p>
     <h1 id="pageTitle">Same task, same model, different traffic</h1>
-    <p class="doc-lede">How the way LLM agents coordinate shapes the traffic they send to the model server.</p>
+    <p class="doc-lede">The way LLM agents coordinate shapes the traffic they send to the model server.</p>
     <p class="authors">Davide Lamagna, Albert Cabellos, Alberto Rodriguez-Natal, Gábor Rétvári, Berta Serracanta</p>
     <p class="post-notice">This post is an informal write-up of our NAIC 2026 paper, <em>Towards Traffic Modelling of
       Multi-Agent Systems: The Role of Coordination Topology</em>. For the method, the statistics and related work,
@@ -58,7 +83,6 @@
   <aside class="tldr" aria-label="TL;DR">
     <p class="tldr-title">TL;DR</p>
     <ul>
-      <li>The way LLM agents coordinate decides when their calls reach the model server.</li>
       <li>Agents that fan out send calls in bursts. Agents that take turns send them one at a time. Neither
         looks Poisson.</li>
       <li>Two setups can make calls at the same average rate and still load the server differently.</li>
@@ -66,7 +90,7 @@
   </aside>
 
   <section id="why" class="doc-section" aria-labelledby="whyTitle">
-    <h2 id="whyTitle">Why look at agent traffic at all?</h2>
+    <h2 id="whyTitle">Why agent traffic matters</h2>
     <p>Most traffic models start with people. Someone clicks, a request goes out, and arrival rates follow human
       behaviour. Agentic systems break that link. A single task from a user can turn into dozens of model calls, and
       their timing is set by how the agents coordinate, not by the user.</p>
@@ -75,17 +99,18 @@
       wide-area and web traffic showed that Poisson models badly underestimate how bursty real traffic is (Leland et
       al. 1994; Paxson and Floyd 1995; Crovella and Bestavros 1997). Each new kind of traffic has needed its own model.
       We wanted to know whether agents are next.</p>
-    <p>A little background for readers outside networking. A traffic model describes when requests arrive and how
-      much work each one brings, in a form simple enough to reason about. Operators use such models to size servers
+    <p>For people outside of networking, a traffic model describes when requests arrive and how
+      much work each one brings, in a form simple enough to analyse. Operators use such models to size servers
       and links, to set rate limits and autoscaling rules, and to drive simulations and load tests. A model only
-      helps if it matches how the traffic really behaves.</p>
+      helps if it matches how the traffic behaves.</p>
     <p>The classic starting point is the Poisson process: requests arrive independently of each other at a constant
-      average rate. The gaps between arrivals then follow an exponential distribution, so a new request is no more
-      likely just after the last one than at any other moment, and a single number, the rate, describes everything.
-      That simplicity made it the default. Queueing results are easy to derive for it, and it described telephone
-      calls well. But it assumes arrivals are spread out fairly evenly. If real traffic comes in
-      bursts, queues typically grow longer and tail latency gets much worse than a Poisson model predicts at the
-      same average load. That gap is what this post is about.</p>
+      average rate. The gaps between arrivals are then independent and exponentially distributed: the length of each gap
+      does not depend on the previous ones, and the time left until the next request does not depend on how long
+      it has been since the last one. A single number, the rate, describes everything.
+      Its simplicity, easy queueing results and good fit for telephone calls made it the default, but it
+      assumes arrivals are spread out evenly. If real traffic comes in
+      bursts, queues grow longer and tail latency gets worse than a Poisson model predicts at the
+      same average load. That gap is what this paper is about.</p>
   </section>
 
   <section id="experiment" class="doc-section" aria-labelledby="experimentTitle">
@@ -112,14 +137,13 @@
         <p>Every agent messages every other agent: twelve messages per round.</p>
       </article>
     </div>
-    <p>We ran each pattern about 500 times (481 for star) and logged every model call, alongside metrics from the
-      model server, the containers and the network. Changing the topology also changes how many calls a run makes
-      and how long each one is, so the comparisons below are between whole setups. Most of what follows comes from one simple quantity: the gap
+    <p>We ran each pattern about 500 times and logged every model call, alongside metrics from the
+      model server, the containers and the network. Most of what follows comes from one quantity: the gap
       between the starts of consecutive model calls during the discussion<sup class="fn-ref"><a href="#fn1" id="fnref1">1</a></sup>.</p>
   </section>
 
   <section id="bursts" class="doc-section" aria-labelledby="burstsTitle">
-    <h2 id="burstsTitle">Bursts, then waiting</h2>
+    <h2 id="burstsTitle">Bursty arrivals</h2>
     <figure class="post-figure">
       <svg class="sketch" viewBox="0 0 640 202" role="img" aria-labelledby="fig1Title fig1Desc">
 <title id="fig1Title">Sketch of call starts during two discussion rounds</title>
@@ -187,19 +211,19 @@
     <aside class="post-aside">
       <p>In full mesh the twelve peer messages go through a pool of five workers, so only five leave together and
         the rest follow as workers free up. That is an orchestrator setting rather than a property of the topology,
-        and it caps the size of the burst. We have not measured how much it lowers the 38%.</p>
+        and it caps the size of the burst.</p>
     </aside>
   </section>
 
   <section id="poisson" class="doc-section" aria-labelledby="poissonTitle">
-    <h2 id="poissonTitle">Poisson doesn't fit</h2>
+    <h2 id="poissonTitle">The Poisson model does not fit</h2>
     <p>The usual first guess for arrivals is a Poisson process, which implies exponentially distributed gaps. For
-      star and full mesh that fails almost by construction, since calls sent together cannot be Poisson. Sequential
-      is the more interesting case: it has no bursts, and the exponential still fits far worse than the alternatives
+      star and full mesh that fails almost by construction, since calls sent together cannot be Poisson. In sequential
+      there are no bursts, and the exponential still fits worse than the alternatives
       (KS distance 0.40, against 0.03 for the log-normal).</p>
     <p>Looking only at the slower gaps, those above 50 ms, the log-normal has the lowest AIC of the three
-      distributions we tried in every pattern. How close it gets differs. The KS distance is 0.03 for sequential
-      and 0.08 and 0.09 for star and full mesh, so in the fan-out patterns the slow group has structure that a
+      distributions we tried in every pattern, though how well it fits varies: the KS distance is 0.03 for
+      sequential but 0.08 and 0.09 for star and full mesh, so in the fan-out patterns the slow group has structure that a
       single distribution does not capture. For full mesh the Weibull is slightly closer by KS distance. The fits,
       tests and robustness checks are in <a data-site-href="paper">the paper</a>.</p>
   </section>
@@ -208,17 +232,17 @@
     <h2 id="loadTitle">Same rate, different load</h2>
     <p>For us this is the most practical result. Star and sequential make discussion calls at almost the same average
       rate, about 0.21 per second. Yet star keeps more calls in flight at the model server: 1.6 on average against
-      1.0. Its calls also take longer, 11.6 s on average against 5.7 s, although part of that is that they are
-      longer (2.7k tokens against 1.8k). Full mesh finishes its discussion in 32 s against 81 s and averages nearly
-      three calls in flight. It sends fewer bytes to the model server in total (39 kB per run against 51 kB), but in
-      so much less time that the mean byte rate is 77% higher, about 1.1 kB/s against 0.6 kB/s.</p>
+      1.0. Its calls also take longer, 11.6 s on average against 5.7 s, partly because each call handles more
+      tokens, prompt and response together (2.7k per call against 1.8k). Full mesh finishes its discussion in 32 s against 81 s and averages nearly
+      three calls in flight. Although it sends fewer bytes to the model server in total (39 kB per run against 51 kB), it
+      does so in less than half the time, so its mean byte rate is 77% higher (about 1.1 kB/s against 0.6 kB/s).</p>
     <p>An average rate hides this. A rate limiter or autoscaler sized on averages would treat star and
-      sequential as the same workload, even though one arrives as a steady trickle and the other in bursts. It also means a
-      bursty trace from an agentic system may just reflect its structure, not a change in load.</p>
+      sequential as the same workload, even though one arrives as a steady trickle and the other in bursts. It also means that
+      burstiness in a trace from an agentic system may reflect its coordination structure, not a change in load.</p>
   </section>
 
   <section id="limits" class="doc-section" aria-labelledby="limitsTitle">
-    <h2 id="limitsTitle">Limits</h2>
+    <h2 id="limitsTitle">Limitations</h2>
     <p>This is one framework, one small model, four kinds of task and a single machine. The topologies were fixed
       in advance and the agents did not call external tools. The exact numbers are specific to this testbed. We expect the
       pattern to carry over: fan-out creates bursts, and the coordination structure, not just the user, shapes what
@@ -226,10 +250,10 @@
   </section>
 
   <section id="next" class="doc-section" aria-labelledby="nextTitle">
-    <h2 id="nextTitle">Where next</h2>
-    <p>Next we want more models and frameworks, deployments spread over several machines, a mixture model that
-      describes both groups of gaps, and a generative model that can produce synthetic agent traffic. Tool calls and
-      agents that choose their own call graph come after that.</p>
+    <h2 id="nextTitle">Future work</h2>
+    <p>Next we want more models and frameworks, deployments spread over several machines, and a mixture model
+      that describes both groups of gaps. We also plan a semi-Markov model of the agents' execution states, with
+      transition probabilities estimated from our traces, that can generate synthetic agent traffic.</p>
   </section>
 
   <section id="try" class="doc-section" aria-labelledby="tryTitle">
