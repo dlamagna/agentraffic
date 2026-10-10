@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>agentraffic</title>
+  <title>agentraffic · Traffic modelling of multi-agent (agentic) LLM systems</title>
+  <meta name="description" content="Code, data and a replay demo for traffic modelling of multi-agent (agentic) LLM systems: how agent coordination shapes the traffic sent to the model server. From the NAIC 2026 paper.">
+  <link rel="canonical" href="https://dlamagna.github.io/agentraffic/">
   <script>
     /* Theme before first paint: the saved choice, else light (see common/js/theme.js). */
     (function () {
@@ -157,7 +159,7 @@
     </div>
     </div>
     <div class="home-top__intro">
-      <p class="summary">When several LLM agents work on one task, a single request from a user can turn into dozens
+      <p class="summary">In agentic systems, where several LLM agents work on one task, a single request from a user can turn into dozens
         of calls to the model server, and the way the agents coordinate decides when those calls arrive. We ran the
         same tasks on the same model under three coordination patterns (agents taking turns, a star of reviewers, and
         everyone messaging everyone) and measured the traffic from the application down to the network. Fan-out turns
