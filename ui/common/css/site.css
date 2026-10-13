@@ -244,6 +244,9 @@
 .paper-footer__links a { color: var(--accent-text); text-decoration: none; overflow-wrap: anywhere; }
 .paper-footer__links a:hover { text-decoration: underline; }
 .paper-footer__sep { margin: 0 7px; color: var(--text-muted); }
+.paper-footer__more { margin-top: 2px !important; color: var(--text-muted); font-size: 0.78rem; }
+.paper-footer__more a { color: var(--accent-text); text-decoration: none; }
+.paper-footer__more a:hover { text-decoration: underline; }
 @media (max-width: 720px) { .paper-footer { padding: 16px 16px 24px; } }
 
 /* ─── BibTeX block ───────────────────────────────────────────────────────────── */

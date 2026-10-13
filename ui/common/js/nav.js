@@ -10,7 +10,7 @@
  *       header links for page "runner" (see MENUS; the 'playground' entry is the Playground ▾
  *       menu of the interactive tools, 'results' the Results ▾ menu of the four results pages plus the secondary Beta entry),
  *       then Docs ▾, Paper ↗, Code ↗ and Portal ▾ (connect your own backend, sign in)
- *   <footer data-site-footer></footer>          paper title, authors, DOI, GitHub, cite
+ *   <footer data-site-footer></footer>          paper title, authors, DOI, GitHub, cite, edge-healer link
  *   <div data-site-cite></div>                  BibTeX with a copy button
  *   <a data-site-href="paper | doi | repo | repo:<path> | cite | agentverse-paper | agentverse-repo">
  *                                               href from site.js
@@ -422,7 +422,7 @@ export function mountNav(host, pageId = host.dataset.siteNav) {
 // Footer, citation, filled links
 // ---------------------------------------------------------------------------
 
-/** Fills `host` with the paper footer: title, authors and venue, DOI, GitHub, cite. */
+/** Fills `host` with the paper footer: title, authors and venue, DOI, GitHub, cite, and a line on the author's edge-healer project. */
 export function mountFooter(host) {
   const sep = () => el('span', { class: 'paper-footer__sep', 'aria-hidden': 'true', text: '·' });
   const box = el('div', { class: 'paper-footer' }, [
@@ -434,6 +434,11 @@ export function mountFooter(host) {
       el('a', { href: REPO_URL, text: 'Code on GitHub' }), sep(),
       el('a', { href: siteHref('docs/blog/#cite'), text: 'Cite' }), sep(),
       el('a', { href: siteHref('docs/blog/'), text: 'About the blog post' }),
+    ]),
+    el('p', { class: 'paper-footer__more' }, [
+      'Also by the author: ',
+      el('a', { href: 'https://dlamagna.github.io/kubernetes-edge-healer/', text: 'edge-healer' }),
+      ' — decentralised self-healing for Kubernetes at the edge',
     ]),
   ]);
   host.classList.add('site-footer-host');
